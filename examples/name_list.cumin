@@ -1,7 +1,7 @@
 struct Person {
-    name: String,
+    name: string,
     sex: Sex,
-    age: Nat,
+    age: nat,
 }
 
 enum Sex {
@@ -14,11 +14,11 @@ enum Sex {
 let names = [
     Person("John", Sex::Male, 17),
     Person { name="Xohn", sex=Sex::Other, age=1 },
-]
+];
 
 // Cumin by
 let author = Person {
     name = "cympfh",
     sex = Sex::Male,
     age = 0,
-}
+};

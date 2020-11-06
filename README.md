@@ -1,14 +1,14 @@
 # cumin
 
-Mini-Programmable Configuration Language
+Mini-Programmable Typed Configuration Language
 
 ## Example
 
 ```rust
 struct Person {
-    name: String,
+    name: string,
     sex: Sex,
-    age: Nat,
+    age: nat,
 }
 
 enum Sex {
@@ -21,15 +21,17 @@ enum Sex {
 let names = [
     Person("John", Sex::Male, 17),
     Person { name="Xohn", sex=Sex::Other, age=1 },
-]
+];
 
 // Cumin by
 let author = Person {
     name = "cympfh",
     sex = Sex::Male,
     age = 0,
-}
+};
 ```
+
+### Query Command (like jq)
 
 ```bash
 # bash
@@ -40,12 +42,16 @@ $ cq -r '.author.name' ./examples/name_list.cumin
 cympfh
 ```
 
-```python
-# python
-import cumin
+### Convert to JSON
 
-conf = cumin.load('./examples/name_list.cumin')
-for person in conf['names']:
-    if person['age'] > 20:
-        print(person['name'])
+```bash
+# bash
+$ cuminc -T json ./examples/name_list.cumin
+{
+    "names": [
+        {"name": "John", "sex": "Male", "age": 17},
+        {"name": "Xohn", "sex": "Other", "age": 1}
+    ],
+    "author": {"name": "cympfh", "sex": "Male", "age": 0}
+}
 ```

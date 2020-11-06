@@ -1,0 +1,11 @@
+// vars in blocks are private
+
+let memory = {
+    let request = 3;
+    let padding = 4;
+    request + padding
+};
+
+// Here,
+// memory is public, and
+// request and padding are invisible.
