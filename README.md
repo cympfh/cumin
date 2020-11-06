@@ -6,9 +6,9 @@ Mini-Programmable Typed Configuration Language
 
 ```rust
 struct Person {
-    name: string,
+    name: String,
     sex: Sex,
-    age: nat,
+    age: Nat,
 }
 
 enum Sex {

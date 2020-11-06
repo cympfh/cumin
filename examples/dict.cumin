@@ -1,0 +1,15 @@
+// `dict {}` can contain any values
+// This is type-unsafe, but convenient.
+
+let everything = dict {
+    size = 2,
+    data = [
+        dict {
+            x = 3,
+        },
+        dict {
+            y = 2,
+            z = "z",
+        }
+    ],
+};
