@@ -6,6 +6,8 @@ let memory = {
     request + padding
 };
 
+memory
+
 // Here,
 // memory is public, and
 // request and padding are invisible.

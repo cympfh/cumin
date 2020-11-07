@@ -1,3 +1,5 @@
+use crate::parser::value::*;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum JSON {
     Nat(u128),
@@ -30,6 +32,15 @@ impl JSON {
                     .collect::<Vec<_>>()
                     .join(",")
             ),
+        }
+    }
+    pub fn from_cumin(val: Value) -> Self {
+        use JSON::*;
+        match val {
+            Value::Nat(x) => Nat(x),
+            Value::Int(x) => Int(x),
+            Value::Str(x) => Str(x),
+            Value::Var(v) => panic!("Var {} is unresolved", v),
         }
     }
 }

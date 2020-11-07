@@ -4,7 +4,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, many1, parser, sep_by, Parser};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     Let(String, Expr),
     Struct(String, Vec<(String, String)>),

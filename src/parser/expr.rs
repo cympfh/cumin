@@ -4,7 +4,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, parser, Parser};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
     Val(Value),
     Add(Box<Expr>, Box<Expr>),

@@ -1,0 +1,30 @@
+struct Person {
+    name: String,
+    sex: Sex,
+    age: Nat,
+}
+
+enum Sex {
+    Male,
+    Female,
+    Other,
+}
+
+// {{ ... }} is a Just Dictionary[fields => Any data]
+
+{{
+
+    // list of Person
+    names = [
+        Person("John", Sex::Male, 17),
+        Person { name="Xohn", sex=Sex::Other, age=1 },
+    ],
+
+    // Cumin by
+    author = Person {
+        name = "cympfh",
+        sex = Sex::Male,
+        age = 0,
+    },
+
+}}

@@ -2,7 +2,7 @@ use combine::parser::char::{alpha_num, char, digit, spaces};
 use combine::stream::Stream;
 use combine::{between, choice, many, many1, none_of, parser, token, Parser};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
     Nat(u128),
     Int(i128),

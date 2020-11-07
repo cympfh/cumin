@@ -8,3 +8,8 @@ edition = "2018"
 
 [dependencies]
 combine = "4.3.2"
+structopt = { version = "0.3", default-features = false }
+
+[[bin]]
+name = "cuminc"
+path = "src/bin/cuminc.rs"
