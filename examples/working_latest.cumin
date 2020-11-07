@@ -1,4 +1,4 @@
 struct X {
-    x: Int
+    x: Int,
 }
 1 + 2
