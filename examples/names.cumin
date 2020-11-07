@@ -1,17 +1,19 @@
+// struct is a Fixed schema
 struct Person {
     name: String,
     sex: Sex,
     age: Nat,
 }
 
+// "Male" or "Female" or "Other"
 enum Sex {
     Male,
     Female,
     Other,
 }
 
-// {{ ... }} is a Just Dictionary[fields => Any data]
-
+// Exporting the last data
+// Here {{ ... }} is a Just Dictionary[fields => Any data]
 {{
 
     // list of Person

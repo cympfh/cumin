@@ -5,48 +5,45 @@ Mini-Programmable Typed Configuration Language
 ## Example
 
 ```rust
+// struct is a Fixed schema
 struct Person {
     name: String,
     sex: Sex,
     age: Nat,
 }
 
+// "Male" or "Female" or "Other"
 enum Sex {
     Male,
     Female,
     Other,
 }
 
-// list of Person
-let names = [
-    Person("John", Sex::Male, 17),
-    Person { name="Xohn", sex=Sex::Other, age=1 },
-];
+// Exporting the last data
+// Here {{ ... }} is a Just Dictionary[fields => Any data]
+{{
 
-// Cumin by
-let author = Person {
-    name = "cympfh",
-    sex = Sex::Male,
-    age = 0,
-};
-```
+    // list of Person
+    names = [
+        Person("John", Sex::Male, 17),
+        Person { name="Xohn", sex=Sex::Other, age=1 },
+    ],
 
-### Query Command (like jq)
+    // Cumin by
+    author = Person {
+        name = "cympfh",
+        sex = Sex::Male,
+        age = 0,
+    },
 
-```bash
-# bash
-$ cq '.names[0]' ./examples/name_list.cumin
-Person("John", Sex::Male, 17)
-
-$ cq -r '.author.name' ./examples/name_list.cumin
-cympfh
+}}
 ```
 
 ### Convert to JSON
 
 ```bash
 # bash
-$ cuminc -T json ./examples/name_list.cumin
+$ cuminc -T json ./examples/names.cumin
 {
     "names": [
         {"name": "John", "sex": "Male", "age": 17},
@@ -54,4 +51,15 @@ $ cuminc -T json ./examples/name_list.cumin
     ],
     "author": {"name": "cympfh", "sex": "Male", "age": 0}
 }
+```
+
+### Query Command (like jq)
+
+```bash
+# bash
+$ cq '.names[0]' ./examples/names.cumin
+Person("John", Sex::Male, 17)
+
+$ cq -r '.author.name' ./examples/names.cumin
+cympfh
 ```
