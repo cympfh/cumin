@@ -1,3 +1,4 @@
+// This can be working with latest version
 struct X {
     x: Int,
 }

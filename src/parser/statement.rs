@@ -1,8 +1,9 @@
 use crate::parser::expr::*;
+use combine::error::ParseError;
 use combine::parser::char::{alpha_num, char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by, Parser};
+use combine::{choice, many, many1, none_of, parser, sep_by, Parser};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
@@ -10,12 +11,31 @@ pub enum Statement {
     Struct(String, Vec<(String, String)>),
 }
 
+fn comment<Input>() -> impl Parser<Input, Output = ()>
+where
+    Input: Stream<Token = char>,
+    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
+{
+    spaces()
+        .with(string("//"))
+        .with(many::<String, _, _>(none_of("\n".chars())))
+        .with(spaces())
+}
+
+fn commentable_spaces<Input>() -> impl Parser<Input, Output = ()>
+where
+    Input: Stream<Token = char>,
+    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
+{
+    choice!(attempt(comment()), spaces())
+}
+
 parser! {
     pub fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
 
         // let id = expr;
         let let_stmt = (
-            spaces(),
+            commentable_spaces(),
             string("let"),
             space(),
             spaces(),
@@ -26,7 +46,7 @@ parser! {
             expr(),
             spaces(),
             char(';'),
-            spaces(),
+            commentable_spaces(),
         )
             .map(|t| Statement::Let(t.4, t.8));
 
@@ -34,27 +54,27 @@ parser! {
         let struct_stmt = {
             let struct_inner = sep_by(
                 (
-                    spaces(),
+                    commentable_spaces(),
                     many1(alpha_num()),
                     spaces(),
                     char(':'),
                     spaces(),
                     many1(alpha_num()),
-                    spaces()
+                    commentable_spaces()
                 ).map(|t| (t.1, t.5)), char(','));
             (
-                spaces(),
+                commentable_spaces(),
                 string("struct"),
                 space(),
                 spaces(),
                 many1(alpha_num()),
                 spaces(),
                 char('{'),
-                spaces(),
+                commentable_spaces(),
                 struct_inner,
-                spaces(),
+                commentable_spaces(),
                 char('}'),
-                spaces(),
+                commentable_spaces(),
             )
                 .map(|t| Statement::Struct(t.4, t.8))
         };
@@ -63,7 +83,7 @@ parser! {
         let struct_stmt_comma = {
             let struct_inner = many(
                 (
-                    spaces(),
+                    commentable_spaces(),
                     many1(alpha_num()),
                     spaces(),
                     char(':'),
@@ -71,21 +91,21 @@ parser! {
                     many1(alpha_num()),
                     spaces(),
                     char(','),
-                    spaces(),
+                    commentable_spaces(),
                 ).map(|t| (t.1, t.5)));
             (
-                spaces(),
+                commentable_spaces(),
                 string("struct"),
                 space(),
                 spaces(),
                 many1(alpha_num()),
                 spaces(),
                 char('{'),
-                spaces(),
+                commentable_spaces(),
                 struct_inner,
-                spaces(),
+                commentable_spaces(),
                 char('}'),
-                spaces(),
+                commentable_spaces(),
             )
                 .map(|t| Statement::Struct(t.4, t.8))
         };
@@ -123,9 +143,21 @@ mod test_statement {
     }
 
     #[test]
+    fn test_comment() {
+        assert_eq!(comment().parse("// hoge"), Ok(((), "")));
+    }
+
+    #[test]
     fn test_struct() {
         assert_eq!(
             stmt().parse("struct X {} "),
+            Ok((Struct("X".to_string(), vec![]), ""))
+        );
+        assert_eq!(
+            stmt().parse(
+                "// comment
+                struct X {}"
+            ),
             Ok((Struct("X".to_string(), vec![]), ""))
         );
         assert_eq!(
