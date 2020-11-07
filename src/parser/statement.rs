@@ -5,13 +5,13 @@ use combine::stream::Stream;
 use combine::{choice, many1, parser, sep_by, Parser};
 
 #[derive(Debug, PartialEq, Eq)]
-enum Statement {
+pub enum Statement {
     Let(String, Expr),
     Struct(String, Vec<(String, String)>),
 }
 
 parser! {
-    fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
+    pub fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
 
         // let id = expr;
         let let_stmt = (

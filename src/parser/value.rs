@@ -1,6 +1,6 @@
 use combine::parser::char::{alpha_num, char, digit, spaces};
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, Parser};
+use combine::{between, choice, many, many1, none_of, parser, token, Parser};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Value {
@@ -16,7 +16,7 @@ parser! {
             .with(many1(digit()))
             .map(|x: String| Value::Int(-x.parse::<i128>().unwrap()));
         let nat_value = many1(digit()).map(|x: String| Value::Nat(x.parse::<u128>().unwrap()));
-        let str_value = (char('"'), many(alpha_num()), char('"')).map(|t| Value::Str(t.1));
+        let str_value = between(token('"'), token('"'), many(none_of("\"".chars())).map(|x:String| Value::Str(x)));
         let var_value = many(alpha_num()).map(|x: String| Value::Var(x));
 
         choice!(int_value, nat_value, str_value, var_value).skip(spaces())
@@ -35,6 +35,10 @@ mod test_value {
         assert_eq!(
             value().parse("\"hoge\""),
             Ok((Value::Str("hoge".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("\"hoge !?\""),
+            Ok((Value::Str("hoge !?".to_string()), ""))
         );
         assert_eq!(
             value().parse("hoge"),
