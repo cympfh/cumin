@@ -21,6 +21,16 @@ pub fn eval(config: Config) -> JSON {
         }
     }
 
+    // collect enums
+    for stmt in config.0.iter() {
+        match stmt {
+            Enum(name, variants) => {
+                env.enums.insert(name.clone(), variants.clone());
+            }
+            _ => (),
+        }
+    }
+
     // collect let
     for stmt in config.0.iter() {
         match stmt {
@@ -46,6 +56,18 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             Some((_, val)) => (*val).clone(),
             None => panic!("Undefined variable {}", v),
         },
+        Val(EnumVariant(s, t)) => {
+            // check existence
+            let ok = if let Some(variants) = env.enums.get(s) {
+                variants.iter().any(|v| v == t)
+            } else {
+                false
+            };
+            if !ok {
+                panic!("Not found Enum {}::{}", s, t);
+            }
+            EnumVariant(s.to_string(), t.to_string())
+        }
         Add(x, y) => {
             let a = eval_expr(&env, &x);
             let b = eval_expr(&env, &y);
@@ -67,14 +89,20 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
 
 struct Environ {
     structs: HashMap<String, Vec<(String, String)>>,
+    enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (String, Value)>,
 }
 
 impl Environ {
     fn new() -> Self {
         let structs = HashMap::new();
+        let enums = HashMap::new();
         let vars = HashMap::new();
-        Self { structs, vars }
+        Self {
+            structs,
+            enums,
+            vars,
+        }
     }
 }
 
@@ -91,5 +119,17 @@ mod test_eval {
 
         let conf = Config(vec![], Add(Box::new(Val(Int(-1))), Box::new(Val(Nat(3)))));
         assert_eq!(eval(conf), JSON::Int(2));
+    }
+
+    #[test]
+    fn test_enum() {
+        let conf = Config(
+            vec![Enum(
+                "X".to_string(),
+                vec!["Zoo".to_string(), "Park".to_string()],
+            )],
+            Val(EnumVariant("X".to_string(), "Park".to_string())),
+        );
+        assert_eq!(eval(conf), JSON::Str("Park".to_string()));
     }
 }

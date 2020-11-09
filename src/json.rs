@@ -41,6 +41,7 @@ impl JSON {
             Value::Int(x) => Int(x),
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
+            Value::EnumVariant(_, t) => Str(t),
         }
     }
 }
