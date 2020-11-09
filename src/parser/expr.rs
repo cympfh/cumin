@@ -3,7 +3,7 @@ use crate::parser::value::*;
 use combine::parser::char::{alpha_num, char, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by, Parser};
+use combine::{choice, many, many1, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
@@ -80,6 +80,7 @@ parser! {
 #[cfg(test)]
 mod test_expr {
     use crate::parser::expr::*;
+    use combine::Parser;
     use Expr::*;
     use Value::*;
 

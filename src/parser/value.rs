@@ -1,7 +1,7 @@
 use combine::parser::char::{alpha_num, char, digit, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{between, choice, many, many1, none_of, parser, token, Parser};
+use combine::{between, choice, many, many1, none_of, parser, token};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
@@ -35,6 +35,7 @@ parser! {
 #[cfg(test)]
 mod test_value {
     use crate::parser::value::*;
+    use combine::Parser;
 
     #[test]
     fn test() {

@@ -2,7 +2,7 @@ use crate::parser::expr::*;
 use crate::parser::statement::*;
 use combine::parser::char::spaces;
 use combine::stream::Stream;
-use combine::{many, parser, Parser};
+use combine::{many, parser};
 
 #[derive(Debug, PartialEq)]
 pub struct Config(pub Vec<Statement>, pub Expr);
@@ -17,6 +17,7 @@ parser! {
 mod test_config {
     use crate::parser::config::*;
     use crate::parser::value::*;
+    use combine::Parser;
     use Expr::*;
     use Statement::*;
     use Value::*;

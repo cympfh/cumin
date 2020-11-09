@@ -1,10 +1,9 @@
 use crate::parser::comment::*;
 use crate::parser::expr::*;
-use combine::error::ParseError;
 use combine::parser::char::{alpha_num, char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by, Parser};
+use combine::{choice, many, many1, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
@@ -127,6 +126,7 @@ parser! {
 mod test_statement {
     use crate::parser::statement::*;
     use crate::parser::value::*;
+    use combine::Parser;
     use Expr::*;
     use Statement::*;
     use Value::*;
