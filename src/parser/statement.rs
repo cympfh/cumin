@@ -3,7 +3,7 @@ use combine::error::ParseError;
 use combine::parser::char::{alpha_num, char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, none_of, parser, sep_by, Parser};
+use combine::{choice, eof, many, many1, none_of, parser, sep_by, Parser};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
@@ -20,6 +20,7 @@ where
     spaces()
         .with(string("//"))
         .with(many::<String, _, _>(none_of("\n".chars())))
+        .with(choice!(char('\n').map(|_| ()), eof().map(|_| ())))
         .with(spaces())
 }
 
@@ -28,7 +29,7 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    choice!(attempt(comment()), spaces())
+    choice!(attempt(many1(comment())), spaces())
 }
 
 parser! {

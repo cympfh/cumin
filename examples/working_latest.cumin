@@ -1,12 +1,25 @@
-// This can be working with latest version
-struct X {
+/// This can be working with latest version
+
+struct Point {
     x: Int,
+    y: Int,
 }
+
 enum Z {
     Z1,  // Z is this,
     Z2,  // xor this.
 }
+
+// Strings
 let x = "hoge";
 let y = "fuga";
+
+// Numbers
 let z: Nat = 0;
+
+// Variants
+// You can override var names (later is prior)
+let z = Z::Z2;
+
+// Exporting this
 x + y
