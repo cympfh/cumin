@@ -85,6 +85,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 panic!("Cannot resolve name {}", f)
             }
         }
+        AnonymousStruct(items) => {
+            let items = items
+                .iter()
+                .map(|(name, val)| (name.to_string(), eval_expr(&env, &val)))
+                .collect();
+            Dict(items)
+        }
         Add(x, y) => {
             let a = eval_expr(&env, &x);
             let b = eval_expr(&env, &y);

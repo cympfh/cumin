@@ -23,11 +23,9 @@ let z: Nat = 0;
 // You can overwrite var names
 let z = Z::Z2;
 
-struct AllData {
-    p: Point,
-    z: Z,
-    str: String,
-}
-
 // Exporting this
-AllData(p, z, x + y)
+{{
+    p = p,
+    z = z,
+    str = x + y,
+}}

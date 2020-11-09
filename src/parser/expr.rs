@@ -1,6 +1,6 @@
 use crate::parser::comment::*;
 use crate::parser::value::*;
-use combine::parser::char::{alpha_num, char, spaces};
+use combine::parser::char::{alpha_num, char, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, many, many1, parser, sep_by, Parser};
@@ -9,11 +9,13 @@ use combine::{choice, many, many1, parser, sep_by, Parser};
 pub enum Expr {
     Val(Value),
     Apply(String, Vec<Expr>),
+    AnonymousStruct(Vec<(String, Expr)>),
     Add(Box<Expr>, Box<Expr>),
 }
 
 parser! {
     pub fn expr[Input]()(Input) -> Expr where [Input: Stream<Token=char>] {
+        // F(x,...)
         let apply_expr = {
             let inner_sep = sep_by::<Vec<_>,_, _, _>((commentable_spaces(), expr(), commentable_spaces()).map(|t| t.1), char(','));
             let inner_trailing = many::<Vec<_>, _, _>((commentable_spaces(), expr(), commentable_spaces(), char(','), commentable_spaces()).map(|t| t.1));
@@ -24,12 +26,52 @@ parser! {
                 char(')')
             ).map(|t| Expr::Apply(t.0, t.2))
         };
+
+        // {{ x=val, }}
+        let dict_expr = {
+            let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
+                (
+                    spaces(),
+                    many1(alpha_num()),
+                    spaces(),
+                    char('='),
+                    spaces(),
+                    expr(),
+                    spaces()
+                ).map(|t| (t.1, t.5)),
+                char(',')
+            );
+            let inner_trailing = many::<Vec<_>, _, _>(
+                (
+                    spaces(),
+                    many1(alpha_num()),
+                    spaces(),
+                    char('='),
+                    spaces(),
+                    expr(),
+                    spaces(),
+                    char(','),
+                    spaces()
+                ).map(|t| (t.1, t.5))
+            );
+            (
+                string("{{"),
+                choice!(attempt(inner_trailing), inner_sep),
+                string("}}"),
+            )
+                .map(|t| Expr::AnonymousStruct(t.1))
+        };
+
+        // _ + _
         let add_expr = (value(), spaces(), char('+'), spaces(), expr())
             .map(|t| Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)));
+
         let value_expr = value().map(|x: Value| Expr::Val(x));
+
         choice!(
             attempt(apply_expr),
             attempt(add_expr),
+            attempt(dict_expr),
             value_expr
         )
     }
@@ -76,6 +118,35 @@ mod test_expr {
                 ),
                 ""
             ))
+        );
+    }
+
+    #[test]
+    fn test_dict() {
+        assert_eq!(
+            expr().parse("{{ x=1, z = 2 }}"),
+            Ok((
+                AnonymousStruct(vec![
+                    ("x".to_string(), Val(Nat(1))),
+                    ("z".to_string(), Val(Nat(2)))
+                ]),
+                ""
+            )),
+        );
+        assert_eq!(
+            expr().parse(
+                "{{
+                x= 1,
+                z = \"hoge\",
+            }}"
+            ),
+            Ok((
+                AnonymousStruct(vec![
+                    ("x".to_string(), Val(Nat(1))),
+                    ("z".to_string(), Val(Str("hoge".to_string())))
+                ]),
+                ""
+            )),
         );
     }
 }
