@@ -81,9 +81,6 @@ impl Environ {
 #[cfg(test)]
 mod test_eval {
     use crate::eval::*;
-    use crate::json::*;
-    use crate::parser::expr::*;
-    use crate::parser::value::*;
     use Expr::*;
     use Value::*;
 
