@@ -17,46 +17,32 @@ parser! {
     pub fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
 
         // let id = expr;
-        let let_stmt = (
-            commentable_spaces(),
-            string("let"),
-            space(),
-            spaces(),
-            many1(alpha_num()),
-            spaces(),
-            char('='),
-            spaces(),
-            expr(),
-            spaces(),
-            char(';'),
-            commentable_spaces(),
-        )
-            .map(|t| Statement::Let(t.4, "Any".to_string(), t.8));
-
         // let id: type = expr;
-        let let_typed_stmt = (
-            commentable_spaces(),
-            string("let"),
-            space(),
-            spaces(),
-            many1(alpha_num()),
-            spaces(),
-            char(':'),
-            spaces(),
-            many1(alpha_num()),
-            spaces(),
-            char('='),
-            spaces(),
-            expr(),
-            spaces(),
-            char(';'),
-            commentable_spaces(),
-        )
-            .map(|t| Statement::Let(t.4, t.8, t.12));
+        let let_stmt = {
+            let typing = choice!(
+                attempt((spaces(), char(':'), spaces(), many1(alpha_num()), spaces()).map(|t| t.3)),
+                spaces().map(|_| "Any".to_string())
+                );
+            (
+                commentable_spaces(),
+                string("let"),
+                space(),
+                spaces(),
+                many1(alpha_num()),
+                typing,
+                char('='),
+                spaces(),
+                expr(),
+                spaces(),
+                char(';'),
+                commentable_spaces(),
+            )
+                .map(|t| Statement::Let(t.4, t.5, t.8))
+        };
 
-        // struct id { id: id, id: id } -- comma sparated
+        // struct id { id: id, id: id [,] }
         let struct_stmt = {
-            let struct_inner = sep_by(
+            let inner_separated = sep_by(
                 (
                     commentable_spaces(),
                     many1(alpha_num()),
@@ -66,26 +52,7 @@ parser! {
                     many1(alpha_num()),
                     commentable_spaces()
                 ).map(|t| (t.1, t.5)), char(','));
-            (
-                commentable_spaces(),
-                string("struct"),
-                space(),
-                spaces(),
-                many1(alpha_num()),
-                spaces(),
-                char('{'),
-                commentable_spaces(),
-                struct_inner,
-                commentable_spaces(),
-                char('}'),
-                commentable_spaces(),
-            )
-                .map(|t| Statement::Struct(t.4, t.8))
-        };
-
-        // struct -- comma trailing
-        let struct_comma_stmt = {
-            let struct_inner = many(
+            let inner_trailing = many(
                 (
                     commentable_spaces(),
                     many1(alpha_num()),
@@ -106,7 +73,7 @@ parser! {
                 spaces(),
                 char('{'),
                 commentable_spaces(),
-                struct_inner,
+                choice!(attempt(inner_trailing), inner_separated),
                 commentable_spaces(),
                 char('}'),
                 commentable_spaces(),
@@ -116,32 +83,14 @@ parser! {
 
         // enum -- comma separated
         let enum_stmst = {
-            let inner = sep_by(
+            let inner_separated = sep_by(
                 (
                 commentable_spaces(),
                 many1(alpha_num()),
                 commentable_spaces()
                 ).map(|t| t.1),
                 char(','));
-            (
-                commentable_spaces(),
-                string("enum"),
-                space(),
-                spaces(),
-                many1(alpha_num()),
-                spaces(),
-                char('{'),
-                inner,
-                char('}'),
-                commentable_spaces()
-            )
-                .map(|t|
-                    Statement::Enum(t.4,t.7))
-        };
-
-        // enum -- comma trailing
-        let enum_comma_stmst = {
-            let inner = many1(
+            let inner_trailing = many1(
                 (
                 commentable_spaces(),
                 many1(alpha_num()),
@@ -158,7 +107,7 @@ parser! {
                 many1(alpha_num()),
                 spaces(),
                 char('{'),
-                inner,
+                choice!(attempt(inner_trailing), inner_separated),
                 char('}'),
                 commentable_spaces()
             )
@@ -167,11 +116,8 @@ parser! {
         };
 
         choice!(
-            attempt(struct_comma_stmt),
             attempt(struct_stmt),
-            attempt(let_typed_stmt),
             attempt(let_stmt),
-            attempt(enum_comma_stmst),
             attempt(enum_stmst)
         )
     }
@@ -190,6 +136,10 @@ mod test_statement {
         assert_eq!(
             stmt().parse("let s = -2;"),
             Ok((Let("s".to_string(), "Any".to_string(), Val(Int(-2))), ""))
+        );
+        assert_eq!(
+            stmt().parse("let z: Nat = 3;"),
+            Ok((Let("z".to_string(), "Nat".to_string(), Val(Nat(3))), ""))
         );
         assert_eq!(
             stmt().parse("let s:Nat=2; "),
