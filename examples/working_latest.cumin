@@ -2,6 +2,10 @@
 struct X {
     x: Int,
 }
+enum Z {
+    Z1,  // Z is this,
+    Z2,  // xor this.
+}
 let x = "hoge";
 let y = "fuga";
 let z: Nat = 0;

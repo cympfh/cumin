@@ -9,6 +9,7 @@ use combine::{choice, many, many1, none_of, parser, sep_by, Parser};
 pub enum Statement {
     Let(String, String, Expr),
     Struct(String, Vec<(String, String)>),
+    Enum(String, Vec<String>),
 }
 
 fn comment<Input>() -> impl Parser<Input, Output = ()>
@@ -101,7 +102,7 @@ parser! {
         };
 
         // struct -- comma trailing
-        let struct_stmt_comma = {
+        let struct_comma_stmt = {
             let struct_inner = many(
                 (
                     commentable_spaces(),
@@ -131,11 +132,65 @@ parser! {
                 .map(|t| Statement::Struct(t.4, t.8))
         };
 
+        // enum -- comma separated
+        let enum_stmst = {
+            let inner = sep_by(
+                (
+                commentable_spaces(),
+                many1(alpha_num()),
+                commentable_spaces()
+                ).map(|t| t.1),
+                char(','));
+            (
+                commentable_spaces(),
+                string("enum"),
+                space(),
+                spaces(),
+                many1(alpha_num()),
+                spaces(),
+                char('{'),
+                inner,
+                char('}'),
+                commentable_spaces()
+            )
+                .map(|t|
+                    Statement::Enum(t.4,t.7))
+        };
+
+        // enum -- comma trailing
+        let enum_comma_stmst = {
+            let inner = many1(
+                (
+                commentable_spaces(),
+                many1(alpha_num()),
+                commentable_spaces(),
+                char(','),
+                commentable_spaces(),
+                ).map(|t| t.1)
+            );
+            (
+                commentable_spaces(),
+                string("enum"),
+                space(),
+                spaces(),
+                many1(alpha_num()),
+                spaces(),
+                char('{'),
+                inner,
+                char('}'),
+                commentable_spaces()
+            )
+                .map(|t|
+                    Statement::Enum(t.4,t.7))
+        };
+
         choice!(
-            attempt(struct_stmt_comma),
+            attempt(struct_comma_stmt),
             attempt(struct_stmt),
             attempt(let_typed_stmt),
-            attempt(let_stmt)
+            attempt(let_stmt),
+            attempt(enum_comma_stmst),
+            attempt(enum_stmst)
         )
     }
 }
@@ -213,6 +268,47 @@ mod test_statement {
                         ("y".to_string(), "Int".to_string()),
                     ]
                 ),
+                ""
+            ))
+        );
+    }
+
+    #[test]
+    fn test_enum() {
+        // comma-separating
+        assert_eq!(
+            stmt().parse(
+                "
+            enum Z {
+                A,B, C,D
+            }
+            "
+            ),
+            Ok((
+                Enum(
+                    "Z".to_string(),
+                    vec![
+                        "A".to_string(),
+                        "B".to_string(),
+                        "C".to_string(),
+                        "D".to_string(),
+                    ]
+                ),
+                ""
+            ))
+        );
+        // comma-trailing
+        assert_eq!(
+            stmt().parse(
+                "
+            enum Z{
+                Z1,//,,,
+                Z2,
+            }
+            "
+            ),
+            Ok((
+                Enum("Z".to_string(), vec!["Z1".to_string(), "Z2".to_string()]),
                 ""
             ))
         );
