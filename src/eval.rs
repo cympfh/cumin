@@ -56,6 +56,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             Some((_, val)) => (*val).clone(),
             None => panic!("Undefined variable {}", v),
         },
+        Val(Dict(items)) => Dict(items.clone()),
         Val(EnumVariant(s, t)) => {
             // check existence
             let ok = if let Some(variants) = env.enums.get(s) {
@@ -67,6 +68,22 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 panic!("Not found Enum {}::{}", s, t);
             }
             EnumVariant(s.to_string(), t.to_string())
+        }
+        Apply(f, args) => {
+            if let Some(fields) = env.structs.get(f) {
+                assert!(fields.len() == args.len());
+                let n = fields.len();
+                let items: Vec<(String, Value)> = (0..n)
+                    .map(|i| {
+                        let (name, _ty) = &fields[i];
+                        let val = eval_expr(&env, &args[i]);
+                        (name.to_string(), val)
+                    })
+                    .collect();
+                Dict(items)
+            } else {
+                panic!("Cannot resolve name {}", f)
+            }
         }
         Add(x, y) => {
             let a = eval_expr(&env, &x);

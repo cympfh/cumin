@@ -41,6 +41,13 @@ impl JSON {
             Value::Int(x) => Int(x),
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
+            Value::Dict(items) => {
+                let items: Vec<(String, JSON)> = items
+                    .iter()
+                    .map(|(key, val)| (key.to_string(), JSON::from_cumin((*val).clone())))
+                    .collect();
+                Dict(items)
+            }
             Value::EnumVariant(_, t) => Str(t),
         }
     }

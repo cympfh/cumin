@@ -1,35 +1,16 @@
+use crate::parser::comment::*;
 use crate::parser::expr::*;
 use combine::error::ParseError;
 use combine::parser::char::{alpha_num, char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, eof, many, many1, none_of, parser, sep_by, Parser};
+use combine::{choice, many, many1, parser, sep_by, Parser};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     Let(String, String, Expr),
     Struct(String, Vec<(String, String)>),
     Enum(String, Vec<String>),
-}
-
-fn comment<Input>() -> impl Parser<Input, Output = ()>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    spaces()
-        .with(string("//"))
-        .with(many::<String, _, _>(none_of("\n".chars())))
-        .with(choice!(char('\n').map(|_| ()), eof().map(|_| ())))
-        .with(spaces())
-}
-
-fn commentable_spaces<Input>() -> impl Parser<Input, Output = ()>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    choice!(attempt(many1(comment())), spaces())
 }
 
 parser! {
@@ -225,11 +206,6 @@ mod test_statement {
                 ""
             ))
         );
-    }
-
-    #[test]
-    fn test_comment() {
-        assert_eq!(comment().parse("// hoge"), Ok(((), "")));
     }
 
     #[test]

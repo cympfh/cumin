@@ -9,6 +9,7 @@ pub enum Value {
     Int(i128),
     Str(String),
     Var(String),
+    Dict(Vec<(String, Value)>),
     EnumVariant(String, String),
 }
 

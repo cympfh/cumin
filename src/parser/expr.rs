@@ -1,21 +1,36 @@
+use crate::parser::comment::*;
 use crate::parser::value::*;
-use combine::parser::char::{char, spaces};
+use combine::parser::char::{alpha_num, char, spaces};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, parser, Parser};
+use combine::{choice, many, many1, parser, sep_by, Parser};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
     Val(Value),
+    Apply(String, Vec<Expr>),
     Add(Box<Expr>, Box<Expr>),
 }
 
 parser! {
     pub fn expr[Input]()(Input) -> Expr where [Input: Stream<Token=char>] {
+        let apply_expr = {
+            let inner_sep = sep_by::<Vec<_>,_, _, _>((commentable_spaces(), expr(), commentable_spaces()).map(|t| t.1), char(','));
+            let inner_trailing = many::<Vec<_>, _, _>((commentable_spaces(), expr(), commentable_spaces(), char(','), commentable_spaces()).map(|t| t.1));
+            (
+                many1(alpha_num()),
+                char('('),
+                choice!(attempt(inner_trailing), inner_sep),
+                char(')')
+            ).map(|t| Expr::Apply(t.0, t.2))
+        };
+        let add_expr = (value(), spaces(), char('+'), spaces(), expr())
+            .map(|t| Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)));
+        let value_expr = value().map(|x: Value| Expr::Val(x));
         choice!(
-            attempt((value(), spaces(), char('+'), spaces(), expr()).map(|t|
-                Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)))),
-            value().map(|x: Value| Expr::Val(x))
+            attempt(apply_expr),
+            attempt(add_expr),
+            value_expr
         )
     }
 }

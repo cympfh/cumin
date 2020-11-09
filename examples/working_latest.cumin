@@ -1,9 +1,11 @@
-/// This can be working with latest version
+/// This can be working with the latest version
 
 struct Point {
     x: Int,
     y: Int,
 }
+
+let p = Point(2, 3);
 
 enum Z {
     Z1,  // Z is this,
@@ -18,8 +20,14 @@ let y = "fuga";
 let z: Nat = 0;
 
 // Variants
-// You can override var names (later is prior)
+// You can overwrite var names
 let z = Z::Z2;
 
+struct AllData {
+    p: Point,
+    z: Z,
+    str: String,
+}
+
 // Exporting this
-x + y
+AllData(p, z, x + y)
