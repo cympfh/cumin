@@ -54,6 +54,11 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Nat(x), Int(y)) => Int(x as i128 + y),
                 (Int(x), Nat(y)) => Int(x + y as i128),
                 (Int(x), Int(y)) => Int(x + y),
+                (Str(x), Str(y)) => {
+                    let mut z = x;
+                    z.push_str(&y);
+                    Str(z)
+                }
                 _ => panic!("Cant compute {:?} + {:?}", x, y),
             }
         }

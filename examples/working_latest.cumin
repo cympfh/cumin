@@ -2,4 +2,6 @@
 struct X {
     x: Int,
 }
-1 + 2
+let x = "hoge";
+let y = "fuga";
+x + y
