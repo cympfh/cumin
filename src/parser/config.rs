@@ -27,20 +27,21 @@ mod test_config {
             config().parse("let x=1; x"),
             Ok((
                 Config(
-                    vec![Let("x".to_string(), Val(Nat(1)))],
+                    vec![Let("x".to_string(), "Any".to_string(), Val(Nat(1)))],
                     Val(Var("x".to_string()))
                 ),
                 ""
             ))
         );
         assert_eq!(
-            config().parse("let x=1; let y = x + 2; x + y"),
+            config().parse("let x:Int=1; let y = x + 2; x + y"),
             Ok((
                 Config(
                     vec![
-                        Let("x".to_string(), Val(Nat(1))),
+                        Let("x".to_string(), "Int".to_string(), Val(Nat(1))),
                         Let(
                             "y".to_string(),
+                            "Any".to_string(),
                             Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))))
                         ),
                     ],

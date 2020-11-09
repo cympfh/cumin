@@ -24,9 +24,9 @@ pub fn eval(config: Config) -> JSON {
     // collect let
     for stmt in config.0.iter() {
         match stmt {
-            Let(id, expr) => {
+            Let(id, ty, expr) => {
                 let val = eval_expr(&env, expr);
-                env.vars.insert(id.clone(), val);
+                env.vars.insert(id.clone(), (ty.clone(), val));
             }
             _ => (),
         }
@@ -43,7 +43,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
         Val(Int(x)) => Int(*x),
         Val(Str(s)) => Str(s.to_string()),
         Val(Var(v)) => match env.vars.get(v) {
-            Some(val) => (*val).clone(),
+            Some((_, val)) => (*val).clone(),
             None => panic!("Undefined variable {}", v),
         },
         Add(x, y) => {
@@ -67,7 +67,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
 
 struct Environ {
     structs: HashMap<String, Vec<(String, String)>>,
-    vars: HashMap<String, Value>,
+    vars: HashMap<String, (String, Value)>,
 }
 
 impl Environ {

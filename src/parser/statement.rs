@@ -7,7 +7,7 @@ use combine::{choice, many, many1, none_of, parser, sep_by, Parser};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
-    Let(String, Expr),
+    Let(String, String, Expr),
     Struct(String, Vec<(String, String)>),
 }
 
@@ -48,7 +48,28 @@ parser! {
             char(';'),
             commentable_spaces(),
         )
-            .map(|t| Statement::Let(t.4, t.8));
+            .map(|t| Statement::Let(t.4, "Any".to_string(), t.8));
+
+        // let id: type = expr;
+        let let_typed_stmt = (
+            commentable_spaces(),
+            string("let"),
+            space(),
+            spaces(),
+            many1(alpha_num()),
+            spaces(),
+            char(':'),
+            spaces(),
+            many1(alpha_num()),
+            spaces(),
+            char('='),
+            spaces(),
+            expr(),
+            spaces(),
+            char(';'),
+            commentable_spaces(),
+        )
+            .map(|t| Statement::Let(t.4, t.8, t.12));
 
         // struct id { id: id, id: id } -- comma sparated
         let struct_stmt = {
@@ -113,6 +134,7 @@ parser! {
         choice!(
             attempt(struct_stmt_comma),
             attempt(struct_stmt),
+            attempt(let_typed_stmt),
             attempt(let_stmt)
         )
     }
@@ -130,15 +152,22 @@ mod test_statement {
     fn test_let() {
         assert_eq!(
             stmt().parse("let s = -2;"),
-            Ok((Let("s".to_string(), Val(Int(-2))), ""))
+            Ok((Let("s".to_string(), "Any".to_string(), Val(Int(-2))), ""))
         );
         assert_eq!(
-            stmt().parse("let s=2; "),
-            Ok((Let("s".to_string(), Val(Nat(2))), ""))
+            stmt().parse("let s:Nat=2; "),
+            Ok((Let("s".to_string(), "Nat".to_string(), Val(Nat(2))), ""))
         );
         assert_eq!(
             stmt().parse("let name = \"hoge\" ; "),
-            Ok((Let("name".to_string(), Val(Str("hoge".to_string()))), ""))
+            Ok((
+                Let(
+                    "name".to_string(),
+                    "Any".to_string(),
+                    Val(Str("hoge".to_string()))
+                ),
+                ""
+            ))
         );
     }
 
