@@ -9,6 +9,7 @@ use combine::{between, choice, many, many1, parser, sep_by};
 pub enum Expr {
     Val(Value),
     Apply(String, Vec<Expr>),
+    FieledApply(String, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Expr)>),
     Add(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
@@ -18,14 +19,63 @@ parser! {
     pub fn expr[Input]()(Input) -> Expr where [Input: Stream<Token=char>] {
         // F(x,...)
         let apply_expr = {
-            let inner_sep = sep_by::<Vec<_>,_, _, _>((commentable_spaces(), expr(), commentable_spaces()).map(|t| t.1), char(','));
-            let inner_trailing = many::<Vec<_>, _, _>((commentable_spaces(), expr(), commentable_spaces(), char(','), commentable_spaces()).map(|t| t.1));
+            let inner_sep = sep_by::<Vec<_>,_, _, _>(
+                (
+                    commentable_spaces(),
+                    expr(),
+                    commentable_spaces()
+                ).map(|t| t.1),
+                char(','));
+            let inner_trailing = many::<Vec<_>, _, _>(
+                (
+                    commentable_spaces(),
+                    expr(),
+                    commentable_spaces(),
+                    char(','),
+                    commentable_spaces()
+                ).map(|t| t.1));
             (
                 many1(alpha_num()),
                 char('('),
                 choice!(attempt(inner_trailing), inner_sep),
                 char(')')
             ).map(|t| Expr::Apply(t.0, t.2))
+        };
+
+        // F { x=val, }
+        let fielded_apply_expr = {
+            let inner_sep = sep_by::<Vec<_>, _, _, _>(
+                (
+                    commentable_spaces(),
+                    many1(alpha_num()),
+                    commentable_spaces(),
+                    char('='),
+                    commentable_spaces(),
+                    expr(),
+                    commentable_spaces(),
+                ).map(|t| (t.1, t.5)),
+                char(','));
+            let inner_trailing = many::<Vec<_>, _, _>(
+                (
+                    commentable_spaces(),
+                    many1(alpha_num()),
+                    commentable_spaces(),
+                    char('='),
+                    commentable_spaces(),
+                    expr(),
+                    commentable_spaces(),
+                    char(','),
+                    commentable_spaces(),
+                ).map(|t| (t.1, t.5)));
+            (
+                commentable_spaces(),
+                many1(alpha_num()),
+                commentable_spaces(),
+                char('{'),
+                choice!(attempt(inner_trailing), inner_sep),
+                char('}'),
+                commentable_spaces(),
+            ).map(|t| Expr::FieledApply(t.1, t.4))
         };
 
         // {{ x=val, }}
@@ -96,6 +146,7 @@ parser! {
             attempt(apply_expr),
             attempt(add_expr),
             attempt(dict_expr),
+            attempt(fielded_apply_expr),
             arrayed_expr,
             value_expr
         )
@@ -186,6 +237,38 @@ mod test_expr {
         assert_eq!(
             expr().parse("[1, 2, 3]"),
             Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        );
+    }
+
+    #[test]
+    fn test_apply() {
+        assert_eq!(
+            expr().parse("X(1, -2, \"x\")"),
+            Ok((
+                Apply(
+                    "X".to_string(),
+                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+                ),
+                ""
+            ))
+        );
+    }
+
+    #[test]
+    fn test_field_apply() {
+        assert_eq!(
+            expr().parse("X { x=1, y=-2, z=\"x\"}"),
+            Ok((
+                FieledApply(
+                    "X".to_string(),
+                    vec![
+                        ("x".to_string(), Val(Nat(1))),
+                        ("y".to_string(), Val(Int(-2))),
+                        ("z".to_string(), Val(Str("x".to_string())))
+                    ]
+                ),
+                ""
+            ))
         );
     }
 }
