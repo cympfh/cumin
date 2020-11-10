@@ -1,15 +1,15 @@
 use crate::parser::expr::*;
 use crate::parser::statement::*;
-use combine::parser::char::spaces;
+use crate::parser::util::*;
 use combine::stream::Stream;
 use combine::{many, parser};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config(pub Vec<Statement>, pub Expr);
 
 parser! {
     pub fn config[Input]()(Input) -> Config where [Input: Stream<Token=char>] {
-        (spaces(), many(stmt()), expr(), spaces()).map(|t| Config(t.1, t.2))
+        (commentable_spaces(), many(stmt()), expr(), commentable_spaces()).map(|t| Config(t.1, t.2))
     }
 }
 

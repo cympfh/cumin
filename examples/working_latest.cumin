@@ -17,16 +17,29 @@ enum Z {
     Z2,  // xor this.
 }
 
-// Strings
-let x = "hoge";
-let y = "fuga";
+// Blocks ({}) make a scope.
+let your_name = {
+    let first_name = "Hoge";
+    let family_name = "Fuga";
+    first_name + " " + family_name
+};
+
+// Of cource You can declar new struct and enum in {}.
+let something = {
+    struct X { x: Int }
+    enum Y { Y1, Y2 }
+    // You can use X and Y only in {}.
+    {{
+        x = X(42),
+        y = Y::Y1,
+    }}
+};
 
 // Numbers
 let z: Nat = 0;
 
-// Variants
 // You can overwrite var names
-let z = Z::Z2;
+let z = Z::Z2; // Enum Variant
 
 // Exporting this
 {{
@@ -36,5 +49,6 @@ let z = Z::Z2;
     }},
     points = ps,
     z = z,
-    user_name = x + " " + y,
+    user_name = your_name,
+    something = something,
 }}
