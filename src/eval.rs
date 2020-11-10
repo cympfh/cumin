@@ -86,6 +86,24 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 panic!("Cannot resolve name {}", f)
             }
         }
+        FieledApply(f, items) => {
+            if let Some(fields) = env.structs.get(f) {
+                let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
+                let items: Vec<(String, Value)> = fields
+                    .iter()
+                    .map(|(name, _ty)| {
+                        if let Some(arg) = args.get(&name.to_string()) {
+                            (name.to_string(), eval_expr(&env, &arg))
+                        } else {
+                            panic!("Cannot find field {}", name)
+                        }
+                    })
+                    .collect();
+                Dict(items)
+            } else {
+                panic!("Cannot resolve name {}", f)
+            }
+        }
         AnonymousStruct(items) => {
             let items = items
                 .iter()
@@ -160,5 +178,32 @@ mod test_eval {
             Val(EnumVariant("X".to_string(), "Park".to_string())),
         );
         assert_eq!(eval(conf), JSON::Str("Park".to_string()));
+    }
+
+    #[test]
+    fn test_fielded_apply() {
+        let conf = Config(
+            vec![Struct(
+                "P".to_string(),
+                vec![
+                    ("x".to_string(), "Int".to_string()),
+                    ("y".to_string(), "Int".to_string()),
+                ],
+            )],
+            FieledApply(
+                "P".to_string(),
+                vec![
+                    ("y".to_string(), Val(Int(2))),
+                    ("x".to_string(), Val(Int(1))),
+                ],
+            ),
+        );
+        assert_eq!(
+            eval(conf),
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Int(1)),
+                ("y".to_string(), JSON::Int(2)),
+            ])
+        );
     }
 }

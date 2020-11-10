@@ -9,6 +9,7 @@ let ps = [
     Point(0, 0),
     Point(1, 2),
     Point(2, 3),
+    Point { y = 3, x = 1, },
 ];
 
 enum Z {
