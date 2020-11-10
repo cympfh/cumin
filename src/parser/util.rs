@@ -23,9 +23,11 @@ where
 {
     choice!(attempt(many1(comment())), spaces())
 }
+
 #[cfg(test)]
 mod test_comment {
-    use crate::parser::comment::*;
+    use crate::parser::util::*;
+
     #[test]
     fn test_comment() {
         assert_eq!(commentable_spaces().parse(" "), Ok(((), "")));
