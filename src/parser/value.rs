@@ -2,7 +2,7 @@ use crate::parser::util::*;
 use combine::parser::char::{char, digit, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{between, choice, many, many1, none_of, parser, token};
+use combine::{between, choice, many, many1, none_of, optional, parser, token};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value {
@@ -10,6 +10,7 @@ pub enum Value {
     Int(i128),
     Str(String),
     Var(String),
+    Env(String, Option<String>),
     Dict(Vec<(String, Value)>),
     EnumVariant(String, String),
     Array(Vec<Value>),
@@ -28,9 +29,15 @@ parser! {
                 string("::"),
                 identifier(),
             ).map(|t| Value::EnumVariant(t.0, t.2));
+        let env_value = char('$').with(
+            choice!(
+                identifier().map(|s| (s, None)),
+                between(char('{'), char('}'), (identifier(), optional(string(":-").with(many(none_of("}".chars()))))))
+            )
+        ).map(|(name, default_value)| Value::Env(name, default_value));
         let var_value = identifier().map(Value::Var);
 
-        choice!(int_value, nat_value, str_value, attempt(variant_value), var_value).skip(spaces())
+        choice!(int_value, nat_value, str_value, env_value, attempt(variant_value), var_value).skip(spaces())
     }
 }
 
@@ -59,6 +66,18 @@ mod test_value {
         assert_eq!(
             value().parse("_hoge0"),
             Ok((Value::Var("_hoge0".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("$USER"),
+            Ok((Value::Env("USER".to_string(), None), ""))
+        );
+        assert_eq!(
+            value().parse("${USER_iD2}"),
+            Ok((Value::Env("USER_iD2".to_string(), None), ""))
+        );
+        assert_eq!(
+            value().parse("${X:-hoge}"),
+            Ok((Value::Env("X".to_string(), Some("hoge".to_string())), ""))
         );
         assert_eq!(
             value().parse("X::Zoo"),

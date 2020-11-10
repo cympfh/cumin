@@ -30,6 +30,10 @@ let z = Z::Z2;
 
 // Exporting this
 {{
+    env = {{
+        shell = $SHELL,  // this is a String
+        HOGE = ${HOGE:-fuga},  // with default value "fuga"
+    }},
     points = ps,
     z = z,
     user_name = x + " " + y,
