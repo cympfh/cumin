@@ -3,6 +3,7 @@ use crate::parser::config::*;
 use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::value::*;
+use std::env;
 
 use std::collections::HashMap;
 
@@ -55,6 +56,11 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
         Val(Var(v)) => match env.vars.get(v) {
             Some((_, val)) => (*val).clone(),
             None => panic!("Undefined variable {}", v),
+        },
+        Val(Env(v, default_value)) => match (env.env_vars.get(v), default_value) {
+            (Some(val), _) => Str(val.to_string()),
+            (None, Some(def)) => Str(def.to_string()),
+            _ => panic!("Undefined env variable {}", v),
         },
         Val(Dict(items)) => Dict(items.clone()),
         Val(EnumVariant(s, t)) => {
@@ -138,16 +144,19 @@ struct Environ {
     structs: HashMap<String, Vec<(String, String)>>,
     enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (String, Value)>,
+    env_vars: HashMap<String, String>,
 }
 
 impl Environ {
     fn new() -> Self {
         let structs = HashMap::new();
         let enums = HashMap::new();
+        let env_vars = env::vars().collect();
         let vars = HashMap::new();
         Self {
             structs,
             enums,
+            env_vars,
             vars,
         }
     }
