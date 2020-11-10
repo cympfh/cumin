@@ -49,6 +49,13 @@ impl JSON {
                 Dict(items)
             }
             Value::EnumVariant(_, t) => Str(t),
+            Value::Array(elements) => {
+                let elements = elements
+                    .iter()
+                    .map(|e| JSON::from_cumin((*e).clone()))
+                    .collect();
+                Array(elements)
+            }
         }
     }
 }
@@ -70,6 +77,10 @@ mod test_json {
             ])
             .stringify(),
             "{\"arr\":[1,2,3],\"str\":\"Hello\",\"dict_empty\":{}}".to_string()
+        );
+        assert_eq!(
+            Array(vec![Array(vec![]), Nat(1), Nat(2), Str("3".to_string())]).stringify(),
+            "[[],1,2,\"3\"]"
         );
     }
 }

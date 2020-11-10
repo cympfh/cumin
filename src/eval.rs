@@ -69,6 +69,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             }
             EnumVariant(s.to_string(), t.to_string())
         }
+        Val(Array(elements)) => Array(elements.to_vec()),
         Apply(f, args) => {
             if let Some(fields) = env.structs.get(f) {
                 assert!(fields.len() == args.len());
@@ -107,6 +108,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 }
                 _ => panic!("Cant compute {:?} + {:?}", x, y),
             }
+        }
+        Arrayed(elements) => {
+            let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
+            Array(elements)
         }
     }
 }

@@ -5,7 +5,11 @@ struct Point {
     y: Int,
 }
 
-let p = Point(2, 3);
+let ps = [
+    Point(0, 0),
+    Point(1, 2),
+    Point(2, 3),
+];
 
 enum Z {
     Z1,  // Z is this,
@@ -25,7 +29,7 @@ let z = Z::Z2;
 
 // Exporting this
 {{
-    p = p,
+    points = ps,
     z = z,
     str = x + y,
 }}

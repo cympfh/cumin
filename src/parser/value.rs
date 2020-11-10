@@ -11,6 +11,7 @@ pub enum Value {
     Var(String),
     Dict(Vec<(String, Value)>),
     EnumVariant(String, String),
+    Array(Vec<Value>),
 }
 
 parser! {

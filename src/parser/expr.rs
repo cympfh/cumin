@@ -3,7 +3,7 @@ use crate::parser::value::*;
 use combine::parser::char::{alpha_num, char, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by};
+use combine::{between, choice, many, many1, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
@@ -11,6 +11,7 @@ pub enum Expr {
     Apply(String, Vec<Expr>),
     AnonymousStruct(Vec<(String, Expr)>),
     Add(Box<Expr>, Box<Expr>),
+    Arrayed(Vec<Expr>),
 }
 
 parser! {
@@ -54,12 +55,11 @@ parser! {
                     spaces()
                 ).map(|t| (t.1, t.5))
             );
-            (
+            between(
                 string("{{"),
-                choice!(attempt(inner_trailing), inner_sep),
                 string("}}"),
-            )
-                .map(|t| Expr::AnonymousStruct(t.1))
+                choice!(attempt(inner_trailing), inner_sep),
+            ).map(Expr::AnonymousStruct)
         };
 
         // _ + _
@@ -68,10 +68,35 @@ parser! {
 
         let value_expr = value().map(|x: Value| Expr::Val(x));
 
+        let arrayed_expr = {
+            let inner_sep =
+                sep_by::<Vec<Expr>, _, _, _>(
+                    (commentable_spaces(),
+                    expr(),
+                    commentable_spaces()).map(|t| t.1),
+                    char(',')
+                );
+            let inner_trailing = many::<Vec<Expr>, _, _>(
+                    (
+                        commentable_spaces(),
+                        expr(),
+                        commentable_spaces(),
+                        char(','),
+                        commentable_spaces()
+                    ).map(|t| t.1)
+                );
+            between(
+                char('['),
+                char(']'),
+                choice!(attempt(inner_trailing), inner_sep),
+            ).map(Expr::Arrayed)
+        };
+
         choice!(
             attempt(apply_expr),
             attempt(add_expr),
             attempt(dict_expr),
+            arrayed_expr,
             value_expr
         )
     }
@@ -148,6 +173,19 @@ mod test_expr {
                 ]),
                 ""
             )),
+        );
+    }
+
+    #[test]
+    fn test_arrayed() {
+        assert_eq!(expr().parse("[]"), Ok((Arrayed(vec![]), "")));
+        assert_eq!(
+            expr().parse("[1, 2, 3,]"),
+            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        );
+        assert_eq!(
+            expr().parse("[1, 2, 3]"),
+            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
         );
     }
 }
