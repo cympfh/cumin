@@ -1,6 +1,14 @@
 # cumin
 
-Mini-Programmable Typed Configuration Language
+Structured Typed Configuration Language
+
+## Features
+
+- Rust-like Syntax
+- Structured
+    - struct, enum
+- Typed
+    - Validated Data
 
 ## Example
 
@@ -41,9 +49,11 @@ enum Sex {
 
 ### Convert to JSON
 
+Cumin Compoler `cuminc` converts `cumin` to `JSON`.
+
 ```bash
 # bash
-$ cuminc -T json ./examples/names.cumin
+$ cuminc ./examples/names.cumin
 {
     "names": [
         {"name": "John", "sex": "Male", "age": 17},
@@ -53,7 +63,7 @@ $ cuminc -T json ./examples/names.cumin
 }
 ```
 
-### Query Command (like jq)
+### Query Command (like jq, Feature Work)
 
 ```bash
 # bash
@@ -63,3 +73,12 @@ Person("John", Sex::Male, 17)
 $ cq -r '.author.name' ./examples/names.cumin
 cympfh
 ```
+
+## For Vim Users
+
+```vim
+Plugin 'rust-lang/rust.vim'
+au BufRead,BufNewFile *.cumin set filetype=cumin
+au FileType cumin set syntax=rust
+```
+
