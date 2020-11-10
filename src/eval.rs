@@ -11,9 +11,13 @@ use Statement::*;
 
 pub fn eval(config: Config) -> JSON {
     let mut env = Environ::new();
+    let val = eval_conf(&mut env, &config);
+    JSON::from_cumin(val)
+}
 
+fn eval_conf(env: &mut Environ, conf: &Config) -> Value {
     // collect struct
-    for stmt in config.0.iter() {
+    for stmt in conf.0.iter() {
         match stmt {
             Struct(name, fields) => {
                 env.structs.insert(name.clone(), fields.clone());
@@ -23,7 +27,7 @@ pub fn eval(config: Config) -> JSON {
     }
 
     // collect enums
-    for stmt in config.0.iter() {
+    for stmt in conf.0.iter() {
         match stmt {
             Enum(name, variants) => {
                 env.enums.insert(name.clone(), variants.clone());
@@ -33,7 +37,7 @@ pub fn eval(config: Config) -> JSON {
     }
 
     // collect let
-    for stmt in config.0.iter() {
+    for stmt in conf.0.iter() {
         match stmt {
             Let(id, ty, expr) => {
                 let val = eval_expr(&env, expr);
@@ -43,7 +47,7 @@ pub fn eval(config: Config) -> JSON {
         }
     }
 
-    JSON::from_cumin(eval_expr(&env, &config.1))
+    eval_expr(&env, &conf.1)
 }
 
 fn eval_expr(env: &Environ, expr: &Expr) -> Value {
@@ -137,9 +141,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
             Array(elements)
         }
+        Blocked(conf_inner) => {
+            let mut env_inner: Environ = (*env).clone();
+            eval_conf(&mut env_inner, &conf_inner)
+        }
     }
 }
 
+#[derive(Clone)]
 struct Environ {
     structs: HashMap<String, Vec<(String, String)>>,
     enums: HashMap<String, Vec<String>>,
@@ -148,7 +157,7 @@ struct Environ {
 }
 
 impl Environ {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let structs = HashMap::new();
         let enums = HashMap::new();
         let env_vars = env::vars().collect();

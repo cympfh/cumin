@@ -5,7 +5,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, many, many1, parser, sep_by};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Let(String, String, Expr),
     Struct(String, Vec<(String, String)>),
@@ -27,7 +27,7 @@ parser! {
                 string("let"),
                 space(),
                 spaces(),
-                many1(alpha_num()),
+                identifier(),
                 typing,
                 char('='),
                 spaces(),

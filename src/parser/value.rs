@@ -4,7 +4,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{between, choice, many, many1, none_of, optional, parser, token};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Nat(u128),
     Int(i128),

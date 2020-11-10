@@ -1,3 +1,4 @@
+use crate::parser::config::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
 use combine::parser::char::{char, string};
@@ -5,7 +6,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, many, parser, sep_by};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Val(Value),
     Apply(String, Vec<Expr>),
@@ -13,6 +14,7 @@ pub enum Expr {
     AnonymousStruct(Vec<(String, Expr)>),
     Add(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
+    Blocked(Box<Config>),
 }
 
 parser! {
@@ -117,6 +119,17 @@ parser! {
             ).map(|t| Expr::AnonymousStruct(t.2))
         };
 
+        // { statement...; expr }
+        let blocked_expr = (
+            commentable_spaces(),
+            char('{'),
+            commentable_spaces(),
+            config(),
+            commentable_spaces(),
+            char('}'),
+            commentable_spaces(),
+        ).map(|t| Expr::Blocked(Box::new(t.3)));
+
         // _ + _
         let add_expr = (value(), commentable_spaces(), char('+'), commentable_spaces(), expr())
             .map(|t| Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)));
@@ -153,6 +166,7 @@ parser! {
             attempt(apply_expr),
             attempt(add_expr),
             attempt(dict_expr),
+            blocked_expr,
             attempt(fielded_apply_expr),
             arrayed_expr,
             value_expr
@@ -162,7 +176,9 @@ parser! {
 
 #[cfg(test)]
 mod test_expr {
+    use crate::parser::config::*;
     use crate::parser::expr::*;
+    use crate::parser::statement::*;
     use combine::Parser;
     use Expr::*;
     use Value::*;
@@ -312,6 +328,34 @@ mod test_expr {
                         ("z".to_string(), Val(Str("x".to_string())))
                     ]
                 ),
+                ""
+            ))
+        );
+    }
+
+    #[test]
+    fn test_blocked() {
+        assert_eq!(
+            expr().parse(
+                "// block
+                {
+                    let x: Int = 1;
+                    let y = -2;
+                    x + y
+                }
+                "
+            ),
+            Ok((
+                Blocked(Box::new(Config(
+                    vec![
+                        Statement::Let("x".to_string(), "Int".to_string(), Val(Nat(1))),
+                        Statement::Let("y".to_string(), "Any".to_string(), Val(Int(-2))),
+                    ],
+                    Expr::Add(
+                        Box::new(Val(Var("x".to_string()))),
+                        Box::new(Val(Var("y".to_string())))
+                    )
+                ))),
                 ""
             ))
         );
