@@ -1,9 +1,9 @@
 use crate::parser::util::*;
 use crate::parser::value::*;
-use combine::parser::char::{alpha_num, char, string};
+use combine::parser::char::{char, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by};
+use combine::{choice, many, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
@@ -36,7 +36,7 @@ parser! {
                 ).map(|t| t.1));
             (
                 commentable_spaces(),
-                many1(alpha_num()),
+                identifier(),
                 commentable_spaces(),
                 char('('),
                 choice!(attempt(inner_trailing), inner_sep),
@@ -50,7 +50,7 @@ parser! {
             let inner_sep = sep_by::<Vec<_>, _, _, _>(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     commentable_spaces(),
                     char('='),
                     commentable_spaces(),
@@ -61,7 +61,7 @@ parser! {
             let inner_trailing = many::<Vec<_>, _, _>(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     commentable_spaces(),
                     char('='),
                     commentable_spaces(),
@@ -72,7 +72,7 @@ parser! {
                 ).map(|t| (t.1, t.5)));
             (
                 commentable_spaces(),
-                many1(alpha_num()),
+                identifier(),
                 commentable_spaces(),
                 char('{'),
                 choice!(attempt(inner_trailing), inner_sep),
@@ -86,7 +86,7 @@ parser! {
             let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     commentable_spaces(),
                     char('='),
                     commentable_spaces(),
@@ -98,7 +98,7 @@ parser! {
             let inner_trailing = many::<Vec<_>, _, _>(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     commentable_spaces(),
                     char('='),
                     commentable_spaces(),

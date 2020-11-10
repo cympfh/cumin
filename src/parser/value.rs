@@ -1,4 +1,5 @@
-use combine::parser::char::{alpha_num, char, digit, spaces, string};
+use crate::parser::util::*;
+use combine::parser::char::{char, digit, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{between, choice, many, many1, none_of, parser, token};
@@ -23,11 +24,11 @@ parser! {
         let str_value = between(token('"'), token('"'), many(none_of("\"".chars())).map(|x:String| Value::Str(x)));
         let variant_value =
             (
-                many1(alpha_num()),
+                identifier(),
                 string("::"),
-                many1(alpha_num()),
+                identifier(),
             ).map(|t| Value::EnumVariant(t.0, t.2));
-        let var_value = many1(alpha_num()).map(|x: String| Value::Var(x));
+        let var_value = identifier().map(Value::Var);
 
         choice!(int_value, nat_value, str_value, attempt(variant_value), var_value).skip(spaces())
     }
@@ -54,6 +55,10 @@ mod test_value {
         assert_eq!(
             value().parse("hoge"),
             Ok((Value::Var("hoge".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("_hoge0"),
+            Ok((Value::Var("_hoge0".to_string()), ""))
         );
         assert_eq!(
             value().parse("X::Zoo"),
