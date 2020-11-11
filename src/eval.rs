@@ -150,6 +150,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             let mut env_inner: Environ = (*env).clone();
             eval_conf(&mut env_inner, &conf_inner)
         }
+        AsCast(expr, typ) => {
+            let val = eval_expr(&env, &expr);
+            val.cast(typ)
+        }
     }
 }
 

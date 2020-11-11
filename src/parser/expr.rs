@@ -1,8 +1,9 @@
 use crate::parser::config::*;
+use crate::parser::typing::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
 use combine::error::ParseError;
-use combine::parser::char::{char, string};
+use combine::parser::char::{char, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, many, parser, sep_by};
@@ -16,6 +17,7 @@ pub enum Expr {
     Add(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
     Blocked(Box<Config>),
+    AsCast(Box<Expr>, Typing),
 }
 
 parser! {
@@ -136,6 +138,27 @@ parser! {
             commentable_spaces(),
         ).map(|t: ((), char, (), Config, (), char, ())| Expr::Blocked(Box::new(t.3)));
 
+        // as cast
+        let as_expr = {
+            let plain_value = value().map(Expr::Val);
+            let parenthesis_expr = (
+                char('('),
+                commentable_spaces(),
+                expr(),
+                commentable_spaces(),
+                char(')'),
+            ).map(|t: (char, (), Expr, (), char)| t.2);
+            (
+                commentable_spaces(),
+                choice!(parenthesis_expr, plain_value),
+                spaces(),
+                string("as"),
+                spaces(),
+                typing(),
+                commentable_spaces(),
+            ).map(|t: ((), Expr, (), &str, (), Typing, ())| Expr::AsCast(Box::new(t.1), t.5))
+        };
+
         // _ + _
         let add_expr = (
             value(),
@@ -181,6 +204,7 @@ parser! {
             attempt(dict_expr),
             blocked_expr,
             attempt(fielded_apply_expr),
+            attempt(as_expr),
             arrayed_expr,
             value_expr
         )
@@ -191,7 +215,6 @@ parser! {
 mod test_expr {
     use crate::parser::expr::*;
     use crate::parser::statement::*;
-    use crate::parser::typing::*;
     use combine::Parser;
     use Expr::*;
     use Value::*;
@@ -276,6 +299,14 @@ mod test_expr {
         );
         assert_eq!(
             expr().parse("[1, 2, 3]//comment"),
+            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        );
+        assert_eq!(
+            expr().parse(
+                "[1, //one
+                2, //two
+                3]//comment"
+            ),
             Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
         );
     }
@@ -371,6 +402,39 @@ mod test_expr {
                 ))),
                 ""
             ))
+        );
+    }
+
+    #[test]
+    fn test_as_cast() {
+        assert_eq!(
+            expr().parse("1 as Int"),
+            Ok((AsCast(Box::new(Val(Nat(1))), Typing::Int), ""))
+        );
+        assert_eq!(
+            expr().parse(
+                "1 as Int
+                // Nat -> Int"
+            ),
+            Ok((AsCast(Box::new(Val(Nat(1))), Typing::Int), ""))
+        );
+        // Bug?
+        // assert_eq!(
+        //     expr().parse(
+        //         "// Nat -> Int
+        //         1 as Int"
+        //     ),
+        //     Ok((AsCast(Box::new(Val(Nat(1))), Typing::Int), ""))
+        // );
+        assert_eq!(
+            expr().parse("(1+1) as Int"),
+            Ok((
+                AsCast(
+                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
+                    Typing::Int
+                ),
+                ""
+            )),
         );
     }
 }

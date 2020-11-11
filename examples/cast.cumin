@@ -1,0 +1,8 @@
+// cast
+{{
+    three = 3 as String,
+    four = "4" as Nat,
+    minus = "-1" as Int,
+    a = ${A:-5},
+    a_int = ${A:-5} as Int
+}}
