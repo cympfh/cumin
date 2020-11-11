@@ -2,6 +2,7 @@ use crate::json::*;
 use crate::parser::config::*;
 use crate::parser::expr::*;
 use crate::parser::statement::*;
+use crate::parser::typing::*;
 use crate::parser::value::*;
 use std::env;
 
@@ -154,9 +155,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
 
 #[derive(Clone)]
 struct Environ {
-    structs: HashMap<String, Vec<(String, String, Option<Expr>)>>,
+    structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
-    vars: HashMap<String, (String, Value)>,
+    vars: HashMap<String, (Typing, Value)>,
     env_vars: HashMap<String, String>,
 }
 
@@ -208,8 +209,8 @@ mod test_eval {
             vec![Struct(
                 "P".to_string(),
                 vec![
-                    ("x".to_string(), "Int".to_string(), None),
-                    ("y".to_string(), "Int".to_string(), None),
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, None),
                 ],
             )],
             FieledApply(
@@ -235,8 +236,8 @@ mod test_eval {
             vec![Struct(
                 "P".to_string(),
                 vec![
-                    ("x".to_string(), "Int".to_string(), Some(Val(Int(42)))),
-                    ("y".to_string(), "Int".to_string(), None),
+                    ("x".to_string(), Typing::Int, Some(Val(Int(42)))),
+                    ("y".to_string(), Typing::Int, None),
                 ],
             )],
             FieledApply("P".to_string(), vec![("y".to_string(), Val(Int(2)))]),

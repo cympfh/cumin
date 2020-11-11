@@ -1,4 +1,5 @@
 use crate::parser::expr::*;
+use crate::parser::typing::*;
 use crate::parser::util::*;
 use combine::parser::char::{char, space, spaces, string};
 use combine::parser::combinator::attempt;
@@ -7,8 +8,8 @@ use combine::{choice, many, many1, optional, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
-    Let(String, String, Expr),
-    Struct(String, Vec<(String, String, Option<Expr>)>), // StructName, [(name, type, default)]
+    Let(String, Typing, Expr),
+    Struct(String, Vec<(String, Typing, Option<Expr>)>), // StructName, [(name, type, default)]
     Enum(String, Vec<String>),
 }
 
@@ -16,19 +17,19 @@ parser! {
     pub fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
 
         // let id = expr;
-        // let id: type = expr;
+        // let id: typing = expr;
         let let_stmt = {
-            let typing = choice!(
-                attempt((spaces(), char(':'), spaces(), identifier(), spaces()).map(|t| t.3)),
-                spaces().map(|_| "Any".to_string())
-                );
+            let type_annotation = choice!(
+                attempt((spaces(), char(':'), spaces(), typing(), spaces()).map(|t| t.3)),
+                spaces().map(|_| Typing::Any)
+            );
             (
                 commentable_spaces(),
                 string("let"),
                 space(),
                 spaces(),
                 identifier(),
-                typing,
+                type_annotation,
                 char('='),
                 spaces(),
                 expr(),
@@ -39,7 +40,7 @@ parser! {
                 .map(|t| Statement::Let(t.4, t.5, t.8))
         };
 
-        // struct id { id: id [= expr] [,] }
+        // struct id { id: typing [= expr] [,] }
         let struct_stmt = {
             let inner_separated = sep_by(
                 (
@@ -48,7 +49,7 @@ parser! {
                     spaces(),
                     char(':'),
                     spaces(),
-                    identifier(),
+                    typing(),
                     commentable_spaces(),
                     optional(char('=').with(spaces()).with(expr())),
                     commentable_spaces()
@@ -61,7 +62,7 @@ parser! {
                     spaces(),
                     char(':'),
                     spaces(),
-                    identifier(),
+                    typing(),
                     spaces(),
                     optional(char('=').with(spaces()).with(expr())),
                     commentable_spaces(),
@@ -140,22 +141,22 @@ mod test_statement {
     fn test_let() {
         assert_eq!(
             stmt().parse("let s = -2;"),
-            Ok((Let("s".to_string(), "Any".to_string(), Val(Int(-2))), ""))
+            Ok((Let("s".to_string(), Typing::Any, Val(Int(-2))), ""))
         );
         assert_eq!(
             stmt().parse("let z: Nat = 3;"),
-            Ok((Let("z".to_string(), "Nat".to_string(), Val(Nat(3))), ""))
+            Ok((Let("z".to_string(), Typing::Nat, Val(Nat(3))), ""))
         );
         assert_eq!(
             stmt().parse("let s:Nat=2; "),
-            Ok((Let("s".to_string(), "Nat".to_string(), Val(Nat(2))), ""))
+            Ok((Let("s".to_string(), Typing::Nat, Val(Nat(2))), ""))
         );
         assert_eq!(
             stmt().parse("let name = \"hoge\" ; "),
             Ok((
                 Let(
                     "name".to_string(),
-                    "Any".to_string(),
+                    Typing::Any,
                     Val(Str("hoge".to_string()))
                 ),
                 ""
@@ -182,8 +183,8 @@ mod test_statement {
                 Struct(
                     "Point".to_string(),
                     vec![
-                        ("x".to_string(), "Int".to_string(), None),
-                        ("y".to_string(), "Int".to_string(), None),
+                        ("x".to_string(), Typing::Int, None),
+                        ("y".to_string(), Typing::Int, None),
                     ]
                 ),
                 ""
@@ -196,8 +197,8 @@ mod test_statement {
                 Struct(
                     "Point".to_string(),
                     vec![
-                        ("x".to_string(), "Int".to_string(), None),
-                        ("y".to_string(), "Int".to_string(), None),
+                        ("x".to_string(), Typing::Int, None),
+                        ("y".to_string(), Typing::Int, None),
                     ]
                 ),
                 ""
@@ -216,11 +217,11 @@ mod test_statement {
                     vec![
                         (
                             "name".to_string(),
-                            "String".to_string(),
+                            Typing::String,
                             Some(Val(Str("hoge".to_string())))
                         ),
-                        ("x".to_string(), "Int".to_string(), None),
-                        ("y".to_string(), "Int".to_string(), Some(Val(Nat(0)))),
+                        ("x".to_string(), Typing::Int, None),
+                        ("y".to_string(), Typing::Int, Some(Val(Nat(0)))),
                     ]
                 ),
                 ""

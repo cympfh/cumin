@@ -178,6 +178,7 @@ parser! {
 mod test_expr {
     use crate::parser::expr::*;
     use crate::parser::statement::*;
+    use crate::parser::typing::*;
     use combine::Parser;
     use Expr::*;
     use Value::*;
@@ -347,8 +348,8 @@ mod test_expr {
             Ok((
                 Blocked(Box::new(Config(
                     vec![
-                        Statement::Let("x".to_string(), "Int".to_string(), Val(Nat(1))),
-                        Statement::Let("y".to_string(), "Any".to_string(), Val(Int(-2))),
+                        Statement::Let("x".to_string(), Typing::Int, Val(Nat(1))),
+                        Statement::Let("y".to_string(), Typing::Any, Val(Int(-2))),
                     ],
                     Expr::Add(
                         Box::new(Val(Var("x".to_string()))),
