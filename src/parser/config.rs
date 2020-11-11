@@ -16,6 +16,7 @@ parser! {
 #[cfg(test)]
 mod test_config {
     use crate::parser::config::*;
+    use crate::parser::typing::*;
     use crate::parser::value::*;
     use combine::Parser;
     use Expr::*;
@@ -29,7 +30,7 @@ mod test_config {
             config().parse("let x=1; x"),
             Ok((
                 Config(
-                    vec![Let("x".to_string(), "Any".to_string(), Val(Nat(1)))],
+                    vec![Let("x".to_string(), Typing::Any, Val(Nat(1)))],
                     Val(Var("x".to_string()))
                 ),
                 ""
@@ -40,10 +41,10 @@ mod test_config {
             Ok((
                 Config(
                     vec![
-                        Let("x".to_string(), "Int".to_string(), Val(Nat(1))),
+                        Let("x".to_string(), Typing::Int, Val(Nat(1))),
                         Let(
                             "y".to_string(),
-                            "Any".to_string(),
+                            Typing::Any,
                             Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))))
                         ),
                     ],
@@ -61,7 +62,7 @@ mod test_config {
                 Config(
                     vec![Struct(
                         "X".to_string(),
-                        vec![("x".to_string(), "Int".to_string(), None)]
+                        vec![("x".to_string(), Typing::Int, None)]
                     )],
                     Add(
                         Box::new(Val(Var("x".to_string()))),
@@ -71,15 +72,18 @@ mod test_config {
                 ""
             ))
         );
-        // assert_eq!(
-        //     config().parse("struct X { x: Int } let x=1; X(x)"),
-        //     Ok((
-        //         vec![
-        //             Struct("X".to_string(), vec![("x".to_string(), "Int".to_string())]),
-        //             Let("x".to_string(), Val(Nat(1)))
-        //         ],
-        //         ""
-        //     ))
-        // );
+        assert_eq!(
+            config().parse("struct X { x: Int } let x=1; X(x)"),
+            Ok((
+                Config(
+                    vec![
+                        Struct("X".to_string(), vec![("x".to_string(), Typing::Int, None)]),
+                        Let("x".to_string(), Typing::Any, Val(Nat(1)))
+                    ],
+                    Apply("X".to_string(), vec![Val(Var("x".to_string()))])
+                ),
+                ""
+            ))
+        );
     }
 }
