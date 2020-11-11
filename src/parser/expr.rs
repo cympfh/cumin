@@ -176,7 +176,6 @@ parser! {
 
 #[cfg(test)]
 mod test_expr {
-    use crate::parser::config::*;
     use crate::parser::expr::*;
     use crate::parser::statement::*;
     use combine::Parser;

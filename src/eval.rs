@@ -86,7 +86,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 let n = fields.len();
                 let items: Vec<(String, Value)> = (0..n)
                     .map(|i| {
-                        let (name, _ty) = &fields[i];
+                        let (name, _ty, _default) = &fields[i];
                         let val = eval_expr(&env, &args[i]);
                         (name.to_string(), val)
                     })
@@ -101,11 +101,15 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
                 let items: Vec<(String, Value)> = fields
                     .iter()
-                    .map(|(name, _ty)| {
+                    .map(|(name, _ty, default)| {
                         if let Some(arg) = args.get(&name.to_string()) {
                             (name.to_string(), eval_expr(&env, &arg))
                         } else {
-                            panic!("Cannot find field {}", name)
+                            if let Some(e) = default {
+                                (name.to_string(), eval_expr(&env, e))
+                            } else {
+                                panic!("Cannot find field {}", name)
+                            }
                         }
                     })
                     .collect();
@@ -150,7 +154,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
 
 #[derive(Clone)]
 struct Environ {
-    structs: HashMap<String, Vec<(String, String)>>,
+    structs: HashMap<String, Vec<(String, String, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (String, Value)>,
     env_vars: HashMap<String, String>,
@@ -204,8 +208,8 @@ mod test_eval {
             vec![Struct(
                 "P".to_string(),
                 vec![
-                    ("x".to_string(), "Int".to_string()),
-                    ("y".to_string(), "Int".to_string()),
+                    ("x".to_string(), "Int".to_string(), None),
+                    ("y".to_string(), "Int".to_string(), None),
                 ],
             )],
             FieledApply(
@@ -220,6 +224,27 @@ mod test_eval {
             eval(conf),
             JSON::Dict(vec![
                 ("x".to_string(), JSON::Int(1)),
+                ("y".to_string(), JSON::Int(2)),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_fielded_apply_with_default() {
+        let conf = Config(
+            vec![Struct(
+                "P".to_string(),
+                vec![
+                    ("x".to_string(), "Int".to_string(), Some(Val(Int(42)))),
+                    ("y".to_string(), "Int".to_string(), None),
+                ],
+            )],
+            FieledApply("P".to_string(), vec![("y".to_string(), Val(Int(2)))]),
+        );
+        assert_eq!(
+            eval(conf),
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Int(42)),
                 ("y".to_string(), JSON::Int(2)),
             ])
         );
