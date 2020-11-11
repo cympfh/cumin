@@ -19,7 +19,7 @@ parser! {
         // let id: type = expr;
         let let_stmt = {
             let typing = choice!(
-                attempt((spaces(), char(':'), spaces(), many1(alpha_num()), spaces()).map(|t| t.3)),
+                attempt((spaces(), char(':'), spaces(), identifier(), spaces()).map(|t| t.3)),
                 spaces().map(|_| "Any".to_string())
                 );
             (
@@ -44,21 +44,21 @@ parser! {
             let inner_separated = sep_by(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     spaces(),
                     char(':'),
                     spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     commentable_spaces()
                 ).map(|t| (t.1, t.5)), char(','));
             let inner_trailing = many(
                 (
                     commentable_spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     spaces(),
                     char(':'),
                     spaces(),
-                    many1(alpha_num()),
+                    identifier(),
                     spaces(),
                     char(','),
                     commentable_spaces(),
@@ -68,7 +68,7 @@ parser! {
                 string("struct"),
                 space(),
                 spaces(),
-                many1(alpha_num()),
+                identifier(),
                 spaces(),
                 char('{'),
                 commentable_spaces(),
@@ -80,19 +80,19 @@ parser! {
                 .map(|t| Statement::Struct(t.4, t.8))
         };
 
-        // enum -- comma separated
+        // enum id { id, id [,] }
         let enum_stmst = {
             let inner_separated = sep_by(
                 (
                 commentable_spaces(),
-                many1(alpha_num()),
+                identifier(),
                 commentable_spaces()
                 ).map(|t| t.1),
                 char(','));
             let inner_trailing = many1(
                 (
                 commentable_spaces(),
-                many1(alpha_num()),
+                identifier(),
                 commentable_spaces(),
                 char(','),
                 commentable_spaces(),
@@ -103,7 +103,7 @@ parser! {
                 string("enum"),
                 space(),
                 spaces(),
-                many1(alpha_num()),
+                identifier(),
                 spaces(),
                 char('{'),
                 choice!(attempt(inner_trailing), inner_separated),
