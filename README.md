@@ -14,66 +14,54 @@ Structured Typed Configuration Language
 ## Example
 
 ```rust
-// struct is a Fixed schema
-struct Person {
-    name: String,
-    sex: Sex = Sex::Other,  // can have default value
-    age: Nat,
+struct UserRecord {
+    id: Int,
+    name: String = "Anonymous",
+    region: Region = Region::Unknown,
 }
 
-// Enum Value
-// Exact One of "Male", "Female" or "Other"
-enum Sex {
-    Male,
-    Female,
-    Other,
+enum Region {
+    Unknown,
+    East,
+    West,
 }
 
-// Exporting the last data
-// Here {{ ... }} is a Just Dictionary[fields => Any data]
-{{
-
-    // list of Person
-    names = [
-        Person("John", Sex::Male, 17),
-        Person { name="Xohn", age=1 },  // Default Value used for Sex
-    ],
-
-    // Cumin by
-    author = Person {
-        name = "cympfh",
-        sex = Sex::Male,
-        age = 0,
-    },
-
-}}
+[
+    UserRecord(1, "cympfh", Region::East),
+    UserRecord { id = 2, name = "Alan", region = Region::West, },
+    UserRecord { id = 3, name = "Bob" },
+    UserRecord { id = 4, region = Region::East },
+]
 ```
 
-### Convert to JSON
+## Compiler
 
-Cumin Compoler `cuminc` converts `cumin` to `JSON`.
+Cumin Compiler `cuminc` converts to JSON from Cumin.
 
 ```bash
-# bash
 $ cuminc ./examples/names.cumin
-{
-    "names": [
-        {"name": "John", "sex": "Male", "age": 17},
-        {"name": "Xohn", "sex": "Other", "age": 1}
-    ],
-    "author": {"name": "cympfh", "sex": "Male", "age": 0}
-}
-```
-
-### Query Command (like jq, Feature Work)
-
-```bash
-# bash
-$ cq '.names[0]' ./examples/names.cumin
-Person("John", Sex::Male, 17)
-
-$ cq -r '.author.name' ./examples/names.cumin
-cympfh
+[
+  {
+    "id": 1,
+    "name": "Taro",
+    "region": "East"
+  },
+  {
+    "id": 2,
+    "name": "Alan",
+    "region": "West"
+  },
+  {
+    "id": 3,
+    "name": "Bob",
+    "region": "Unknown"
+  },
+  {
+    "id": 4,
+    "name": "Anonymous",
+    "region": "East"
+  }
+]
 ```
 
 ## For Vim Users
