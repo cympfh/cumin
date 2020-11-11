@@ -9,6 +9,7 @@ Structured Typed Configuration Language
     - struct, enum
 - Typed
     - Validated Data
+- Mini-Programmable
 
 ## Example
 
@@ -16,11 +17,12 @@ Structured Typed Configuration Language
 // struct is a Fixed schema
 struct Person {
     name: String,
-    sex: Sex,
+    sex: Sex = Sex::Other,  // can have default value
     age: Nat,
 }
 
-// "Male" or "Female" or "Other"
+// Enum Value
+// Exact One of "Male", "Female" or "Other"
 enum Sex {
     Male,
     Female,
@@ -34,7 +36,7 @@ enum Sex {
     // list of Person
     names = [
         Person("John", Sex::Male, 17),
-        Person { name="Xohn", sex=Sex::Other, age=1 },
+        Person { name="Xohn", age=1 },  // Default Value used for Sex
     ],
 
     // Cumin by

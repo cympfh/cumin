@@ -61,7 +61,7 @@ mod test_config {
                 Config(
                     vec![Struct(
                         "X".to_string(),
-                        vec![("x".to_string(), "Int".to_string())]
+                        vec![("x".to_string(), "Int".to_string(), None)]
                     )],
                     Add(
                         Box::new(Val(Var("x".to_string()))),

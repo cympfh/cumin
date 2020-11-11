@@ -1,14 +1,14 @@
 use crate::parser::expr::*;
 use crate::parser::util::*;
-use combine::parser::char::{alpha_num, char, space, spaces, string};
+use combine::parser::char::{char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, many1, parser, sep_by};
+use combine::{choice, many, many1, optional, parser, sep_by};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Let(String, String, Expr),
-    Struct(String, Vec<(String, String)>),
+    Struct(String, Vec<(String, String, Option<Expr>)>), // StructName, [(name, type, default)]
     Enum(String, Vec<String>),
 }
 
@@ -39,7 +39,7 @@ parser! {
                 .map(|t| Statement::Let(t.4, t.5, t.8))
         };
 
-        // struct id { id: id, id: id [,] }
+        // struct id { id: id [= expr] [,] }
         let struct_stmt = {
             let inner_separated = sep_by(
                 (
@@ -49,8 +49,11 @@ parser! {
                     char(':'),
                     spaces(),
                     identifier(),
+                    commentable_spaces(),
+                    optional(char('=').with(spaces()).with(expr())),
                     commentable_spaces()
-                ).map(|t| (t.1, t.5)), char(','));
+                ).map(|t| (t.1, t.5, t.7)),
+                char(','));
             let inner_trailing = many(
                 (
                     commentable_spaces(),
@@ -60,9 +63,11 @@ parser! {
                     spaces(),
                     identifier(),
                     spaces(),
+                    optional(char('=').with(spaces()).with(expr())),
+                    commentable_spaces(),
                     char(','),
                     commentable_spaces(),
-                ).map(|t| (t.1, t.5)));
+                ).map(|t| (t.1, t.5, t.7)));
             (
                 commentable_spaces(),
                 string("struct"),
@@ -177,8 +182,8 @@ mod test_statement {
                 Struct(
                     "Point".to_string(),
                     vec![
-                        ("x".to_string(), "Int".to_string()),
-                        ("y".to_string(), "Int".to_string()),
+                        ("x".to_string(), "Int".to_string(), None),
+                        ("y".to_string(), "Int".to_string(), None),
                     ]
                 ),
                 ""
@@ -191,8 +196,31 @@ mod test_statement {
                 Struct(
                     "Point".to_string(),
                     vec![
-                        ("x".to_string(), "Int".to_string()),
-                        ("y".to_string(), "Int".to_string()),
+                        ("x".to_string(), "Int".to_string(), None),
+                        ("y".to_string(), "Int".to_string(), None),
+                    ]
+                ),
+                ""
+            ))
+        );
+        // with default values
+        assert_eq!(
+            stmt().parse(
+                "struct Point {
+                name: String = \"hoge\",
+                x: Int, y:Int=0, } "
+            ),
+            Ok((
+                Struct(
+                    "Point".to_string(),
+                    vec![
+                        (
+                            "name".to_string(),
+                            "String".to_string(),
+                            Some(Val(Str("hoge".to_string())))
+                        ),
+                        ("x".to_string(), "Int".to_string(), None),
+                        ("y".to_string(), "Int".to_string(), Some(Val(Nat(0)))),
                     ]
                 ),
                 ""
