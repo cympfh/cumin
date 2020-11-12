@@ -9,11 +9,14 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    spaces()
-        .with(string("//"))
-        .with(many::<String, _, _>(none_of("\n".chars())))
-        .with(choice!(char('\n').map(|_| ()), eof().map(|_| ())))
-        .with(spaces())
+    (
+        spaces(),
+        string("//"),
+        many::<String, _, _>(none_of("\n".chars())),
+        choice!(char('\n').map(|_| ()), eof().map(|_| ())),
+        spaces(),
+    )
+        .map(|_| ())
 }
 
 pub fn commentable_spaces<Input>() -> impl Parser<Input, Output = ()>

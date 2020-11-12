@@ -21,7 +21,7 @@ parser! {
             expr(),
             commentable_spaces(),
         )
-            .map(|t| Config(t.1, t.2))
+            .map(|t: ((), Vec<Statement>, Expr, ())| Config(t.1, t.2))
     }
 }
 
