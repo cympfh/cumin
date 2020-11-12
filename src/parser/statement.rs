@@ -26,7 +26,7 @@ parser! {
         let let_stmt = {
             let type_annotation = choice!(
                 attempt((spaces(), char(':'), spaces(), typing(), spaces()).map(|t| t.3)),
-                spaces().map(|_| Typing::Any)
+                spaces().map(|_: ()| Typing::Any)
             );
             (
                 commentable_spaces(),
@@ -47,7 +47,7 @@ parser! {
 
         // struct id { id: typing [= expr] [,] }
         let struct_stmt = {
-            let inner_separated = sep_by(
+            let inner_separated = sep_by::<Vec<(String, Typing, Option<Expr>)>, _, _, _>(
                 (
                     commentable_spaces(),
                     identifier(),
@@ -56,11 +56,16 @@ parser! {
                     spaces(),
                     typing(),
                     commentable_spaces(),
-                    optional(char('=').with(spaces()).with(expr())),
+                    optional(
+                        (
+                            char('='),
+                            spaces(),
+                            expr(),
+                        ).map(|t| t.2)),
                     commentable_spaces()
                 ).map(|t| (t.1, t.5, t.7)),
                 char(','));
-            let inner_trailing = many(
+            let inner_trailing = many::<Vec<(String, Typing, Option<Expr>)>, _, _>(
                 (
                     commentable_spaces(),
                     identifier(),
@@ -69,7 +74,12 @@ parser! {
                     spaces(),
                     typing(),
                     spaces(),
-                    optional(char('=').with(spaces()).with(expr())),
+                    optional(
+                        (
+                            char('='),
+                            spaces(),
+                            expr(),
+                        ).map(|t| t.2)),
                     commentable_spaces(),
                     char(','),
                     commentable_spaces(),
@@ -93,21 +103,21 @@ parser! {
 
         // enum id { id, id [,] }
         let enum_stmst = {
-            let inner_separated = sep_by(
+            let inner_separated = sep_by::<Vec<String>, _, _, _>(
                 (
-                commentable_spaces(),
-                identifier(),
-                commentable_spaces()
-                ).map(|t| t.1),
+                    commentable_spaces(),
+                    identifier(),
+                    commentable_spaces(),
+                ).map(|t: ((), String, ())| t.1),
                 char(','));
-            let inner_trailing = many1(
+            let inner_trailing = many1::<Vec<String>, _, _>(
                 (
-                commentable_spaces(),
-                identifier(),
-                commentable_spaces(),
-                char(','),
-                commentable_spaces(),
-                ).map(|t| t.1)
+                    commentable_spaces(),
+                    identifier(),
+                    commentable_spaces(),
+                    char(','),
+                    commentable_spaces(),
+                ).map(|t: ((), String, (), char, ())| t.1)
             );
             (
                 commentable_spaces(),
@@ -121,8 +131,7 @@ parser! {
                 char('}'),
                 commentable_spaces()
             )
-                .map(|t|
-                    Statement::Enum(t.4,t.7))
+                .map(|t| Statement::Enum(t.4, t.7))
         };
 
         choice!(

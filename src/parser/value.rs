@@ -1,6 +1,6 @@
 use crate::parser::util::*;
 use combine::error::ParseError;
-use combine::parser::char::{char, digit, spaces, string};
+use combine::parser::char::{char, digit, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{between, choice, many, many1, none_of, optional, parser, token};
@@ -34,16 +34,30 @@ parser! {
                 identifier(),
                 string("::"),
                 identifier(),
-            ).map(|t| Value::EnumVariant(t.0, t.2));
-        let env_value = char('$').with(
-            choice!(
-                identifier().map(|s| (s, None)),
-                between(char('{'), char('}'), (identifier(), optional(string(":-").with(many(none_of("}".chars()))))))
-            )
-        ).map(|(name, default_value)| Value::Env(name, default_value));
+            ).map(|t: (String, &str, String)| Value::EnumVariant(t.0, t.2));
+        let env_value = {
+            let default_string_value = (
+                string(":-"),
+                many::<String, _, _>(none_of("}".chars())),
+            ).map(|t| t.1);
+            (
+                char('$'),
+                choice!(
+                    identifier().map(|s: String| (s, None)),
+                    between(char('{'), char('}'), (identifier(), optional(default_string_value)))
+                ),
+            ).map(|(_, (name, default_value))| Value::Env(name, default_value))
+        };
         let var_value = identifier().map(Value::Var);
 
-        choice!(int_value, nat_value, str_value, env_value, attempt(variant_value), var_value).skip(spaces())
+        choice!(
+            int_value,
+            nat_value,
+            str_value,
+            env_value,
+            attempt(variant_value),
+            var_value
+        )
     }
 }
 
@@ -54,9 +68,9 @@ mod test_value {
 
     #[test]
     fn test() {
-        assert_eq!(value().parse("23 "), Ok((Value::Nat(23), "")));
-        assert_eq!(value().parse("23x"), Ok((Value::Nat(23), "x")));
-        assert_eq!(value().parse("-23 _"), Ok((Value::Int(-23), "_")));
+        assert_eq!(value().parse("23"), Ok((Value::Nat(23), "")));
+        assert_eq!(value().parse("23_"), Ok((Value::Nat(23), "_")));
+        assert_eq!(value().parse("-23_"), Ok((Value::Int(-23), "_")));
         assert_eq!(
             value().parse("\"hoge\""),
             Ok((Value::Str("hoge".to_string()), ""))
