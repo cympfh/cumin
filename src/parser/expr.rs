@@ -27,145 +27,128 @@ parser! {
     {
         // F(x,...)
         let apply_expr = {
-            let inner_sep = sep_by::<Vec<_>,_, _, _>(
-                (
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces()
-                ).map(|t| t.1),
+            let inner_sep = sep_by::<Vec<Expr>,_, _, _>(
+                commentable_spaces()
+                    .with(expr())
+                    .skip(commentable_spaces()),
                 char(','));
-            let inner_trailing = many::<Vec<_>, _, _>(
-                (
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces()
-                ).map(|t| t.1));
-            (
-                commentable_spaces(),
-                identifier(),
-                commentable_spaces(),
-                char('('),
-                choice!(attempt(inner_trailing), inner_sep),
-                char(')'),
-                commentable_spaces(),
-            ).map(|t| Expr::Apply(t.1, t.4))
+            let inner_trailing = many::<Vec<Expr>, _, _>(
+                commentable_spaces()
+                    .with(expr())
+                    .skip(commentable_spaces())
+                    .skip(char(','))
+                    .skip(commentable_spaces()));
+            commentable_spaces()
+                .with(identifier())
+                .skip(commentable_spaces())
+                .skip(char('('))
+                .and(choice!(attempt(inner_trailing), inner_sep))
+                .skip(char(')'))
+                .skip(commentable_spaces())
+                .map(|(id, args)| Expr::Apply(id, args))
         };
 
         // F { x=val, }
         let fielded_apply_expr = {
-            let inner_sep = sep_by::<Vec<_>, _, _, _>(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                ).map(|t| (t.1, t.5)),
+            let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(commentable_spaces())
+                    .skip(char('='))
+                    .skip(commentable_spaces())
+                    .and(expr())
+                    .skip(commentable_spaces()),
                 char(','));
-            let inner_trailing = many::<Vec<_>, _, _>(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.1, t.5)));
-            (
-                commentable_spaces(),
-                identifier(),
-                commentable_spaces(),
-                char('{'),
-                choice!(attempt(inner_trailing), inner_sep),
-                char('}'),
-                commentable_spaces(),
-            ).map(|t| Expr::FieledApply(t.1, t.4))
+            let inner_trailing = many::<Vec<(String, Expr)>, _, _>(
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(commentable_spaces())
+                    .skip(char('='))
+                    .skip(commentable_spaces())
+                    .and(expr())
+                    .skip(commentable_spaces())
+                    .skip(char(','))
+                    .skip(commentable_spaces()));
+            commentable_spaces()
+                .with(identifier())
+                .skip(commentable_spaces())
+                .skip(char('{'))
+                .and(choice!(attempt(inner_trailing), inner_sep))
+                .skip(char('}'))
+                .skip(commentable_spaces())
+                .map(|(id, items)| Expr::FieledApply(id, items))
         };
 
         // {{ x=val, }}
         let dict_expr = {
             let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                ).map(|t| (t.1, t.5)),
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(commentable_spaces())
+                    .skip(char('='))
+                    .skip(commentable_spaces())
+                    .and(expr())
+                    .skip(commentable_spaces()),
                 char(',')
             );
-            let inner_trailing = many::<Vec<_>, _, _>(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.1, t.5))
-            );
-            (
-                commentable_spaces(),
-                string("{{"),
-                choice!(attempt(inner_trailing), inner_sep),
-                string("}}"),
-                commentable_spaces(),
-            ).map(|t| Expr::AnonymousStruct(t.2))
+            let inner_trailing = many::<Vec<(String, Expr)>, _, _>(
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(commentable_spaces())
+                    .skip(char('='))
+                    .skip(commentable_spaces())
+                    .and(expr())
+                    .skip(commentable_spaces())
+                    .skip(char(','))
+                    .skip(commentable_spaces()));
+            commentable_spaces()
+                .skip(string("{{"))
+                .with(choice!(attempt(inner_trailing), inner_sep))
+                .skip(string("}}"))
+                .skip(commentable_spaces())
+                .map(Expr::AnonymousStruct)
         };
 
         // { statement...; expr }
-        let blocked_expr = (
-            commentable_spaces(),
-            char('{'),
-            commentable_spaces(),
-            config(),
-            commentable_spaces(),
-            char('}'),
-            commentable_spaces(),
-        ).map(|t| Expr::Blocked(Box::new(t.3)));
+        let blocked_expr = commentable_spaces()
+            .skip(char('{'))
+            .skip(commentable_spaces())
+            .with(config())
+            .skip(commentable_spaces())
+            .skip(char('}'))
+            .skip(commentable_spaces())
+            .map(|t: Config| Expr::Blocked(Box::new(t)));
 
         // _ + _
-        let add_expr = (value(), commentable_spaces(), char('+'), commentable_spaces(), expr())
-            .map(|t| Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)));
+        let add_expr = value()
+            .skip(commentable_spaces())
+            .skip(char('+'))
+            .skip(commentable_spaces())
+            .and(expr())
+            .map(|(x, y)| Expr::Add(Box::new(Expr::Val(x)), Box::new(y)));
 
         let value_expr = value().map(|x: Value| Expr::Val(x));
 
         let arrayed_expr = {
             let inner_sep =
                 sep_by::<Vec<Expr>, _, _, _>(
-                    (commentable_spaces(),
-                    expr(),
-                    commentable_spaces()).map(|t| t.1),
+                    commentable_spaces()
+                        .with(expr())
+                        .skip(commentable_spaces()),
                     char(',')
                 );
             let inner_trailing = many::<Vec<Expr>, _, _>(
-                    (
-                        commentable_spaces(),
-                        expr(),
-                        commentable_spaces(),
-                        char(','),
-                        commentable_spaces()
-                    ).map(|t| t.1)
-                );
-            (
-                commentable_spaces(),
-                char('['),
-                choice!(attempt(inner_trailing), inner_sep),
-                char(']'),
-                commentable_spaces(),
-            ).map(|t| Expr::Arrayed(t.2))
+                    commentable_spaces()
+                        .with(expr())
+                        .skip(commentable_spaces())
+                        .skip(char(','))
+                        .skip(commentable_spaces()));
+            commentable_spaces()
+                .skip(char('['))
+                .with(choice!(attempt(inner_trailing), inner_sep))
+                .skip(char(']'))
+                .skip(commentable_spaces())
+                .map(Expr::Arrayed)
         };
 
         choice!(

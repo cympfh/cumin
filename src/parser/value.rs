@@ -28,22 +28,31 @@ parser! {
             .with(many1(digit()))
             .map(|x: String| Value::Int(-x.parse::<i128>().unwrap()));
         let nat_value = many1(digit()).map(|x: String| Value::Nat(x.parse::<u128>().unwrap()));
-        let str_value = between(token('"'), token('"'), many(none_of("\"".chars())).map(|x:String| Value::Str(x)));
-        let variant_value =
-            (
-                identifier(),
-                string("::"),
-                identifier(),
-            ).map(|t| Value::EnumVariant(t.0, t.2));
-        let env_value = char('$').with(
-            choice!(
-                identifier().map(|s| (s, None)),
-                between(char('{'), char('}'), (identifier(), optional(string(":-").with(many(none_of("}".chars()))))))
-            )
-        ).map(|(name, default_value)| Value::Env(name, default_value));
+        let str_value = between(
+            token('"'),
+            token('"'),
+            many(none_of("\"".chars())).map(Value::Str));
+        let variant_value = identifier()
+            .skip(string("::"))
+            .and(identifier())
+            .map(|t| Value::EnumVariant(t.0, t.1));
+        let env_value = char('$')
+            .with(
+                choice!(
+                    identifier().map(|s| (s, None)),
+                    between(char('{'), char('}'), (identifier(), optional(string(":-").with(many(none_of("}".chars()))))))
+                ))
+            .map(|(name, default_value)| Value::Env(name, default_value));
         let var_value = identifier().map(Value::Var);
 
-        choice!(int_value, nat_value, str_value, env_value, attempt(variant_value), var_value).skip(spaces())
+        choice!(
+            int_value,
+            nat_value,
+            str_value,
+            env_value,
+            attempt(variant_value),
+            var_value
+        ).skip(spaces())
     }
 }
 

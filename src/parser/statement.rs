@@ -25,110 +25,96 @@ parser! {
         // let id: typing = expr;
         let let_stmt = {
             let type_annotation = choice!(
-                attempt((spaces(), char(':'), spaces(), typing(), spaces()).map(|t| t.3)),
+                attempt(spaces().skip(char(':')).skip(spaces()).with(typing()).skip(spaces())),
                 spaces().map(|_| Typing::Any)
             );
-            (
-                commentable_spaces(),
-                string("let"),
-                space(),
-                spaces(),
-                identifier(),
-                type_annotation,
-                char('='),
-                spaces(),
-                expr(),
-                spaces(),
-                char(';'),
-                commentable_spaces(),
-            )
-                .map(|t| Statement::Let(t.4, t.5, t.8))
+            commentable_spaces()
+                .skip(string("let"))
+                .skip(space())
+                .skip(spaces())
+                .with(identifier())
+                .and(type_annotation)
+                .skip(char('='))
+                .skip(spaces())
+                .and(expr())
+                .skip(spaces())
+                .skip(char(';'))
+                .skip(commentable_spaces())
+                .map(|((id, typ), e)| Statement::Let(id, typ, e))
         };
 
         // struct id { id: typing [= expr] [,] }
         let struct_stmt = {
-            let inner_separated = sep_by(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    spaces(),
-                    char(':'),
-                    spaces(),
-                    typing(),
-                    commentable_spaces(),
-                    optional(char('=').with(spaces()).with(expr())),
-                    commentable_spaces()
-                ).map(|t| (t.1, t.5, t.7)),
+            let inner_separated = sep_by::<Vec<(String, Typing, Option<Expr>)>, _, _, _>(
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(spaces())
+                    .skip(char(':'))
+                    .skip(spaces())
+                    .and(typing())
+                    .skip(commentable_spaces())
+                    .and(optional(char('=').with(spaces()).with(expr())))
+                    .skip(commentable_spaces())
+                    .map(|((id, typ), e)| (id, typ, e)),
                 char(','));
-            let inner_trailing = many(
-                (
-                    commentable_spaces(),
-                    identifier(),
-                    spaces(),
-                    char(':'),
-                    spaces(),
-                    typing(),
-                    spaces(),
-                    optional(char('=').with(spaces()).with(expr())),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.1, t.5, t.7)));
-            (
-                commentable_spaces(),
-                string("struct"),
-                space(),
-                spaces(),
-                identifier(),
-                spaces(),
-                char('{'),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_separated),
-                commentable_spaces(),
-                char('}'),
-                commentable_spaces(),
-            )
-                .map(|t| Statement::Struct(t.4, t.8))
+            let inner_trailing = many::<Vec<(String, Typing, Option<Expr>)>, _, _>(
+                commentable_spaces()
+                    .with(identifier())
+                    .skip(spaces())
+                    .skip(char(':'))
+                    .skip(spaces())
+                    .and(typing())
+                    .skip(spaces())
+                    .and(optional(char('=').with(spaces()).with(expr())))
+                    .skip(commentable_spaces())
+                    .skip(char(','))
+                    .skip(commentable_spaces())
+                    .map(|((id, typ), e)| (id, typ, e)));
+            commentable_spaces()
+                .skip(string("struct"))
+                .skip(space())
+                .skip(spaces())
+                .with(identifier())
+                .skip(spaces())
+                .skip(char('{'))
+                .skip(commentable_spaces())
+                .and(choice!(attempt(inner_trailing), inner_separated))
+                .skip(commentable_spaces())
+                .skip(char('}'))
+                .skip(commentable_spaces())
+                .map(|t| Statement::Struct(t.0, t.1))
         };
 
         // enum id { id, id [,] }
         let enum_stmst = {
             let inner_separated = sep_by(
-                (
-                commentable_spaces(),
-                identifier(),
                 commentable_spaces()
-                ).map(|t| t.1),
+                    .with(identifier())
+                    .skip(commentable_spaces()),
                 char(','));
             let inner_trailing = many1(
-                (
-                commentable_spaces(),
-                identifier(),
-                commentable_spaces(),
-                char(','),
-                commentable_spaces(),
-                ).map(|t| t.1)
-            );
-            (
-                commentable_spaces(),
-                string("enum"),
-                space(),
-                spaces(),
-                identifier(),
-                spaces(),
-                char('{'),
-                choice!(attempt(inner_trailing), inner_separated),
-                char('}'),
                 commentable_spaces()
-            )
-                .map(|t|
-                    Statement::Enum(t.4,t.7))
+                    .with(identifier())
+                    .skip(commentable_spaces())
+                    .skip(char(','))
+                    .skip(commentable_spaces()));
+            commentable_spaces()
+                .skip(string("enum"))
+                .skip(space())
+                .skip(spaces())
+                .with(identifier())
+                .skip(spaces())
+                .skip(char('{'))
+                .and(choice!(attempt(inner_trailing), inner_separated))
+                .skip(char('}'))
+                .skip(commentable_spaces())
+                .map(|t| Statement::Enum(t.0, t.1))
         };
 
         choice!(
             attempt(struct_stmt),
             attempt(let_stmt),
-            attempt(enum_stmst)
+            enum_stmst
         )
     }
 }
