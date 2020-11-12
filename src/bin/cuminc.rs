@@ -29,7 +29,7 @@ fn main() {
     let opt = Opt::from_args();
     let content = cat(opt.input_cumin);
     if let Ok((conf, rest)) = config().parse(content.as_str()) {
-        if rest != "" {
+        if !rest.is_empty() {
             eprintln!("Parsing Stop with `{}`", rest);
             eprintln!("read conf: {:?}", &conf);
             return;

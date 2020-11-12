@@ -1,4 +1,5 @@
 use crate::parser::util::identifier;
+use combine::error::ParseError;
 use combine::parser::char::string;
 use combine::stream::Stream;
 use combine::{choice, parser};
@@ -14,7 +15,12 @@ pub enum Typing {
 }
 
 parser! {
-    pub fn typing[Input]()(Input) -> Typing where [Input: Stream<Token=char>] {
+    pub fn typing[Input]()(Input) -> Typing
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<char, Input::Range, Input::Position>,
+    ]
+    {
         let any_typing = string("Any").map(|_| Typing::Any);
         let nat_typing = string("Nat").map(|_| Typing::Nat);
         let int_typing = string("Int").map(|_| Typing::Int);

@@ -1,6 +1,7 @@
 use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::util::*;
+use combine::error::ParseError;
 use combine::stream::Stream;
 use combine::{many, parser};
 
@@ -8,8 +9,19 @@ use combine::{many, parser};
 pub struct Config(pub Vec<Statement>, pub Expr);
 
 parser! {
-    pub fn config[Input]()(Input) -> Config where [Input: Stream<Token=char>] {
-        (commentable_spaces(), many(stmt()), expr(), commentable_spaces()).map(|t| Config(t.1, t.2))
+    pub fn config[Input]()(Input) -> Config
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
+    ]
+    {
+        (
+            commentable_spaces(),
+            many(stmt()),
+            expr(),
+            commentable_spaces(),
+        )
+            .map(|t| Config(t.1, t.2))
     }
 }
 
