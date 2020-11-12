@@ -1,6 +1,7 @@
 use crate::parser::expr::*;
 use crate::parser::typing::*;
 use crate::parser::util::*;
+use combine::error::ParseError;
 use combine::parser::char::{char, space, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
@@ -14,8 +15,12 @@ pub enum Statement {
 }
 
 parser! {
-    pub fn stmt[Input]()(Input) -> Statement where [Input: Stream<Token=char>] {
-
+    pub fn stmt[Input]()(Input) -> Statement
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<char, Input::Range, Input::Position>,
+    ]
+    {
         // let id = expr;
         // let id: typing = expr;
         let let_stmt = {

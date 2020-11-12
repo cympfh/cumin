@@ -1,6 +1,7 @@
 use crate::parser::config::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
+use combine::error::ParseError;
 use combine::parser::char::{char, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
@@ -18,7 +19,12 @@ pub enum Expr {
 }
 
 parser! {
-    pub fn expr[Input]()(Input) -> Expr where [Input: Stream<Token=char>] {
+    pub fn expr[Input]()(Input) -> Expr
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<char, Input::Range, Input::Position>,
+    ]
+    {
         // F(x,...)
         let apply_expr = {
             let inner_sep = sep_by::<Vec<_>,_, _, _>(

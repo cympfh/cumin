@@ -1,4 +1,5 @@
 use crate::parser::util::*;
+use combine::error::ParseError;
 use combine::parser::char::{char, digit, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
@@ -17,7 +18,12 @@ pub enum Value {
 }
 
 parser! {
-    pub fn value[Input]()(Input) -> Value where [Input: Stream<Token=char>] {
+    pub fn value[Input]()(Input) -> Value
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<char, Input::Range, Input::Position>,
+    ]
+    {
         let int_value = char('-')
             .with(many1(digit()))
             .map(|x: String| Value::Int(-x.parse::<i128>().unwrap()));
