@@ -57,6 +57,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
     match expr {
         Val(Nat(x)) => Nat(*x),
         Val(Int(x)) => Int(*x),
+        Val(Float(x)) => Float(*x),
         Val(Str(s)) => Str(s.to_string()),
         Val(Var(v)) => match env.vars.get(v) {
             Some((_, val)) => (*val).clone(),
@@ -132,8 +133,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
             match (a, b) {
                 (Nat(x), Nat(y)) => Nat(x + y),
                 (Nat(x), Int(y)) => Int(x as i128 + y),
+                (Nat(x), Float(y)) => Float(x as f64 + y),
                 (Int(x), Nat(y)) => Int(x + y as i128),
                 (Int(x), Int(y)) => Int(x + y),
+                (Int(x), Float(y)) => Float(x as f64 + y),
+                (Float(x), Nat(y)) => Float(x + y as f64),
+                (Float(x), Int(y)) => Float(x + y as f64),
+                (Float(x), Float(y)) => Float(x + y),
                 (Str(x), Str(y)) => {
                     let mut z = x;
                     z.push_str(&y);
