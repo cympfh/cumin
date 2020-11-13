@@ -68,7 +68,9 @@ parser! {
                     identifier().map(|s: String| (s, None)),
                     between(char('{'), char('}'), (identifier(), optional(default_string_value)))
                 ),
-            ).map(|(_, (name, default_value))| Value::Env(name, default_value))
+            ).map(|(_, (name, default_value)): (char, (String, Option<String>))| {
+                Value::Env(name, default_value)
+            })
         };
         let var_value = identifier().map(Value::Var);
 
