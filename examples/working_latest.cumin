@@ -57,6 +57,7 @@ let z = Z::Z2; // Enum Variant
         shell = $SHELL,  // this is a String
         HOGE = ${HOGE:-fuga},  // with default value "fuga"
         NUM = ${NUM:-42} as Int,  // String -> Int cast
+        BETA = ${BETA:-0.01} as Float,
     }},
     points = ps,
     z = z,

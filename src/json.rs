@@ -39,6 +39,7 @@ impl JSON {
         match val {
             Value::Nat(x) => Nat(x),
             Value::Int(x) => Int(x),
+            Value::Float(x) => Float(x),
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
             Value::Env(v, _) => panic!("Env {} is unresolved", v),

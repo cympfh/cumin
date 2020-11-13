@@ -10,6 +10,7 @@ use combine::{between, choice, many, many1, none_of, optional, parser, token};
 pub enum Value {
     Nat(u128),
     Int(i128),
+    Float(f64),
     Str(String),
     Var(String),
     Env(String, Option<String>),
@@ -24,15 +25,19 @@ impl Value {
         match (self, typ) {
             (Nat(x), Typing::Nat) => Nat(*x),
             (Nat(x), Typing::Int) => Int((*x) as i128),
-            // (Nat(x), Typing::Float) => Int(x as f64),
+            (Nat(x), Typing::Float) => Float((*x) as f64),
             (Nat(x), Typing::String) => Str(format!("{}", x)),
             (Int(x), Typing::Nat) => Nat((*x) as u128),
             (Int(x), Typing::Int) => Int(*x),
-            // (Int(x), Typing::Float) => Int(x as f64),
+            (Int(x), Typing::Float) => Float((*x) as f64),
             (Int(x), Typing::String) => Str(format!("{}", x)),
+            (Float(x), Typing::Nat) => Nat((*x) as u128),
+            (Float(x), Typing::Int) => Int((*x) as i128),
+            (Float(x), Typing::Float) => Float(*x),
+            (Float(x), Typing::String) => Str(format!("{}", x)),
             (Str(x), Typing::Nat) => Nat(x.parse::<u128>().unwrap()),
             (Str(x), Typing::Int) => Int(x.parse::<i128>().unwrap()),
-            // (Str(x), Typing::Float) =>
+            (Str(x), Typing::Float) => Float(x.parse::<f64>().unwrap()),
             (Str(x), Typing::String) => Str(x.to_string()),
             _ => panic!("Cannot cast {:?} into {:?}", self, typ),
         }
@@ -46,9 +51,36 @@ parser! {
         Input::Error: ParseError<char, Input::Range, Input::Position>,
     ]
     {
-        let int_value = char('-')
-            .with(many1(digit()))
-            .map(|x: String| Value::Int(-x.parse::<i128>().unwrap()));
+        let float_value =
+            (
+                many1(digit()),
+                char('.'),
+                many1(digit()),
+            ).map(|(head, _, tail): (String, char, String)| {
+                let mut num: String = head;
+                num.push('.');
+                num.push_str(tail.as_str());
+                Value::Float(num.parse::<f64>().unwrap())
+            });
+        let minus_float_value =
+            (
+                char('-'),
+                many1(digit()),
+                char('.'),
+                many1(digit()),
+            ).map(|(_, head, _, tail): (char, String, char, String)| {
+                let mut num: String = head;
+                num.push('.');
+                num.push_str(tail.as_str());
+                Value::Float(-num.parse::<f64>().unwrap())
+            });
+        let int_value =
+            (
+                char('-'),
+                many1(digit()),
+            ).map(|(_, x): (char, String)| {
+                Value::Int(-x.parse::<i128>().unwrap())
+            });
         let nat_value = many1(digit()).map(|x: String| Value::Nat(x.parse::<u128>().unwrap()));
         let str_value = between(token('"'), token('"'), many(none_of("\"".chars())).map(|x:String| Value::Str(x)));
         let variant_value =
@@ -75,6 +107,8 @@ parser! {
         let var_value = identifier().map(Value::Var);
 
         choice!(
+            attempt(minus_float_value),
+            attempt(float_value),
             int_value,
             nat_value,
             str_value,
@@ -96,6 +130,10 @@ mod test_value {
         assert_eq!(value().parse("23"), Ok((Value::Nat(23), "")));
         assert_eq!(value().parse("23_"), Ok((Value::Nat(23), "_")));
         assert_eq!(value().parse("-23_"), Ok((Value::Int(-23), "_")));
+        assert_eq!(value().parse("0.5"), Ok((Value::Float(0.5), "")));
+        assert_eq!(value().parse("21.5"), Ok((Value::Float(21.5), "")));
+        assert_eq!(value().parse("-0.5"), Ok((Value::Float(-0.5), "")));
+        assert_eq!(value().parse("-21.5"), Ok((Value::Float(-21.5), "")));
         assert_eq!(
             value().parse("\"hoge\""),
             Ok((Value::Str("hoge".to_string()), ""))
