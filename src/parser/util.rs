@@ -13,10 +13,10 @@ where
         spaces(),
         string("//"),
         many::<String, _, _>(none_of("\n".chars())),
-        choice!(char('\n').map(|_| ()), eof().map(|_| ())),
+        choice!(char('\n').map(|_: char| ()), eof()),
         spaces(),
     )
-        .map(|_| ())
+        .map(|_: ((), &str, String, (), ())| ())
 }
 
 pub fn commentable_spaces<Input>() -> impl Parser<Input, Output = ()>

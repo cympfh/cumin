@@ -1,3 +1,4 @@
+use crate::parser::typing::*;
 use crate::parser::util::*;
 use combine::error::ParseError;
 use combine::parser::char::{char, digit, string};
@@ -15,6 +16,27 @@ pub enum Value {
     Dict(Vec<(String, Value)>),
     EnumVariant(String, String),
     Array(Vec<Value>),
+}
+
+impl Value {
+    pub fn cast(&self, typ: &Typing) -> Value {
+        use Value::*;
+        match (self, typ) {
+            (Nat(x), Typing::Nat) => Nat(*x),
+            (Nat(x), Typing::Int) => Int((*x) as i128),
+            // (Nat(x), Typing::Float) => Int(x as f64),
+            (Nat(x), Typing::String) => Str(format!("{}", x)),
+            (Int(x), Typing::Nat) => Nat((*x) as u128),
+            (Int(x), Typing::Int) => Int(*x),
+            // (Int(x), Typing::Float) => Int(x as f64),
+            (Int(x), Typing::String) => Str(format!("{}", x)),
+            (Str(x), Typing::Nat) => Nat(x.parse::<u128>().unwrap()),
+            (Str(x), Typing::Int) => Int(x.parse::<i128>().unwrap()),
+            // (Str(x), Typing::Float) =>
+            (Str(x), Typing::String) => Str(x.to_string()),
+            _ => panic!("Cannot cast {:?} into {:?}", self, typ),
+        }
+    }
 }
 
 parser! {
@@ -46,7 +68,9 @@ parser! {
                     identifier().map(|s: String| (s, None)),
                     between(char('{'), char('}'), (identifier(), optional(default_string_value)))
                 ),
-            ).map(|(_, (name, default_value))| Value::Env(name, default_value))
+            ).map(|(_, (name, default_value)): (char, (String, Option<String>))| {
+                Value::Env(name, default_value)
+            })
         };
         let var_value = identifier().map(Value::Var);
 
@@ -65,9 +89,10 @@ parser! {
 mod test_value {
     use crate::parser::value::*;
     use combine::Parser;
+    use Value::*;
 
     #[test]
-    fn test() {
+    fn test_parse() {
         assert_eq!(value().parse("23"), Ok((Value::Nat(23), "")));
         assert_eq!(value().parse("23_"), Ok((Value::Nat(23), "_")));
         assert_eq!(value().parse("-23_"), Ok((Value::Int(-23), "_")));
@@ -102,6 +127,22 @@ mod test_value {
         assert_eq!(
             value().parse("X::Zoo"),
             Ok((Value::EnumVariant("X".to_string(), "Zoo".to_string()), ""))
+        );
+    }
+
+    #[test]
+    fn test_cast() {
+        assert_eq!(Nat(0).cast(&Typing::Nat), Nat(0));
+        assert_eq!(Nat(0).cast(&Typing::Int), Int(0));
+        assert_eq!(Nat(0).cast(&Typing::String), Str("0".to_string()));
+        assert_eq!(Int(0).cast(&Typing::Nat), Nat(0));
+        assert_eq!(Int(0).cast(&Typing::Int), Int(0));
+        assert_eq!(Int(0).cast(&Typing::String), Str("0".to_string()));
+        assert_eq!(Str("0".to_string()).cast(&Typing::Nat), Nat(0));
+        assert_eq!(Str("0".to_string()).cast(&Typing::Int), Int(0));
+        assert_eq!(
+            Str("0".to_string()).cast(&Typing::String),
+            Str("0".to_string())
         );
     }
 }
