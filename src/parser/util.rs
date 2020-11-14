@@ -58,6 +58,14 @@ mod test_comment {
             ),
             Ok(((), ""))
         );
+        assert_eq!(
+            commentable_spaces().parse(
+                "// hoge
+
+                let x = 1; // fuga"
+            ),
+            Ok(((), "let x = 1; // fuga"))
+        );
     }
 
     #[test]
