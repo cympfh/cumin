@@ -1,3 +1,4 @@
+pub mod arith;
 pub mod config;
 pub mod expr;
 pub mod statement;
