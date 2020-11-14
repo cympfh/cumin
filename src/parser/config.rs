@@ -49,7 +49,14 @@ mod test_config {
             ))
         );
         assert_eq!(
-            config().parse("let x:Int=1; let y = x + 2; x + y"),
+            config().parse(
+                "let x:Int=1; //comment
+                // comment
+                let y = x + 2;
+                // comment
+                // comment
+                x + y"
+            ),
             Ok((
                 Config(
                     vec![

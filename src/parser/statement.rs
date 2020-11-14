@@ -29,7 +29,6 @@ parser! {
                 spaces().map(|_: ()| Typing::Any)
             );
             (
-                commentable_spaces(),
                 string("let"),
                 space(),
                 spaces(),
@@ -42,14 +41,13 @@ parser! {
                 char(';'),
                 commentable_spaces(),
             )
-                .map(|t| Statement::Let(t.4, t.5, t.8))
+                .map(|t| Statement::Let(t.3, t.4, t.7))
         };
 
         // struct id { id: typing [= expr] [,] }
         let struct_stmt = {
             let inner_separated = sep_by::<Vec<(String, Typing, Option<Expr>)>, _, _, _>(
                 (
-                    commentable_spaces(),
                     identifier(),
                     spaces(),
                     char(':'),
@@ -63,11 +61,10 @@ parser! {
                             expr(),
                         ).map(|t| t.2)),
                     commentable_spaces()
-                ).map(|t| (t.1, t.5, t.7)),
-                char(','));
+                ).map(|t| (t.0, t.4, t.6)),
+                char(',').with(commentable_spaces()));
             let inner_trailing = many::<Vec<(String, Typing, Option<Expr>)>, _, _>(
                 (
-                    commentable_spaces(),
                     identifier(),
                     spaces(),
                     char(':'),
@@ -83,9 +80,8 @@ parser! {
                     commentable_spaces(),
                     char(','),
                     commentable_spaces(),
-                ).map(|t| (t.1, t.5, t.7)));
+                ).map(|t| (t.0, t.4, t.6)));
             (
-                commentable_spaces(),
                 string("struct"),
                 space(),
                 spaces(),
@@ -94,50 +90,47 @@ parser! {
                 char('{'),
                 commentable_spaces(),
                 choice!(attempt(inner_trailing), inner_separated),
-                commentable_spaces(),
                 char('}'),
                 commentable_spaces(),
             )
-                .map(|t| Statement::Struct(t.4, t.8))
+                .map(|t| Statement::Struct(t.3, t.7))
         };
 
         // enum id { id, id [,] }
         let enum_stmst = {
             let inner_separated = sep_by::<Vec<String>, _, _, _>(
                 (
-                    commentable_spaces(),
                     identifier(),
                     commentable_spaces(),
-                ).map(|t: ((), String, ())| t.1),
-                char(','));
+                ).map(|t: (String, ())| t.0),
+                char(',').with(commentable_spaces()));
             let inner_trailing = many1::<Vec<String>, _, _>(
                 (
-                    commentable_spaces(),
                     identifier(),
                     commentable_spaces(),
                     char(','),
                     commentable_spaces(),
-                ).map(|t: ((), String, (), char, ())| t.1)
+                ).map(|t: (String, (), char, ())| t.0)
             );
             (
-                commentable_spaces(),
                 string("enum"),
                 space(),
                 spaces(),
                 identifier(),
                 spaces(),
                 char('{'),
+                commentable_spaces(),
                 choice!(attempt(inner_trailing), inner_separated),
                 char('}'),
                 commentable_spaces()
             )
-                .map(|t| Statement::Enum(t.4, t.7))
+                .map(|t| Statement::Enum(t.3, t.7))
         };
 
         choice!(
             attempt(struct_stmt),
             attempt(let_stmt),
-            attempt(enum_stmst)
+            enum_stmst
         )
     }
 }
@@ -185,10 +178,7 @@ mod test_statement {
             Ok((Struct("X".to_string(), vec![]), ""))
         );
         assert_eq!(
-            stmt().parse(
-                "// comment
-                struct X {}"
-            ),
+            stmt().parse("struct X {} // comment"),
             Ok((Struct("X".to_string(), vec![]), ""))
         );
         assert_eq!(
@@ -248,8 +238,7 @@ mod test_statement {
         // comma-separating
         assert_eq!(
             stmt().parse(
-                "
-            enum Z {
+                "enum Z {
                 A,B, C,D
             }
             "
@@ -270,8 +259,7 @@ mod test_statement {
         // comma-trailing
         assert_eq!(
             stmt().parse(
-                "
-            enum Z{
+                "enum Z{
                 Z1,//,,,
                 Z2,
             }
