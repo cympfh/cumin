@@ -1,3 +1,4 @@
+use crate::parser::arith::*;
 use crate::parser::config::*;
 use crate::parser::typing::*;
 use crate::parser::util::*;
@@ -15,6 +16,10 @@ pub enum Expr {
     FieledApply(String, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Expr)>),
     Add(Box<Expr>, Box<Expr>),
+    Sub(Box<Expr>, Box<Expr>),
+    Mul(Box<Expr>, Box<Expr>),
+    Div(Box<Expr>, Box<Expr>),
+    Pow(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
     Blocked(Box<Config>),
     AsCast(Box<Expr>, Typing),
@@ -150,17 +155,9 @@ parser! {
             ).map(|t: (Expr, (), &str, (), Typing, ())| Expr::AsCast(Box::new(t.0), t.4))
         };
 
-        // _ + _
-        let add_expr = (
-            value(),
-            commentable_spaces(),
-            char('+'),
-            commentable_spaces(),
-            expr()
-        ).map(|t: (Value, (), char, (), Expr)| Expr::Add(Box::new(Expr::Val(t.0)), Box::new(t.4)));
-
         let value_expr = value().map(|x: Value| Expr::Val(x));
 
+        // [ Expr [,] ]
         let arrayed_expr = {
             let inner_sep =
                 sep_by::<Vec<Expr>, _, _, _>(
@@ -189,11 +186,11 @@ parser! {
 
         choice!(
             attempt(apply_expr),
-            attempt(add_expr),
             attempt(dict_expr),
             blocked_expr,
             attempt(fielded_apply_expr),
             attempt(as_expr),
+            attempt(arith_expr()),
             arrayed_expr,
             value_expr
         )
@@ -235,11 +232,38 @@ mod test_expr {
             expr().parse("x + y + z"),
             Ok((
                 Add(
-                    Box::new(Val(Var("x".to_string()))),
                     Box::new(Add(
+                        Box::new(Val(Var("x".to_string()))),
                         Box::new(Val(Var("y".to_string()))),
-                        Box::new(Val(Var("z".to_string()))),
-                    ))
+                    )),
+                    Box::new(Val(Var("z".to_string()))),
+                ),
+                ""
+            ))
+        );
+        assert_eq!(
+            expr().parse("x - y"),
+            Ok((
+                Sub(
+                    Box::new(Val(Var("x".to_string()))),
+                    Box::new(Val(Var("y".to_string()))),
+                ),
+                ""
+            ))
+        );
+        assert_eq!(
+            expr().parse("( 1 - 2 ) "),
+            Ok((Sub(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),), ""))
+        );
+        assert_eq!(
+            expr().parse("(x * y) / z"),
+            Ok((
+                Div(
+                    Box::new(Mul(
+                        Box::new(Val(Var("x".to_string()))),
+                        Box::new(Val(Var("y".to_string()))),
+                    )),
+                    Box::new(Val(Var("z".to_string())))
                 ),
                 ""
             ))

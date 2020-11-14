@@ -148,6 +148,88 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 _ => panic!("Cant compute {:?} + {:?}", x, y),
             }
         }
+        Sub(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => {
+                    if x >= y {
+                        Nat(x - y)
+                    } else {
+                        Int(x as i128 - y as i128)
+                    }
+                }
+                (Nat(x), Int(y)) => Int(x as i128 - y),
+                (Nat(x), Float(y)) => Float(x as f64 - y),
+                (Int(x), Nat(y)) => Int(x - y as i128),
+                (Int(x), Int(y)) => Int(x - y),
+                (Int(x), Float(y)) => Float(x as f64 - y),
+                (Float(x), Nat(y)) => Float(x - y as f64),
+                (Float(x), Int(y)) => Float(x - y as f64),
+                (Float(x), Float(y)) => Float(x - y),
+                _ => panic!("Cant compute {:?} - {:?}", x, y),
+            }
+        }
+        Mul(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => Nat(x * y),
+                (Nat(x), Int(y)) => Int(x as i128 * y),
+                (Nat(x), Float(y)) => Float(x as f64 * y),
+                (Int(x), Nat(y)) => Int(x * y as i128),
+                (Int(x), Int(y)) => Int(x * y),
+                (Int(x), Float(y)) => Float(x as f64 * y),
+                (Float(x), Nat(y)) => Float(x * y as f64),
+                (Float(x), Int(y)) => Float(x * y as f64),
+                (Float(x), Float(y)) => Float(x * y),
+                _ => panic!("Cant compute {:?} * {:?}", x, y),
+            }
+        }
+        Div(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => Nat(x / y),
+                (Nat(x), Int(y)) => Int(x as i128 / y),
+                (Nat(x), Float(y)) => Float(x as f64 / y),
+                (Int(x), Nat(y)) => Int(x / y as i128),
+                (Int(x), Int(y)) => Int(x / y),
+                (Int(x), Float(y)) => Float(x as f64 / y),
+                (Float(x), Nat(y)) => Float(x / y as f64),
+                (Float(x), Int(y)) => Float(x / y as f64),
+                (Float(x), Float(y)) => Float(x / y),
+                _ => panic!("Cant compute {:?} / {:?}", x, y),
+            }
+        }
+        Pow(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => Nat(x.pow(y as u32)),
+                (Nat(x), Int(y)) => {
+                    if y >= 0 {
+                        Nat(x.pow(y as u32))
+                    } else {
+                        Float((x as f64).powi(y as i32))
+                    }
+                }
+                (Nat(x), Float(y)) => Float((x as f64).powf(y)),
+                (Int(x), Nat(y)) => Int(x.pow(y as u32)),
+                (Int(x), Int(y)) => {
+                    if y >= 0 {
+                        Int(x.pow(y as u32))
+                    } else {
+                        Float((x as f64).powi(y as i32))
+                    }
+                }
+                (Int(x), Float(y)) => Float((x as f64).powf(y)),
+                (Float(x), Nat(y)) => Float(x.powi(y as i32)),
+                (Float(x), Int(y)) => Float(x.powi(y as i32)),
+                (Float(x), Float(y)) => Float(x.powf(y)),
+                _ => panic!("Cant compute {:?} / {:?}", x, y),
+            }
+        }
         Arrayed(elements) => {
             let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
             Array(elements)
