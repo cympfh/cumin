@@ -1,6 +1,7 @@
 use crate::parser::util::identifier;
 use combine::error::ParseError;
-use combine::parser::char::string;
+use combine::parser::char::{char, spaces, string};
+use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, parser};
 
@@ -11,6 +12,7 @@ pub enum Typing {
     Int,
     Float,
     String,
+    Array(Box<Typing>),
     UserTyping(String),
 }
 
@@ -26,8 +28,16 @@ parser! {
         let int_typing = string("Int").map(|_| Typing::Int);
         let float_typing = string("Float").map(|_| Typing::Float);
         let string_typing = string("String").map(|_| Typing::String);
+        let array_typing = (
+            string("Array<"),
+            spaces(),
+            typing(),
+            spaces(),
+            char('>'),
+        ).map(|(_, _, elements, _, _): (&str, (), Typing, (), char)| Typing::Array(Box::new(elements)));
         let user_typing = identifier().map(Typing::UserTyping);
         choice!(
+            attempt(array_typing),
             any_typing,
             nat_typing,
             int_typing,
@@ -50,6 +60,17 @@ mod test_typing {
         assert_eq!(typing().parse("Int"), Ok((Typing::Int, "")));
         assert_eq!(typing().parse("Float"), Ok((Typing::Float, "")));
         assert_eq!(typing().parse("String"), Ok((Typing::String, "")));
+        assert_eq!(
+            typing().parse("Array<String>"),
+            Ok((Typing::Array(Box::new(Typing::String)), ""))
+        );
+        assert_eq!(
+            typing().parse("Array<Array<String>>"),
+            Ok((
+                Typing::Array(Box::new(Typing::Array(Box::new(Typing::String)))),
+                ""
+            ))
+        );
         assert_eq!(
             typing().parse("Hoge_type"),
             Ok((Typing::UserTyping("Hoge_type".to_string()), ""))
