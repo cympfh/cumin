@@ -5,7 +5,7 @@ struct Point {
     y: Int,
 }
 
-let ps = [
+let ps: Array<Point> = [
     Point(0, 0),
     Point(1, 2),
     Point(2, 3),
