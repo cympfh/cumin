@@ -226,10 +226,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
 fn eval_value(env: &Environ, value: &Value) -> Value {
     use Value::*;
     match value {
-        // Nat(x) => Nat(*x),
-        // Int(x) => Int(*x),
-        // Float(x) => Float(*x),
-        // Str(s) => Str(s.to_string()),
         Var(v) => match env.vars.get(v) {
             Some((_, val)) => (*val).clone(),
             None => panic!("Undefined variable {}", v),
@@ -239,7 +235,6 @@ fn eval_value(env: &Environ, value: &Value) -> Value {
             (None, Some(def)) => Str(def.to_string()),
             _ => panic!("Undefined env variable {}", v),
         },
-        // Dict(items) => Dict(items.clone()),
         EnumVariant(s, t) => {
             // check existence
             let ok = if let Some(variants) = env.enums.get(s) {
@@ -252,7 +247,6 @@ fn eval_value(env: &Environ, value: &Value) -> Value {
             }
             EnumVariant(s.to_string(), t.to_string())
         }
-        // Array(elements) => Array(elements.to_vec()),
         _ => value.clone(),
     }
 }
