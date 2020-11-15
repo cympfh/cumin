@@ -16,7 +16,7 @@ Structured Typed Configuration Language
 ```rust
 struct UserRecord {
     id: Int,
-    name: String = "Anonymous",
+    name: Option<String> = None,
     region: Region = Region::Unknown,
 }
 
@@ -43,7 +43,7 @@ $ cuminc ./examples/names.cumin
 [
   {
     "id": 1,
-    "name": "Taro",
+    "name": "cympfh",
     "region": "East"
   },
   {
@@ -58,7 +58,7 @@ $ cuminc ./examples/names.cumin
   },
   {
     "id": 4,
-    "name": "Anonymous",
+    "name": null,
     "region": "East"
   }
 ]
