@@ -55,35 +55,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
     use Expr::*;
     use Value::*;
     match expr {
-        Val(Nat(x)) => Nat(*x),
-        Val(Int(x)) => Int(*x),
-        Val(Float(x)) => Float(*x),
-        Val(Str(s)) => Str(s.to_string()),
-        Val(Var(v)) => match env.vars.get(v) {
-            Some((_, val)) => (*val).clone(),
-            None => panic!("Undefined variable {}", v),
-        },
-        Val(Env(v, default_value)) => match (env.env_vars.get(v), default_value) {
-            (Some(val), _) => Str(val.to_string()),
-            (None, Some(def)) => Str(def.to_string()),
-            _ => panic!("Undefined env variable {}", v),
-        },
-        Val(Dict(items)) => Dict(items.clone()),
-        Val(EnumVariant(s, t)) => {
-            // check existence
-            let ok = if let Some(variants) = env.enums.get(s) {
-                variants.iter().any(|v| v == t)
-            } else {
-                false
-            };
-            if !ok {
-                panic!("Not found Enum {}::{}", s, t);
-            }
-            EnumVariant(s.to_string(), t.to_string())
-        }
-        Val(Array(elements)) => Array(elements.to_vec()),
+        Val(value) => eval_value(&env, value),
         Apply(f, args) => {
-            if let Some(fields) = env.structs.get(f) {
+            if f == "Some" {
+                assert!(args.len() == 1);
+                let x = eval_expr(&env, &args[0]);
+                Just(Box::new(x))
+            } else if let Some(fields) = env.structs.get(f) {
                 assert!(fields.len() == args.len());
                 let n = fields.len();
                 let items: Vec<(String, Value)> = (0..n)
@@ -245,6 +223,40 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
     }
 }
 
+fn eval_value(env: &Environ, value: &Value) -> Value {
+    use Value::*;
+    match value {
+        // Nat(x) => Nat(*x),
+        // Int(x) => Int(*x),
+        // Float(x) => Float(*x),
+        // Str(s) => Str(s.to_string()),
+        Var(v) => match env.vars.get(v) {
+            Some((_, val)) => (*val).clone(),
+            None => panic!("Undefined variable {}", v),
+        },
+        Env(v, default_value) => match (env.env_vars.get(v), default_value) {
+            (Some(val), _) => Str(val.to_string()),
+            (None, Some(def)) => Str(def.to_string()),
+            _ => panic!("Undefined env variable {}", v),
+        },
+        // Dict(items) => Dict(items.clone()),
+        EnumVariant(s, t) => {
+            // check existence
+            let ok = if let Some(variants) = env.enums.get(s) {
+                variants.iter().any(|v| v == t)
+            } else {
+                false
+            };
+            if !ok {
+                panic!("Not found Enum {}::{}", s, t);
+            }
+            EnumVariant(s.to_string(), t.to_string())
+        }
+        // Array(elements) => Array(elements.to_vec()),
+        _ => value.clone(),
+    }
+}
+
 #[derive(Clone)]
 struct Environ {
     structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
@@ -341,5 +353,11 @@ mod test_eval {
                 ("y".to_string(), JSON::Int(2)),
             ])
         );
+    }
+
+    #[test]
+    fn test_optional() {
+        let conf = Config(vec![], Val(Array(vec![Nothing, Just(Box::new(Nat(1)))])));
+        assert_eq!(eval(conf), JSON::Array(vec![JSON::Null, JSON::Nat(1)]));
     }
 }

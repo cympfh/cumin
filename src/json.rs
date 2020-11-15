@@ -8,6 +8,7 @@ pub enum JSON {
     Str(String),
     Array(Vec<JSON>),
     Dict(Vec<(String, JSON)>),
+    Null,
 }
 
 impl JSON {
@@ -32,6 +33,7 @@ impl JSON {
                     .collect::<Vec<_>>()
                     .join(",")
             ),
+            Null => "null".to_string(),
         }
     }
     pub fn from_cumin(val: Value) -> Self {
@@ -58,6 +60,8 @@ impl JSON {
                     .collect();
                 Array(elements)
             }
+            Value::Just(x) => JSON::from_cumin(*x),
+            Value::Nothing => JSON::Null,
         }
     }
 }
@@ -84,5 +88,6 @@ mod test_json {
             Array(vec![Array(vec![]), Nat(1), Nat(2), Str("3".to_string())]).stringify(),
             "[[],1,2,\"3\"]"
         );
+        assert_eq!(Array(vec![Null, Nat(1)]).stringify(), "[null,1]");
     }
 }
