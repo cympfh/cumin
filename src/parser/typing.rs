@@ -13,6 +13,7 @@ pub enum Typing {
     Float,
     String,
     Array(Box<Typing>),
+    Option(Box<Typing>),
     UserTyping(String),
 }
 
@@ -35,9 +36,17 @@ parser! {
             spaces(),
             char('>'),
         ).map(|(_, _, elements, _, _): (&str, (), Typing, (), char)| Typing::Array(Box::new(elements)));
+        let option_typing = (
+            string("Option<"),
+            spaces(),
+            typing(),
+            spaces(),
+            char('>'),
+        ).map(|(_, _, elements, _, _): (&str, (), Typing, (), char)| Typing::Option(Box::new(elements)));
         let user_typing = identifier().map(Typing::UserTyping);
         choice!(
             attempt(array_typing),
+            attempt(option_typing),
             any_typing,
             nat_typing,
             int_typing,
@@ -68,6 +77,26 @@ mod test_typing {
             typing().parse("Array<Array<String>>"),
             Ok((
                 Typing::Array(Box::new(Typing::Array(Box::new(Typing::String)))),
+                ""
+            ))
+        );
+        assert_eq!(
+            typing().parse("Option<String>"),
+            Ok((Typing::Option(Box::new(Typing::String)), ""))
+        );
+        assert_eq!(
+            typing().parse("Option<Array<String>>"),
+            Ok((
+                Typing::Option(Box::new(Typing::Array(Box::new(Typing::String)))),
+                ""
+            ))
+        );
+        assert_eq!(
+            typing().parse("Option<Option<Array<Int>>>"),
+            Ok((
+                Typing::Option(Box::new(Typing::Option(Box::new(Typing::Array(Box::new(
+                    Typing::Int
+                )))))),
                 ""
             ))
         );

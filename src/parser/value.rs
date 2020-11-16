@@ -17,6 +17,8 @@ pub enum Value {
     Dict(Vec<(String, Value)>),
     EnumVariant(String, String),
     Array(Vec<Value>),
+    Just(Box<Value>),
+    Nothing,
 }
 
 impl Value {
@@ -51,6 +53,7 @@ parser! {
         Input::Error: ParseError<char, Input::Range, Input::Position>,
     ]
     {
+        let none_value = string("None").map(|_| Value::Nothing);
         let float_value =
             (
                 many1(digit()),
@@ -114,6 +117,7 @@ parser! {
             str_value,
             env_value,
             attempt(variant_value),
+            attempt(none_value),
             var_value
         )
     }
@@ -166,6 +170,7 @@ mod test_value {
             value().parse("X::Zoo"),
             Ok((Value::EnumVariant("X".to_string(), "Zoo".to_string()), ""))
         );
+        assert_eq!(value().parse("None"), Ok((Value::Nothing, "")));
     }
 
     #[test]

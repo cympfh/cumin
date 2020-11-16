@@ -25,7 +25,7 @@ let your_name = {
 };
 
 // Of cource You can declar new struct and enum in {}.
-let something = {
+let records = {
     struct UserRecord {
         id: Int,
         name: String = "Anonymous",  // set default value
@@ -51,6 +51,10 @@ let z: Nat = 0;
 // You can overwrite var names
 let z = Z::Z2; // Enum Variant
 
+// Option<_> types can represent "null-able" values.
+let some_value: Option<String> = Some("Name");  // Not Null
+let null_value: Option<String> = None;  // Null.
+
 // Exporting this
 {{
     env = {{
@@ -62,5 +66,11 @@ let z = Z::Z2; // Enum Variant
     points = ps,
     z = z,
     user_name = your_name,
-    something = something,
+    records = records,
+
+    options = {{
+        some_value = some_value,
+        null_value = null_value,
+    }},
+
 }}
