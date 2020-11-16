@@ -1,6 +1,8 @@
 # cumin
 
-Structured Typed Configuration Language
+is a Structured Typed Configuration Language.
+
+Document is [Here](http://cympfh.cc/cumin).
 
 ## Features
 
