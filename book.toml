@@ -1,0 +1,10 @@
+[book]
+authors = ["cympfh"]
+language = "en"
+multilingual = false
+src = "src"
+title = "cumin spec"
+
+[build]
+build-dir = "docs"
+create-missing = true
