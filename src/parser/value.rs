@@ -4,7 +4,7 @@ use combine::error::ParseError;
 use combine::parser::char::{char, digit, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{between, choice, many, many1, none_of, optional, parser, token};
+use combine::{any, between, choice, many, many1, none_of, optional, parser};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -43,6 +43,15 @@ impl Value {
             (Str(x), Typing::String) => Str(x.to_string()),
             _ => panic!("Cannot cast {:?} into {:?}", self, typ),
         }
+    }
+}
+
+fn escaped_character(c: char) -> char {
+    match c {
+        'n' => '\n',
+        't' => '\t',
+        'r' => '\r',
+        _ => c,
     }
 }
 
@@ -85,7 +94,15 @@ parser! {
                 Value::Int(-x.parse::<i128>().unwrap())
             });
         let nat_value = many1(digit()).map(|x: String| Value::Nat(x.parse::<u128>().unwrap()));
-        let str_value = between(token('"'), token('"'), many(none_of("\"".chars())).map(|x:String| Value::Str(x)));
+        let str_value =
+            (
+                char('"'),
+                many::<String, _, _>(
+                    choice!(
+                        attempt(char('\\').with(any()).map(escaped_character)),
+                        attempt(none_of("\"".chars())))),
+                char('"'),
+            ).map(|(_, s, _): (char, String, char)| Value::Str(s));
         let variant_value =
             (
                 identifier(),
@@ -145,6 +162,18 @@ mod test_value {
         assert_eq!(
             value().parse("\"hoge !?\""),
             Ok((Value::Str("hoge !?".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("\"ho\\nge\""),
+            Ok((Value::Str("ho\nge".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("\"ho\\\"ge\""),
+            Ok((Value::Str("ho\"ge".to_string()), ""))
+        );
+        assert_eq!(
+            value().parse("\"ho\\\\ge\\'\""),
+            Ok((Value::Str("ho\\ge'".to_string()), ""))
         );
         assert_eq!(
             value().parse("hoge"),
