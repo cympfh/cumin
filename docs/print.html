@@ -278,18 +278,33 @@ And you can omit the fields having default Values.</p>
 <p>This declaration introduces new type <code>Z</code> and three Values
 <code>Z::A</code>, <code>Z::B</code> and <code>Z::C</code>.</p>
 <h1><a class="header" href="#let" id="let">let</a></h1>
+<h2><a class="header" href="#let-statement" id="let-statement">let Statement</a></h2>
 <p>The <code>let</code> Statement gives names to data.</p>
+<pre><code class="language-rust noplaypen">let x: Int = 1 + 2;
+</code></pre>
+<p>Type annotation is freely optional.</p>
 <pre><code class="language-rust noplaypen">let x = 1 + 2;
 </code></pre>
 <p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
 and we call it <code>x</code>.
-Frankly, this is variable.
-After <code>x</code> is binded, you can use <code>x</code> as a Value.</p>
+Frankly, this is a variable,
+and you can use <code>x</code> as a Value.</p>
 <p>The last <code>;</code> is required.
 This Statement can be denoted by following BNF;</p>
 <pre><code>&lt;let&gt; ::= `let` &lt;id&gt; `=` &lt;expression&gt; `;`
         | `let` &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt; `;`
 </code></pre>
+<h2><a class="header" href="#shadowing" id="shadowing">shadowing</a></h2>
+<p>When some variables are defined already,
+you can declare the same names with <code>let</code>.
+New data shadows old data.</p>
+<pre><code class="language-rust noplaypen">let x = 1;
+// Here, x is Nat 1.
+
+let x = &quot;hoge&quot;;
+// Here, x is String &quot;hoge&quot;.
+</code></pre>
+<p>Once variables are shadowed, they cannot be used.</p>
 <h1><a class="header" href="#dictionary" id="dictionary">Dictionary</a></h1>
 <p>Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
