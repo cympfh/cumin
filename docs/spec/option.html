@@ -148,15 +148,15 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#option" id="option">Option</a></h1>
-<p>If you want <code>null</code>-able values, <code>Option</code> is very suitable.
-For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is null-able.
-Null value can be denoted as <code>None</code>.</p>
+<p>If you want <em>null</em>-able Values, <code>Option</code> is very suitable.
+For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is <em>null</em>-able.
+Null Value can be denoted as <code>None</code>.</p>
 <pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = None;
 </code></pre>
-<p>In other hand, not null values for null-able are denoted with <code>Some(_)</code>.</p>
+<p>In other hand, not <em>null</em> Values for <em>null</em>-able are denoted with <code>Some(_)</code>.</p>
 <pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
 </code></pre>
-<p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> null values.</p>
+<p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> <em>null</em> Values.</p>
 
                     </main>
 
@@ -195,21 +195,6 @@ Null value can be denoted as <code>None</code>.</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

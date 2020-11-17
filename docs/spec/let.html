@@ -148,15 +148,15 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#let" id="let">let</a></h1>
-<p>The <code>let</code> statement gives names to data.</p>
+<p>The <code>let</code> Statement gives names to data.</p>
 <pre><code class="language-rust noplaypen">let x = 1 + 2;
 </code></pre>
-<p>This statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
+<p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
 and we call it <code>x</code>.
 Frankly, this is variable.
-After <code>x</code> is binded, you can use <code>x</code> as a value.</p>
+After <code>x</code> is binded, you can use <code>x</code> as a Value.</p>
 <p>The last <code>;</code> is required.
-This statement can be denoted by following BNF;</p>
+This Statement can be denoted by following BNF;</p>
 <pre><code>&lt;let&gt; ::= `let` &lt;id&gt; `=` &lt;expression&gt; `;`
         | `let` &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt; `;`
 </code></pre>
@@ -198,21 +198,6 @@ This statement can be denoted by following BNF;</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

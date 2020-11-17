@@ -12,7 +12,7 @@ struct X {
 }
 ```
 
-Each fields can have default values.
+Each fields can have default Values.
 
 ```rust,noplaypen
 struct X {
@@ -26,7 +26,7 @@ _NOTE_:
 Cumin always allows comma-trailing.
 The last `,` is optional completely, but I recommend putting ','.
 
-The statement syntax can be denoted as `<struct>` in the following (pseudo-)BNF.
+This Statement syntax can be denoted as `<struct>` in the following BNF.
 
 ```
 <struct> ::= struct <id> { <fields> }
@@ -44,13 +44,13 @@ where
 After you declared structs, you can apply them.
 
 For example, the previous struct `X` has three fields `x`, `n` and `s`.
-You can create `X` values by appling three values.
+You can create `X` Values by appling three Values.
 
 ```rust,noplaypen
 X(0, 123, "yellow")
 ```
 
-Applied values can be any expression.
+Applied Values can be any Expression.
 
 ```rust,noplaypen
 let n = -3;
@@ -64,10 +64,10 @@ Cumin has another style.
 X { s = "yellow", n = 123, x = 0 }
 ```
 
-Because any fields are named, the appling values can be in any order.
-And you can omit the fields having default values.
+Because any fields are named, the appling Values can be in any order.
+And you can omit the fields having default Values.
 
 ```rust,noplaypen
-X { s = "yellow", x = 0 }  // n is omitted, and the default value `0` be applied.
+X { s = "yellow", x = 0 }  // n is omitted, and the default Value `0` be applied.
 ```
 

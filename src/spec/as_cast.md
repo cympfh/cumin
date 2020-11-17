@@ -1,6 +1,6 @@
 # as-cast
 
-With `as` keyword, values are casted to another types.
+With `as` keyword, Values are casted to another types.
 
 ```rust,noplaypen
 // Inter Number Types

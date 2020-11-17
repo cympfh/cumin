@@ -1,6 +1,6 @@
 # Dictionary
 
-Dictionary is a value data which can have any fields with any types.
+Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with `{{` and `}}`.
 
 ```rust,noplaypen

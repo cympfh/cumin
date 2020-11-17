@@ -175,23 +175,30 @@ names
 <h1><a class="header" href="#language-spec-v093" id="language-spec-v093">Language Spec v0.9.3</a></h1>
 <h1><a class="header" href="#overview" id="overview">Overview</a></h1>
 <p>Cumin data are composed of Statements and Expressions.
-A cumin data must start with zero or more statements and exact one expression data.</p>
-<pre><code>// cumin data
-(Statement)
+A cumin data must start with zero or more Statements and end with exact one Expression data.</p>
+<p>Frankly, it is expressed like</p>
+<pre><code>(Statement)
     :
 (Statement)
 (Expression)
 </code></pre>
-<p>As statement, there are <code>struct</code>, <code>enum</code> and <code>let</code>.
+<p>or denoted as <code>&lt;cumin&gt;</code> in the following (pseudo-)BNF.</p>
+<pre><code>&lt;cumin&gt; :: = &lt;statements&gt; &lt;expression&gt; | &lt;expression&gt;
+&lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
+    where
+        &lt;statement&gt; ::= (Statement)
+        &lt;expression&gt; ::= (Expression)
+</code></pre>
+<p>As Statement, there are <code>struct</code>, <code>enum</code> and <code>let</code>.
 <code>struct</code> and <code>enum</code> define new types.
 <code>let</code> gives names for data, which are <em>variables</em> we called.</p>
-<p>An expression represents a value,
+<p>An Expression represents a Value,
 which can contain already defined types and variables.
-For examples, number literals are values and expressions.
-Arithmetic expressions are expressions (e.g. <code>(1 + x) / 2</code>).</p>
+For examples, number literals are Values and Expressions.
+Arithmetic Expressions are Expressions (e.g. <code>(1 + x) / 2</code>).</p>
 <h1><a class="header" href="#primitive-values" id="primitive-values">Primitive Values</a></h1>
-<p><strong>Values</strong> are expressions.
-In particular, primitive values can be used in any context.</p>
+<p><strong>Values</strong> are Expressions.
+In particular, primitive Values can be used in any context.</p>
 <h2><a class="header" href="#numbers" id="numbers">Numbers</a></h2>
 <p>Natural numbers and integers are represented as decimal literal.</p>
 <p>For examples,</p>
@@ -224,7 +231,7 @@ You should write <code>0.1</code> and <code>1.0</code>.</p>
     s: String,
 }
 </code></pre>
-<p>Each fields can have default values.</p>
+<p>Each fields can have default Values.</p>
 <pre><code class="language-rust noplaypen">struct X {
     x: Int,
     n: Nat = 0,
@@ -234,7 +241,7 @@ You should write <code>0.1</code> and <code>1.0</code>.</p>
 <p><em>NOTE</em>:
 Cumin always allows comma-trailing.
 The last <code>,</code> is optional completely, but I recommend putting ','.</p>
-<p>The statement syntax can be denoted as <code>&lt;struct&gt;</code> in the following (pseudo-)BNF.</p>
+<p>This Statement syntax can be denoted as <code>&lt;struct&gt;</code> in the following BNF.</p>
 <pre><code>&lt;struct&gt; ::= struct &lt;id&gt; { &lt;fields&gt; }
 &lt;fields&gt; ::= &lt;field&gt; | &lt;field&gt; `,` | &lt;field&gt; `,` &lt;fields&gt;
 &lt;fields&gt; ::= &lt;id&gt; `:` &lt;type&gt; | &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt;
@@ -247,10 +254,10 @@ where
 <h2><a class="header" href="#struct-values" id="struct-values">Struct Values</a></h2>
 <p>After you declared structs, you can apply them.</p>
 <p>For example, the previous struct <code>X</code> has three fields <code>x</code>, <code>n</code> and <code>s</code>.
-You can create <code>X</code> values by appling three values.</p>
+You can create <code>X</code> Values by appling three Values.</p>
 <pre><code class="language-rust noplaypen">X(0, 123, &quot;yellow&quot;)
 </code></pre>
-<p>Applied values can be any expression.</p>
+<p>Applied Values can be any Expression.</p>
 <pre><code class="language-rust noplaypen">let n = -3;
 X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
 </code></pre>
@@ -258,9 +265,9 @@ X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
 Cumin has another style.</p>
 <pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, n = 123, x = 0 }
 </code></pre>
-<p>Because any fields are named, the appling values can be in any order.
-And you can omit the fields having default values.</p>
-<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default value `0` be applied.
+<p>Because any fields are named, the appling Values can be in any order.
+And you can omit the fields having default Values.</p>
+<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default Value `0` be applied.
 </code></pre>
 <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
 <p>Cumin's Enum is very simple (likewise C-language).</p>
@@ -268,23 +275,23 @@ And you can omit the fields having default values.</p>
     A, B, C,
 }
 </code></pre>
-<p>This declaration introduces new type <code>Z</code> and three values
+<p>This declaration introduces new type <code>Z</code> and three Values
 <code>Z::A</code>, <code>Z::B</code> and <code>Z::C</code>.</p>
 <h1><a class="header" href="#let" id="let">let</a></h1>
-<p>The <code>let</code> statement gives names to data.</p>
+<p>The <code>let</code> Statement gives names to data.</p>
 <pre><code class="language-rust noplaypen">let x = 1 + 2;
 </code></pre>
-<p>This statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
+<p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
 and we call it <code>x</code>.
 Frankly, this is variable.
-After <code>x</code> is binded, you can use <code>x</code> as a value.</p>
+After <code>x</code> is binded, you can use <code>x</code> as a Value.</p>
 <p>The last <code>;</code> is required.
-This statement can be denoted by following BNF;</p>
+This Statement can be denoted by following BNF;</p>
 <pre><code>&lt;let&gt; ::= `let` &lt;id&gt; `=` &lt;expression&gt; `;`
         | `let` &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt; `;`
 </code></pre>
 <h1><a class="header" href="#dictionary" id="dictionary">Dictionary</a></h1>
-<p>Dictionary is a value data which can have any fields with any types.
+<p>Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
 <pre><code class="language-rust noplaypen">{{
     x = 1,
@@ -296,7 +303,7 @@ It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
 If two or more dictionaries have same fields with same types,
 it is chance to create struct.</p>
 <h1><a class="header" href="#array" id="array">Array</a></h1>
-<p>An Array is a value data containing zero or more elements in order.
+<p>An Array is a Value data containing zero or more elements in order.
 It is required that all elements have same types,
 therefore any Array can be called an Array of type <code>T</code> where <code>T</code> is the type of elements.</p>
 <p>For example,
@@ -310,15 +317,15 @@ the following is an Array of <code>Int</code>.</p>
 </code></pre>
 <p>The type of this data is <code>Array&lt;Int&gt;</code>.</p>
 <h1><a class="header" href="#option" id="option">Option</a></h1>
-<p>If you want <code>null</code>-able values, <code>Option</code> is very suitable.
-For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is null-able.
-Null value can be denoted as <code>None</code>.</p>
+<p>If you want <em>null</em>-able Values, <code>Option</code> is very suitable.
+For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is <em>null</em>-able.
+Null Value can be denoted as <code>None</code>.</p>
 <pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = None;
 </code></pre>
-<p>In other hand, not null values for null-able are denoted with <code>Some(_)</code>.</p>
+<p>In other hand, not <em>null</em> Values for <em>null</em>-able are denoted with <code>Some(_)</code>.</p>
 <pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
 </code></pre>
-<p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> null values.</p>
+<p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> <em>null</em> Values.</p>
 <h1><a class="header" href="#types" id="types">Types</a></h1>
 <h2><a class="header" href="#primitive-types" id="primitive-types">Primitive Types</a></h2>
 <p>There are following types in prior.</p>
@@ -332,10 +339,10 @@ Option&lt;_&gt;
 <p>where <code>Nat</code> is for Natural Numbers.
 <code>Array</code> and <code>Option</code> have type parameter.
 In actual code, it should be filled <code>&lt;_&gt;</code> with some type.
-For example, <code>Array&lt;Int&gt;</code> is an array of int values.
+For example, <code>Array&lt;Int&gt;</code> is an array of Int Values.
 Type parameters can be nested.
 <code>Array&lt;Array&lt;Option&lt;Int&gt;&gt;&gt;</code>
-is an array of an array of option of int. values</p>
+is an array of an array of option of Int Values.</p>
 <h2><a class="header" href="#custom-types" id="custom-types">Custom Types</a></h2>
 <p>After you declared <code>struct</code>s and <code>enum</code>s, the names are new types.</p>
 <pre><code class="language-rust noplaypen">struct X {}
@@ -345,7 +352,7 @@ is an array of an array of option of int. values</p>
 let x: X = X();
 </code></pre>
 <h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
-<p>With <code>as</code> keyword, values are casted to another types.</p>
+<p>With <code>as</code> keyword, Values are casted to another types.</p>
 <pre><code class="language-rust noplaypen">// Inter Number Types
 let x = 1.0 as Int; // Float -&gt; Int
 let y = 2 as Float; // Nat -&gt; Float
@@ -378,7 +385,7 @@ x + 1
 };
 z
 </code></pre>
-<p>The <code>z</code> has value <code>2</code>, and the <code>x</code> is invisible from outer.
+<p>Here, <code>z</code> has Value <code>2</code>, and the <code>x</code> is invisible from outer.
 This notation can make private variables.</p>
 <h1><a class="header" href="#tools" id="tools">Tools</a></h1>
 <h1><a class="header" href="#cuminc" id="cuminc">cuminc</a></h1>
@@ -405,21 +412,6 @@ This notation can make private variables.</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

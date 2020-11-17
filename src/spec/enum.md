@@ -8,6 +8,6 @@ enum Z {
 }
 ```
 
-This declaration introduces new type `Z` and three values
+This declaration introduces new type `Z` and three Values
 `Z::A`, `Z::B` and `Z::C`.
 

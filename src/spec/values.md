@@ -1,7 +1,7 @@
 # Primitive Values
 
-__Values__ are expressions.
-In particular, primitive values can be used in any context.
+__Values__ are Expressions.
+In particular, primitive Values can be used in any context.
 
 ## Numbers
 

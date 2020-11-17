@@ -149,20 +149,27 @@
                     <main>
                         <h1><a class="header" href="#overview" id="overview">Overview</a></h1>
 <p>Cumin data are composed of Statements and Expressions.
-A cumin data must start with zero or more statements and exact one expression data.</p>
-<pre><code>// cumin data
-(Statement)
+A cumin data must start with zero or more Statements and end with exact one Expression data.</p>
+<p>Frankly, it is expressed like</p>
+<pre><code>(Statement)
     :
 (Statement)
 (Expression)
 </code></pre>
-<p>As statement, there are <code>struct</code>, <code>enum</code> and <code>let</code>.
+<p>or denoted as <code>&lt;cumin&gt;</code> in the following (pseudo-)BNF.</p>
+<pre><code>&lt;cumin&gt; :: = &lt;statements&gt; &lt;expression&gt; | &lt;expression&gt;
+&lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
+    where
+        &lt;statement&gt; ::= (Statement)
+        &lt;expression&gt; ::= (Expression)
+</code></pre>
+<p>As Statement, there are <code>struct</code>, <code>enum</code> and <code>let</code>.
 <code>struct</code> and <code>enum</code> define new types.
 <code>let</code> gives names for data, which are <em>variables</em> we called.</p>
-<p>An expression represents a value,
+<p>An Expression represents a Value,
 which can contain already defined types and variables.
-For examples, number literals are values and expressions.
-Arithmetic expressions are expressions (e.g. <code>(1 + x) / 2</code>).</p>
+For examples, number literals are Values and Expressions.
+Arithmetic Expressions are Expressions (e.g. <code>(1 + x) / 2</code>).</p>
 
                     </main>
 
@@ -201,21 +208,6 @@ Arithmetic expressions are expressions (e.g. <code>(1 + x) / 2</code>).</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

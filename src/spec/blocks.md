@@ -25,5 +25,5 @@ let z = {
 z
 ```
 
-The `z` has value `2`, and the `x` is invisible from outer.
+Here, `z` has Value `2`, and the `x` is invisible from outer.
 This notation can make private variables.

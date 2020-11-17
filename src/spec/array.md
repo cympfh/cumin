@@ -1,6 +1,6 @@
 # Array
 
-An Array is a value data containing zero or more elements in order.
+An Array is a Value data containing zero or more elements in order.
 It is required that all elements have same types,
 therefore any Array can be called an Array of type `T` where `T` is the type of elements.
 

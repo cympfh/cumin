@@ -1,21 +1,32 @@
 # Overview
 
 Cumin data are composed of Statements and Expressions.
-A cumin data must start with zero or more statements and exact one expression data.
+A cumin data must start with zero or more Statements and end with exact one Expression data.
+
+Frankly, it is expressed like
 
 ```
-// cumin data
 (Statement)
     :
 (Statement)
 (Expression)
 ```
 
-As statement, there are `struct`, `enum` and `let`.
+or denoted as `<cumin>` in the following (pseudo-)BNF.
+
+```
+<cumin> :: = <statements> <expression> | <expression>
+<statements> ::= <statement> | <statement> <statements>
+    where
+        <statement> ::= (Statement)
+        <expression> ::= (Expression)
+```
+
+As Statement, there are `struct`, `enum` and `let`.
 `struct` and `enum` define new types.
 `let` gives names for data, which are _variables_ we called.
 
-An expression represents a value,
+An Expression represents a Value,
 which can contain already defined types and variables.
-For examples, number literals are values and expressions.
-Arithmetic expressions are expressions (e.g. `(1 + x) / 2`).
+For examples, number literals are Values and Expressions.
+Arithmetic Expressions are Expressions (e.g. `(1 + x) / 2`).

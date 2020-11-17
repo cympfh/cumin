@@ -148,7 +148,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#dictionary" id="dictionary">Dictionary</a></h1>
-<p>Dictionary is a value data which can have any fields with any types.
+<p>Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
 <pre><code class="language-rust noplaypen">{{
     x = 1,
@@ -197,21 +197,6 @@ it is chance to create struct.</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

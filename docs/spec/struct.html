@@ -156,7 +156,7 @@
     s: String,
 }
 </code></pre>
-<p>Each fields can have default values.</p>
+<p>Each fields can have default Values.</p>
 <pre><code class="language-rust noplaypen">struct X {
     x: Int,
     n: Nat = 0,
@@ -166,7 +166,7 @@
 <p><em>NOTE</em>:
 Cumin always allows comma-trailing.
 The last <code>,</code> is optional completely, but I recommend putting ','.</p>
-<p>The statement syntax can be denoted as <code>&lt;struct&gt;</code> in the following (pseudo-)BNF.</p>
+<p>This Statement syntax can be denoted as <code>&lt;struct&gt;</code> in the following BNF.</p>
 <pre><code>&lt;struct&gt; ::= struct &lt;id&gt; { &lt;fields&gt; }
 &lt;fields&gt; ::= &lt;field&gt; | &lt;field&gt; `,` | &lt;field&gt; `,` &lt;fields&gt;
 &lt;fields&gt; ::= &lt;id&gt; `:` &lt;type&gt; | &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt;
@@ -179,10 +179,10 @@ where
 <h2><a class="header" href="#struct-values" id="struct-values">Struct Values</a></h2>
 <p>After you declared structs, you can apply them.</p>
 <p>For example, the previous struct <code>X</code> has three fields <code>x</code>, <code>n</code> and <code>s</code>.
-You can create <code>X</code> values by appling three values.</p>
+You can create <code>X</code> Values by appling three Values.</p>
 <pre><code class="language-rust noplaypen">X(0, 123, &quot;yellow&quot;)
 </code></pre>
-<p>Applied values can be any expression.</p>
+<p>Applied Values can be any Expression.</p>
 <pre><code class="language-rust noplaypen">let n = -3;
 X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
 </code></pre>
@@ -190,9 +190,9 @@ X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
 Cumin has another style.</p>
 <pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, n = 123, x = 0 }
 </code></pre>
-<p>Because any fields are named, the appling values can be in any order.
-And you can omit the fields having default values.</p>
-<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default value `0` be applied.
+<p>Because any fields are named, the appling Values can be in any order.
+And you can omit the fields having default Values.</p>
+<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default Value `0` be applied.
 </code></pre>
 
                     </main>
@@ -232,21 +232,6 @@ And you can omit the fields having default values.</p>
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3001");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         
