@@ -149,6 +149,23 @@
                     <main>
                         <h1><a class="header" href="#cuminc" id="cuminc">cuminc</a></h1>
 <p><strong>cuminc</strong> is a compiler for cumin.</p>
+<h2><a class="header" href="#installation" id="installation">Installation</a></h2>
+<p>To build from source code, <strong>cargo</strong> is required.
+It is recommended to use <a href="https://www.rust-lang.org/tools/install">rustup</a> to install cargo.</p>
+<pre><code class="language-bash">$ git clone git@github.com:cympfh/cumin.git
+$ make install
+$ export PATH=$PATH:$HOME/.cargo/bin/
+$ which cuminc
+</code></pre>
+<h2><a class="header" href="#usage" id="usage">Usage</a></h2>
+<p><strong>cuminc</strong> compiles cumin data and then generates JSON data.</p>
+<pre><code class="language-bash">$ cuminc &lt;file.cumin&gt;
+$ cat &lt;file.cumin&gt; | cuminc
+</code></pre>
+<h3><a class="header" href="#example" id="example">Example</a></h3>
+<pre><code class="language-bash">$ echo '{{three = 1 + 2}}' | cuminc
+{&quot;three&quot;:3}
+</code></pre>
 
                     </main>
 
