@@ -8,6 +8,7 @@ There are following types in prior.
 Nat
 Int
 Float
+Bool
 String
 Array<_>
 Option<_>

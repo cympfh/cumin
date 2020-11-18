@@ -50,3 +50,6 @@ Escape with `\`.
 "\n\r\t\""
 ```
 
+## Booleans
+
+There are `true` and `false` as Booleans.

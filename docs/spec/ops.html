@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>as-cast - cumin spec</title>
+        <title>operators - cumin spec</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../spec/types.html"><strong aria-hidden="true">2.9.</strong> Types</a></li><li class="chapter-item expanded "><a href="../spec/as_cast.html" class="active"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../spec/types.html"><strong aria-hidden="true">2.9.</strong> Types</a></li><li class="chapter-item expanded "><a href="../spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../spec/ops.html" class="active"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -150,36 +150,42 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
-<p>With <code>as</code> keyword, Values are casted to another types.</p>
-<pre><code class="language-rust noplaypen">// Inter Number Types
-let x = 1.0 as Int; // Float -&gt; Int
-let y = 2 as Float; // Nat -&gt; Float
-
-// Stringify
-let x = 1.0 as String; // &quot;1.0&quot;
-let y = -2 as String; // &quot;-2&quot;
-
-// Parse String
-let x = &quot;1.0&quot; as Float; // 1.0
-let y = &quot;-2&quot; as Int; // -2
-</code></pre>
-<p><strong>NOTE</strong>:
-Type casting is a coercion procedure.
-It sometimes occurs runtime errors.</p>
+                        <h1><a class="header" href="#operators" id="operators">operators</a></h1>
+<h2><a class="header" href="#number-operators" id="number-operators">Number Operators</a></h2>
+<table><thead><tr><th align="center">Name</th><th align="center">cumin</th><th align="center">Example</th><th align="center">Math</th></tr></thead><tbody>
+<tr><td align="center">Addition</td><td align="center"><code>+</code></td><td align="center"><code>x + y</code></td><td align="center">\( x+y \)</td></tr>
+<tr><td align="center">Subtract</td><td align="center"><code>-</code></td><td align="center"><code>x - y</code></td><td align="center">\( x-y \)</td></tr>
+<tr><td align="center">Minus</td><td align="center"><code>-</code></td><td align="center"><code>-x</code></td><td align="center">\( -x \)</td></tr>
+<tr><td align="center">Multiply</td><td align="center"><code>*</code></td><td align="center"><code>x * y</code></td><td align="center">\( xy \)</td></tr>
+<tr><td align="center">Division</td><td align="center"><code>/</code></td><td align="center"><code>x / y</code></td><td align="center">\( x/y \)</td></tr>
+<tr><td align="center">Power</td><td align="center"><code>**</code></td><td align="center"><code>x ** y</code></td><td align="center">\( x^y \)</td></tr>
+<tr><td align="center">Priority</td><td align="center"><code>()</code></td><td align="center"><code>(x + y) * z</code></td><td align="center">\( (x+y)\times z \)</td></tr>
+</tbody></table>
+<p>There are three types for Numbers:
+<code>Nat</code>, <code>Int</code> and <code>Float</code>.
+The operations do implicit type casting.
+For example, the result of <code>Nat + Float</code> has <code>Float</code>.
+It is one-way <code>Nat -&gt; Int -&gt; Float</code>.</p>
+<h2><a class="header" href="#bool-operators" id="bool-operators">Bool Operators</a></h2>
+<table><thead><tr><th align="center">Name</th><th align="center">cumin</th><th align="center">Example</th><th align="center">Math</th></tr></thead><tbody>
+<tr><td align="center">And</td><td align="center"><code>*</code></td><td align="center"><code>a * b</code></td><td align="center">\( a \land b \)</td></tr>
+<tr><td align="center">Or</td><td align="center"><code>+</code></td><td align="center"><code>a + b</code></td><td align="center">\( a \lor b \)</td></tr>
+<tr><td align="center">Xor</td><td align="center"><code>**</code></td><td align="center"><code>a ** b</code></td><td align="center">\( a \oplus b \)</td></tr>
+<tr><td align="center">Not</td><td align="center"><code>-</code></td><td align="center"><code>-a</code></td><td align="center">\( \lnot a \)</td></tr>
+</tbody></table>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../spec/types.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../spec/blocks.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../spec/blocks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../tools.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -191,13 +197,13 @@ It sometimes occurs runtime errors.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="../spec/types.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../spec/blocks.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="../spec/blocks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../tools.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 

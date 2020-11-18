@@ -8,3 +8,6 @@ title = "cumin spec"
 [build]
 build-dir = "docs"
 create-missing = true
+
+[output.html]
+mathjax-support = true

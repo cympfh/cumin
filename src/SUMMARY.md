@@ -13,5 +13,6 @@
     - [Types](spec/types.md)
     - [as-cast](spec/as_cast.md)
     - [blocks](spec/blocks.md)
+    - [operators](spec/ops.md)
 - [Tools](tools.md)
     - [cuminc](cuminc.md)
