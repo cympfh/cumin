@@ -11,6 +11,7 @@ pub enum Value {
     Nat(u128),
     Int(i128),
     Float(f64),
+    Bool(bool),
     Str(String),
     Var(String),
     Env(String, Option<String>),
@@ -63,6 +64,10 @@ parser! {
     ]
     {
         let none_value = string("None").map(|_| Value::Nothing);
+        let bool_value =
+            choice!(
+                string("true").map(|_| Value::Bool(true)),
+                string("false").map(|_| Value::Bool(false)));
         let float_value =
             (
                 many1(digit()),
@@ -135,6 +140,7 @@ parser! {
             env_value,
             attempt(variant_value),
             attempt(none_value),
+            attempt(bool_value),
             var_value
         )
     }
@@ -155,6 +161,8 @@ mod test_value {
         assert_eq!(value().parse("21.5"), Ok((Value::Float(21.5), "")));
         assert_eq!(value().parse("-0.5"), Ok((Value::Float(-0.5), "")));
         assert_eq!(value().parse("-21.5"), Ok((Value::Float(-21.5), "")));
+        assert_eq!(value().parse("true"), Ok((Value::Bool(true), "")));
+        assert_eq!(value().parse("false"), Ok((Value::Bool(false), "")));
         assert_eq!(
             value().parse("\"hoge\""),
             Ok((Value::Str("hoge".to_string()), ""))

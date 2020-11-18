@@ -5,6 +5,7 @@ pub enum JSON {
     Nat(u128),
     Int(i128),
     Float(f64),
+    Bool(bool),
     Str(String),
     Array(Vec<JSON>),
     Dict(Vec<(String, JSON)>),
@@ -18,6 +19,7 @@ impl JSON {
             Nat(x) => format!("{}", x),
             Int(x) => format!("{}", x),
             Float(x) => format!("{}", x),
+            Bool(x) => format!("{:?}", x),
             Str(x) => format!("{:?}", x),
             Array(xs) => format!(
                 "[{}]",
@@ -42,6 +44,7 @@ impl JSON {
             Value::Nat(x) => Nat(x),
             Value::Int(x) => Int(x),
             Value::Float(x) => Float(x),
+            Value::Bool(x) => Bool(x),
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
             Value::Env(v, _) => panic!("Env {} is unresolved", v),
@@ -75,6 +78,8 @@ mod test_json {
     fn test_stringify() {
         assert_eq!(Nat(3).stringify(), "3".to_string());
         assert_eq!(Int(-3).stringify(), "-3".to_string());
+        assert_eq!(Bool(true).stringify(), "true".to_string());
+        assert_eq!(Bool(false).stringify(), "false".to_string());
         assert_eq!(
             Dict(vec![
                 ("arr".to_string(), Array(vec![Nat(1), Nat(2), Nat(3)])),
