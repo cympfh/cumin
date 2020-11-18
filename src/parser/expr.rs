@@ -1,5 +1,5 @@
-use crate::parser::arith::*;
 use crate::parser::config::*;
+use crate::parser::logic::logic_expr;
 use crate::parser::typing::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
@@ -21,6 +21,10 @@ pub enum Expr {
     Div(Box<Expr>, Box<Expr>),
     Pow(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>),
+    And(Box<Expr>, Box<Expr>),
+    Or(Box<Expr>, Box<Expr>),
+    Xor(Box<Expr>, Box<Expr>),
+    Not(Box<Expr>),
     Arrayed(Vec<Expr>),
     Blocked(Box<Config>),
     AsCast(Box<Expr>, Typing),
@@ -188,11 +192,11 @@ parser! {
         choice!(
             attempt(apply_expr),
             attempt(dict_expr),
-            blocked_expr,
+            attempt(blocked_expr),
+            attempt(arrayed_expr),
             attempt(fielded_apply_expr),
             attempt(as_expr),
-            attempt(arith_expr()),
-            arrayed_expr,
+            attempt(logic_expr()),
             value_expr
         )
     }
@@ -265,6 +269,39 @@ mod test_expr {
                         Box::new(Val(Var("y".to_string()))),
                     )),
                     Box::new(Val(Var("z".to_string())))
+                ),
+                ""
+            ))
+        );
+    }
+
+    #[test]
+    fn test_bool_expression() {
+        assert_eq!(expr().parse("true"), Ok((Val(Bool(true)), "")));
+        assert_eq!(expr().parse("false"), Ok((Val(Bool(false)), "")));
+        assert_eq!(
+            expr().parse("not false"),
+            Ok((Not(Box::new(Val(Bool(false)))), ""))
+        );
+        assert_eq!(
+            expr().parse("true or false"),
+            Ok((
+                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
+                ""
+            ))
+        );
+        assert_eq!(
+            expr().parse("(a or not b) xor (not c and d)"),
+            Ok((
+                Xor(
+                    Box::new(Or(
+                        Box::new(Val(Var("a".to_string()))),
+                        Box::new(Not(Box::new(Val(Var("b".to_string())))))
+                    )),
+                    Box::new(Not(Box::new(And(
+                        Box::new(Val(Var("c".to_string()))),
+                        Box::new(Val(Var("d".to_string())))
+                    ))))
                 ),
                 ""
             ))
