@@ -118,6 +118,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x + y as f64),
                 (Float(x), Int(y)) => Float(x + y as f64),
                 (Float(x), Float(y)) => Float(x + y),
+                (Bool(x), Bool(y)) => Bool(x || y),
                 (Str(x), Str(y)) => {
                     let mut z = x;
                     z.push_str(&y);
@@ -161,6 +162,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x * y as f64),
                 (Float(x), Int(y)) => Float(x * y as f64),
                 (Float(x), Float(y)) => Float(x * y),
+                (Bool(x), Bool(y)) => Bool(x && y),
                 _ => panic!("Cant compute {:?} * {:?}", x, y),
             }
         }
@@ -205,6 +207,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x.powi(y as i32)),
                 (Float(x), Int(y)) => Float(x.powi(y as i32)),
                 (Float(x), Float(y)) => Float(x.powf(y)),
+                (Bool(x), Bool(y)) => Bool(x ^ y),
                 _ => panic!("Cant compute {:?} / {:?}", x, y),
             }
         }
@@ -214,6 +217,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 Nat(x) => Int(-(x as i128)),
                 Int(x) => Int(-x),
                 Float(x) => Float(-x),
+                Bool(x) => Bool(!x),
                 _ => panic!("Cant compute -({:?})", x),
             }
         }
@@ -362,5 +366,35 @@ mod test_eval {
     fn test_optional() {
         let conf = Config(vec![], Val(Array(vec![Nothing, Just(Box::new(Nat(1)))])));
         assert_eq!(eval(conf), JSON::Array(vec![JSON::Null, JSON::Nat(1)]));
+    }
+
+    #[test]
+    fn test_bools() {
+        let conf = Config(
+            vec![],
+            Arrayed(vec![
+                Add(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
+                Add(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
+                Add(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
+                Mul(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
+                Mul(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
+                Mul(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
+                Minus(Box::new(Val(Bool(true)))),
+                Minus(Box::new(Val(Bool(false)))),
+            ]),
+        );
+        assert_eq!(
+            eval(conf),
+            JSON::Array(vec![
+                JSON::Bool(true),
+                JSON::Bool(true),
+                JSON::Bool(false),
+                JSON::Bool(true),
+                JSON::Bool(false),
+                JSON::Bool(false),
+                JSON::Bool(false),
+                JSON::Bool(true),
+            ])
+        );
     }
 }
