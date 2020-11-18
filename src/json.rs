@@ -18,7 +18,7 @@ impl JSON {
             Nat(x) => format!("{}", x),
             Int(x) => format!("{}", x),
             Float(x) => format!("{}", x),
-            Str(x) => format!("\"{}\"", x),
+            Str(x) => format!("{:?}", x),
             Array(xs) => format!(
                 "[{}]",
                 xs.iter()
@@ -79,10 +79,11 @@ mod test_json {
             Dict(vec![
                 ("arr".to_string(), Array(vec![Nat(1), Nat(2), Nat(3)])),
                 ("str".to_string(), Str("Hello".to_string())),
+                ("str_complicated".to_string(), Str("He\nl\tlo\"".to_string())),
                 ("dict_empty".to_string(), Dict(vec![])),
             ])
             .stringify(),
-            "{\"arr\":[1,2,3],\"str\":\"Hello\",\"dict_empty\":{}}".to_string()
+            "{\"arr\":[1,2,3],\"str\":\"Hello\",\"str_complicated\":\"He\\nl\\tlo\\\"\",\"dict_empty\":{}}".to_string()
         );
         assert_eq!(
             Array(vec![Array(vec![]), Nat(1), Nat(2), Str("3".to_string())]).stringify(),
