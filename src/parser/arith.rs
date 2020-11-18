@@ -93,9 +93,15 @@ parser! {
                 char(')'),
                 commentable_spaces(),
             ).map(|(_, _, x, _, _, _): (char, (), Expr, (), char, ())| x);
+        let minused =
+            (
+                char('-'),
+                arith_expr(),
+            ).map(|(_, e): (char, Expr)| Expr::Minus(Box::new(e)));
         choice!(
             attempt(parened),
-            value().map(Expr::Val)
+            attempt(value().map(Expr::Val)),
+            attempt(minused)
         )
     }
 }
@@ -160,6 +166,14 @@ mod test_arith {
                 ),
                 ""
             ))
+        );
+        assert_eq!(
+            arith_expr().parse("-(-2)"),
+            Ok((Minus(Box::new(Val(Int(-2)))), ""))
+        );
+        assert_eq!(
+            arith_expr().parse("-x"),
+            Ok((Minus(Box::new(Val(Var("x".to_string())))), ""))
         );
     }
 }
