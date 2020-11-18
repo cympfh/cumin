@@ -11,6 +11,7 @@ pub enum Typing {
     Nat,
     Int,
     Float,
+    Bool,
     String,
     Array(Box<Typing>),
     Option(Box<Typing>),
@@ -28,6 +29,7 @@ parser! {
         let nat_typing = string("Nat").map(|_| Typing::Nat);
         let int_typing = string("Int").map(|_| Typing::Int);
         let float_typing = string("Float").map(|_| Typing::Float);
+        let bool_typing = string("Bool").map(|_| Typing::Bool);
         let string_typing = string("String").map(|_| Typing::String);
         let array_typing = (
             string("Array<"),
@@ -47,11 +49,12 @@ parser! {
         choice!(
             attempt(array_typing),
             attempt(option_typing),
-            any_typing,
-            nat_typing,
-            int_typing,
-            float_typing,
-            string_typing,
+            attempt(any_typing),
+            attempt(nat_typing),
+            attempt(int_typing),
+            attempt(float_typing),
+            attempt(bool_typing),
+            attempt(string_typing),
             user_typing
         )
     }
@@ -68,6 +71,7 @@ mod test_typing {
         assert_eq!(typing().parse("Nat"), Ok((Typing::Nat, "")));
         assert_eq!(typing().parse("Int"), Ok((Typing::Int, "")));
         assert_eq!(typing().parse("Float"), Ok((Typing::Float, "")));
+        assert_eq!(typing().parse("Bool"), Ok((Typing::Bool, "")));
         assert_eq!(typing().parse("String"), Ok((Typing::String, "")));
         assert_eq!(
             typing().parse("Array<String>"),
