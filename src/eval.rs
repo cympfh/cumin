@@ -118,7 +118,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x + y as f64),
                 (Float(x), Int(y)) => Float(x + y as f64),
                 (Float(x), Float(y)) => Float(x + y),
-                (Bool(x), Bool(y)) => Bool(x || y),
                 (Str(x), Str(y)) => {
                     let mut z = x;
                     z.push_str(&y);
@@ -162,7 +161,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x * y as f64),
                 (Float(x), Int(y)) => Float(x * y as f64),
                 (Float(x), Float(y)) => Float(x * y),
-                (Bool(x), Bool(y)) => Bool(x && y),
                 _ => panic!("Cant compute {:?} * {:?}", x, y),
             }
         }
@@ -207,7 +205,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x.powi(y as i32)),
                 (Float(x), Int(y)) => Float(x.powi(y as i32)),
                 (Float(x), Float(y)) => Float(x.powf(y)),
-                (Bool(x), Bool(y)) => Bool(x ^ y),
                 _ => panic!("Cant compute {:?} / {:?}", x, y),
             }
         }
@@ -217,8 +214,38 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 Nat(x) => Int(-(x as i128)),
                 Int(x) => Int(-x),
                 Float(x) => Float(-x),
-                Bool(x) => Bool(!x),
                 _ => panic!("Cant compute -({:?})", x),
+            }
+        }
+        And(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Bool(x), Bool(y)) => Bool(x && y),
+                _ => panic!("Cant compute {:?} and {:?}", x, y),
+            }
+        }
+        Or(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Bool(x), Bool(y)) => Bool(x || y),
+                _ => panic!("Cant compute {:?} or {:?}", x, y),
+            }
+        }
+        Xor(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Bool(x), Bool(y)) => Bool(x ^ y),
+                _ => panic!("Cant compute {:?} xor {:?}", x, y),
+            }
+        }
+        Not(x) => {
+            let a = eval_expr(&env, &x);
+            match a {
+                Bool(x) => Bool(!x),
+                _ => panic!("Cant compute not {:?}", x),
             }
         }
         Arrayed(elements) => {
@@ -373,14 +400,14 @@ mod test_eval {
         let conf = Config(
             vec![],
             Arrayed(vec![
-                Add(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
-                Add(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
-                Add(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
-                Mul(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
-                Mul(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
-                Mul(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
-                Minus(Box::new(Val(Bool(true)))),
-                Minus(Box::new(Val(Bool(false)))),
+                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
+                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
+                Or(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
+                And(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
+                And(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
+                And(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
+                Not(Box::new(Val(Bool(true)))),
+                Not(Box::new(Val(Bool(false)))),
             ]),
         );
         assert_eq!(
