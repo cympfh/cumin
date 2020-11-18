@@ -208,6 +208,15 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 _ => panic!("Cant compute {:?} / {:?}", x, y),
             }
         }
+        Minus(x) => {
+            let a = eval_expr(&env, &x);
+            match a {
+                Nat(x) => Int(-(x as i128)),
+                Int(x) => Int(-x),
+                Float(x) => Float(-x),
+                _ => panic!("Cant compute -({:?})", x),
+            }
+        }
         Arrayed(elements) => {
             let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
             Array(elements)

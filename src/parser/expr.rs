@@ -20,6 +20,7 @@ pub enum Expr {
     Mul(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
     Pow(Box<Expr>, Box<Expr>),
+    Minus(Box<Expr>),
     Arrayed(Vec<Expr>),
     Blocked(Box<Config>),
     AsCast(Box<Expr>, Typing),
