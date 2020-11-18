@@ -2,7 +2,7 @@
 
 is a Structured Typed Configuration Language.
 
-Document is [Here](http://cympfh.cc/cumin).
+Document is [Here](https://cympfh.cc/cumin).
 
 ## Features
 
