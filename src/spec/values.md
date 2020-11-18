@@ -44,5 +44,9 @@ Strings are denoted by quoting double-quotation (`"`).
 
 ### Escape
 
-_TODO_
+Escape with `\`.
+
+```rust,noplaypen
+"\n\r\t\""
+```
 
