@@ -14,6 +14,42 @@ parser! {
         Input::Error: ParseError<char, Input::Range, Input::Position>,
     ]
     {
+        let compare =
+            (
+                bool_expr(),
+                commentable_spaces(),
+                choice!(
+                    attempt(string("==")),
+                    attempt(string("!=")),
+                    attempt(string("<=")),
+                    attempt(string(">=")),
+                    attempt(string("<")),
+                    attempt(string(">"))),
+                commentable_spaces(),
+                bool_expr(),
+                commentable_spaces(),
+            ).map(|(x, _, op, _, y, _): (Expr, (), &str, (), Expr, ())| {
+                match op {
+                    "==" => Expr::Equal(Box::new(x), Box::new(y)),
+                    "!=" => Expr::Not(Box::new(Expr::Equal(Box::new(x), Box::new(y)))),
+                    "<=" => Expr::Not(Box::new(Expr::Less(Box::new(y), Box::new(x)))),
+                    ">=" => Expr::Not(Box::new(Expr::Less(Box::new(x), Box::new(y)))),
+                    "<" => Expr::Less(Box::new(x), Box::new(y)),
+                    ">" => Expr::Less(Box::new(y), Box::new(x)),
+                    _ => panic!(),
+                }
+            });
+        choice!(attempt(compare), bool_expr())
+    }
+}
+
+parser! {
+    pub fn bool_expr[Input]()(Input) -> Expr
+    where [
+        Input: Stream<Token = char>,
+        Input::Error: ParseError<char, Input::Range, Input::Position>,
+    ]
+    {
         let p = arith_expr().skip(commentable_spaces());
         let op_token = choice!(
             attempt(string("and")),
@@ -85,7 +121,7 @@ parser! {
             (
                 char('('),
                 commentable_spaces(),
-                logic_expr(),
+                expr(),
                 commentable_spaces(),
                 char(')'),
                 commentable_spaces(),
@@ -111,7 +147,7 @@ parser! {
 }
 
 #[cfg(test)]
-mod test_arith {
+mod test_logic {
     use crate::parser::logic::*;
     use crate::parser::value::*;
     use combine::Parser;
@@ -181,7 +217,7 @@ mod test_arith {
     }
 
     #[test]
-    fn test_logic() {
+    fn test_bool() {
         assert_eq!(logic_expr().parse("true"), Ok((Val(Bool(true)), "")));
         assert_eq!(
             logic_expr().parse("not x"),
@@ -219,6 +255,43 @@ mod test_arith {
                         Box::new(Val(Bool(false))),
                         Box::new(Not(Box::new(Val(Bool(true)))))
                     ))
+                ),
+                ""
+            ))
+        );
+    }
+    #[test]
+    fn test_compare() {
+        assert_eq!(
+            logic_expr().parse("1 == 2"),
+            Ok((Equal(Box::new(Val(Nat(1))), Box::new(Val(Nat(2)))), ""))
+        );
+        assert_eq!(
+            logic_expr().parse("1 <= 2"),
+            Ok((
+                Not(Box::new(Less(Box::new(Val(Nat(2))), Box::new(Val(Nat(1)))))),
+                ""
+            ))
+        );
+        assert_eq!(
+            logic_expr().parse("1 + 1 == 2 - 0"),
+            Ok((
+                Equal(
+                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
+                    Box::new(Sub(Box::new(Val(Nat(2))), Box::new(Val(Nat(0)))))
+                ),
+                ""
+            ))
+        );
+        assert_eq!(
+            logic_expr().parse("(1 <= 2) == false"),
+            Ok((
+                Equal(
+                    Box::new(Not(Box::new(Less(
+                        Box::new(Val(Nat(2))),
+                        Box::new(Val(Nat(1)))
+                    )))),
+                    Box::new(Val(Bool(false)))
                 ),
                 ""
             ))
