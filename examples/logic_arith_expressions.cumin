@@ -1,0 +1,19 @@
+/// Examples of Logical or Arithmetic Expressions
+
+let thousand = 2 ** 10; // pow(2, 10) is about 1,000
+
+let x = 1;
+let y = (x + 2) * 3;  // 9
+
+let z = y == 9;  // true
+
+let yes = (y < 9) or (y == 9) or (y > 9);  // always yes.
+let no = (y <= 9) and (y > 9);  // always no.
+
+{{
+    thousand = thousand,
+    y = y,
+    z = z,
+    yes = yes,
+    no = no,
+}}
