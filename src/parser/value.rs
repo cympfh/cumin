@@ -41,8 +41,10 @@ impl Value {
             (Str(x), Typing::Nat) => Nat(x.parse::<u128>().unwrap()),
             (Str(x), Typing::Int) => Int(x.parse::<i128>().unwrap()),
             (Str(x), Typing::Float) => Float(x.parse::<f64>().unwrap()),
+            (Str(x), Typing::Bool) if x.as_str() == "true" => Bool(true),
+            (Str(x), Typing::Bool) if x.as_str() == "false" => Bool(false),
             (Str(x), Typing::String) => Str(x.to_string()),
-            _ => panic!("Cannot cast {:?} into {:?}", self, typ),
+            _ => panic!("Cannot cast {:?} as {:?}", self, typ),
         }
     }
 }
@@ -224,5 +226,7 @@ mod test_value {
             Str("0".to_string()).cast(&Typing::String),
             Str("0".to_string())
         );
+        assert_eq!(Str("true".to_string()).cast(&Typing::Bool), Bool(true));
+        assert_eq!(Str("false".to_string()).cast(&Typing::Bool), Bool(false));
     }
 }
