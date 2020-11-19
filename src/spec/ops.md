@@ -20,10 +20,10 @@ It is one-way `Nat -> Int -> Float`.
 
 ## Bool Operators
 
-| Name      | cumin | Example       | Math               |
-|:---------:|:-----:|:-------------:|:------------------:|
-| And       |  `*`  | `a * b`       | \\( a \land b \\)  |
-| Or        |  `+`  | `a + b`       | \\( a \lor b \\)   |
-| Xor       |  `**` | `a ** b`      | \\( a \oplus b \\) |
-| Not       |  `-`  | `-a`          | \\( \lnot a \\)    |
+| Name      | cumin   | Example     | Math               |
+|:---------:|:-------:|:-----------:|:------------------:|
+| And       |  `and`  | `x and y`   | \\( a \land b \\)  |
+| Or        |  `or`   | `x or y`    | \\( a \lor b \\)   |
+| Xor       |  `xor`  | `x xor y`   | \\( a \oplus b \\) |
+| Not       |  `not`  | `not x`     | \\( \lnot a \\)    |
 
