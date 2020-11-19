@@ -25,6 +25,8 @@ pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     Xor(Box<Expr>, Box<Expr>),
     Not(Box<Expr>),
+    Equal(Box<Expr>, Box<Expr>),
+    Less(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
     Blocked(Box<Config>),
     AsCast(Box<Expr>, Typing),
@@ -305,6 +307,10 @@ mod test_expr {
                 ),
                 ""
             ))
+        );
+        assert_eq!(
+            expr().parse("not not(true)"),
+            Ok((Not(Box::new(Not(Box::new(Val(Bool(true)))))), ""))
         );
     }
 

@@ -61,6 +61,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 assert!(args.len() == 1);
                 let x = eval_expr(&env, &args[0]);
                 Just(Box::new(x))
+            } else if f == "not" {
+                assert!(args.len() == 1);
+                let e = Not(Box::new(args[0].clone()));
+                eval_expr(&env, &e)
             } else if let Some(fields) = env.structs.get(f) {
                 assert!(fields.len() == args.len());
                 let n = fields.len();
@@ -248,6 +252,31 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 _ => panic!("Cant compute not {:?}", x),
             }
         }
+        Equal(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => Bool(x == y),
+                (Nat(x), Int(y)) => Bool(x as i128 == y),
+                (Int(x), Nat(y)) => Bool(x == y as i128),
+                (Int(x), Int(y)) => Bool(x == y),
+                (Float(x), Float(y)) => Bool(x == y),
+                (Bool(x), Bool(y)) => Bool(x == y),
+                _ => panic!("Cant compare {:?} == {:?}", x, y),
+            }
+        }
+        Less(x, y) => {
+            let a = eval_expr(&env, &x);
+            let b = eval_expr(&env, &y);
+            match (a, b) {
+                (Nat(x), Nat(y)) => Bool(x < y),
+                (Nat(x), Int(y)) => Bool((x as i128) < y),
+                (Int(x), Nat(y)) => Bool(x < y as i128),
+                (Int(x), Int(y)) => Bool(x < y),
+                (Float(x), Float(y)) => Bool(x < y),
+                _ => panic!("Cant compare {:?} < {:?}", x, y),
+            }
+        }
         Arrayed(elements) => {
             let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
             Array(elements)
@@ -423,5 +452,30 @@ mod test_eval {
                 JSON::Bool(true),
             ])
         );
+    }
+
+    #[test]
+    fn test_compare() {
+        // let x = 2;
+        // x == 2
+        let conf = Config(
+            vec![Let("x".to_string(), Typing::Nat, Val(Nat(2)))],
+            Equal(Box::new(Val(Nat(2))), Box::new(Val(Var("x".to_string())))),
+        );
+        assert_eq!(eval(conf), JSON::Bool(true));
+
+        // let x = 2;
+        // 2 < x + 1
+        let conf = Config(
+            vec![Let("x".to_string(), Typing::Nat, Val(Nat(2)))],
+            Less(
+                Box::new(Val(Nat(2))),
+                Box::new(Add(
+                    Box::new(Val(Var("x".to_string()))),
+                    Box::new(Val(Nat(1))),
+                )),
+            ),
+        );
+        assert_eq!(eval(conf), JSON::Bool(true));
     }
 }
