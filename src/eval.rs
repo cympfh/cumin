@@ -56,28 +56,29 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
-        Apply(f, args) => {
-            if f == "Some" {
-                assert!(args.len() == 1);
-                let x = eval_expr(&env, &args[0]);
-                Just(Box::new(x))
-            } else if f == "not" {
-                assert!(args.len() == 1);
-                let e = Not(Box::new(args[0].clone()));
-                eval_expr(&env, &e)
-            } else if let Some(fields) = env.structs.get(f) {
-                assert!(fields.len() == args.len());
-                let n = fields.len();
-                let items: Vec<(String, Value)> = (0..n)
-                    .map(|i| {
-                        let (name, _ty, _default) = &fields[i];
-                        let val = eval_expr(&env, &args[i]);
-                        (name.to_string(), val)
-                    })
-                    .collect();
-                Dict(items)
-            } else {
-                panic!("Cannot resolve name {}", f)
+        Apply(name, args) => {
+            let values: Vec<Value> = args.iter().map(|x| eval_expr(&env, &x)).collect();
+            match name.as_str() {
+                "Some" => {
+                    assert!(values.len() == 1);
+                    Just(Box::new(values[0].clone()))
+                }
+                "not" => {
+                    assert!(values.len() == 1);
+                    let e = Not(Box::new(Val(values[0].clone())));
+                    eval_expr(&env, &e)
+                }
+                _ if env.structs.contains_key(name) => {
+                    let fields = env.structs.get(name).unwrap();
+                    assert!(fields.len() == values.len());
+                    let items: Vec<(String, Value)> = fields
+                        .iter()
+                        .zip(values.iter())
+                        .map(|((name, _ty, _default), value)| (name.to_string(), value.clone()))
+                        .collect();
+                    Dict(items)
+                }
+                _ => panic!("Cannot resolve name {}", name),
             }
         }
         FieledApply(f, items) => {
@@ -344,138 +345,110 @@ impl Environ {
 }
 
 #[cfg(test)]
-mod test_eval {
-    use crate::eval::*;
-    use Expr::*;
-    use Value::*;
+mod test_eval_from_parse {
+    use crate::eval::eval;
+    use crate::json::JSON;
+    use crate::parser::config::config;
+    use combine::parser::Parser;
 
-    #[test]
-    fn test() {
-        let conf = Config(vec![], Val(Int(1)));
-        assert_eq!(eval(conf), JSON::Int(1));
-
-        let conf = Config(vec![], Add(Box::new(Val(Int(-1))), Box::new(Val(Nat(3)))));
-        assert_eq!(eval(conf), JSON::Int(2));
+    macro_rules! assert_eval {
+        ($code:expr, $json:expr) => {
+            assert_eq!(eval(config().parse($code).unwrap().0), $json);
+        };
     }
 
     #[test]
-    fn test_enum() {
-        let conf = Config(
-            vec![Enum(
-                "X".to_string(),
-                vec!["Zoo".to_string(), "Park".to_string()],
-            )],
-            Val(EnumVariant("X".to_string(), "Park".to_string())),
-        );
-        assert_eq!(eval(conf), JSON::Str("Park".to_string()));
-    }
-
-    #[test]
-    fn test_fielded_apply() {
-        let conf = Config(
-            vec![Struct(
-                "P".to_string(),
-                vec![
-                    ("x".to_string(), Typing::Int, None),
-                    ("y".to_string(), Typing::Int, None),
-                ],
-            )],
-            FieledApply(
-                "P".to_string(),
-                vec![
-                    ("y".to_string(), Val(Int(2))),
-                    ("x".to_string(), Val(Int(1))),
-                ],
-            ),
-        );
-        assert_eq!(
-            eval(conf),
-            JSON::Dict(vec![
-                ("x".to_string(), JSON::Int(1)),
-                ("y".to_string(), JSON::Int(2)),
-            ])
-        );
-    }
-
-    #[test]
-    fn test_fielded_apply_with_default() {
-        let conf = Config(
-            vec![Struct(
-                "P".to_string(),
-                vec![
-                    ("x".to_string(), Typing::Int, Some(Val(Int(42)))),
-                    ("y".to_string(), Typing::Int, None),
-                ],
-            )],
-            FieledApply("P".to_string(), vec![("y".to_string(), Val(Int(2)))]),
-        );
-        assert_eq!(
-            eval(conf),
-            JSON::Dict(vec![
-                ("x".to_string(), JSON::Int(42)),
-                ("y".to_string(), JSON::Int(2)),
-            ])
-        );
-    }
-
-    #[test]
-    fn test_optional() {
-        let conf = Config(vec![], Val(Array(vec![Nothing, Just(Box::new(Nat(1)))])));
-        assert_eq!(eval(conf), JSON::Array(vec![JSON::Null, JSON::Nat(1)]));
+    fn test_numbers() {
+        assert_eval!("-1", JSON::Int(-1));
+        assert_eval!("-1 + 3", JSON::Int(2));
+        assert_eval!("-1 / 2", JSON::Int(0));
+        assert_eval!("1 + 2 * 3", JSON::Nat(7));
+        assert_eval!("(1 + 2) * 3", JSON::Nat(9));
     }
 
     #[test]
     fn test_bools() {
-        let conf = Config(
-            vec![],
-            Arrayed(vec![
-                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
-                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
-                Or(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
-                And(Box::new(Val(Bool(true))), Box::new(Val(Bool(true)))),
-                And(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
-                And(Box::new(Val(Bool(false))), Box::new(Val(Bool(false)))),
-                Not(Box::new(Val(Bool(true)))),
-                Not(Box::new(Val(Bool(false)))),
-            ]),
-        );
-        assert_eq!(
-            eval(conf),
+        assert_eval!(
+            "[true or true, true or false, false or true, false or false]",
             JSON::Array(vec![
                 JSON::Bool(true),
                 JSON::Bool(true),
-                JSON::Bool(false),
+                JSON::Bool(true),
+                JSON::Bool(false)
+            ])
+        );
+        assert_eval!(
+            "[true and true, true and false, false and true, false and false]",
+            JSON::Array(vec![
                 JSON::Bool(true),
                 JSON::Bool(false),
                 JSON::Bool(false),
+                JSON::Bool(false)
+            ])
+        );
+        assert_eval!(
+            "[true xor true, true xor false, false xor true, false xor false]",
+            JSON::Array(vec![
                 JSON::Bool(false),
                 JSON::Bool(true),
+                JSON::Bool(true),
+                JSON::Bool(false)
             ])
         );
     }
 
     #[test]
-    fn test_compare() {
-        // let x = 2;
-        // x == 2
-        let conf = Config(
-            vec![Let("x".to_string(), Typing::Nat, Val(Nat(2)))],
-            Equal(Box::new(Val(Nat(2))), Box::new(Val(Var("x".to_string())))),
-        );
-        assert_eq!(eval(conf), JSON::Bool(true));
+    fn test_builtins() {
+        assert_eval!("Some(1)", JSON::Nat(1));
+        assert_eval!("Some(1 + 2)", JSON::Nat(3));
+        assert_eval!("not(true)", JSON::Bool(false));
+    }
 
-        // let x = 2;
-        // 2 < x + 1
-        let conf = Config(
-            vec![Let("x".to_string(), Typing::Nat, Val(Nat(2)))],
-            Less(
-                Box::new(Val(Nat(2))),
-                Box::new(Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Nat(1))),
-                )),
-            ),
+    #[test]
+    fn test_compare() {
+        assert_eval!("let x = 2; x == 2", JSON::Bool(true));
+        assert_eval!("let x = 2; 2 < x + 1", JSON::Bool(true));
+    }
+
+    #[test]
+    fn test_optional() {
+        assert_eval!(
+            "[None, Some(1)]",
+            JSON::Array(vec![JSON::Null, JSON::Nat(1)])
         );
-        assert_eq!(eval(conf), JSON::Bool(true));
+    }
+
+    #[test]
+    fn test_fielded_apply() {
+        assert_eval!(
+            "struct P { x: Nat, y: Nat } P{ x = 1, y = 2 }",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat, y: Nat } P{ y = 2, x = 1 }",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat = 42, y: Nat } P{ x = 1, y = 2 }",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+    }
+
+    #[test]
+    fn test_enum() {
+        assert_eval!(
+            "enum X { Zoo, Park } X::Park",
+            JSON::Str("Park".to_string())
+        );
+        assert_eval!("enum X { Zoo, Park } X::Zoo", JSON::Str("Zoo".to_string()));
     }
 }
