@@ -1,3 +1,4 @@
+use crate::builtins;
 use crate::json::*;
 use crate::parser::config::*;
 use crate::parser::expr::*;
@@ -67,6 +68,11 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                     assert!(values.len() == 1);
                     let e = Not(Box::new(Val(values[0].clone())));
                     eval_expr(&env, &e)
+                }
+                "concat" => builtins::concat(&values),
+                "reverse" => {
+                    assert!(values.len() == 1);
+                    builtins::reverse(&values[0])
                 }
                 _ if env.structs.contains_key(name) => {
                     let fields = env.structs.get(name).unwrap();
@@ -402,6 +408,20 @@ mod test_eval_from_parse {
         assert_eval!("Some(1)", JSON::Nat(1));
         assert_eval!("Some(1 + 2)", JSON::Nat(3));
         assert_eval!("not(true)", JSON::Bool(false));
+        assert_eval!("concat()", JSON::Array(vec![]));
+        assert_eval!("concat([1])", JSON::Array(vec![JSON::Nat(1)]));
+        assert_eval!(
+            "concat([1], [2])",
+            JSON::Array(vec![JSON::Nat(1), JSON::Nat(2)])
+        );
+        assert_eval!(
+            "concat([1], [2], [3])",
+            JSON::Array(vec![JSON::Nat(1), JSON::Nat(2), JSON::Nat(3)])
+        );
+        assert_eval!(
+            "reverse([1, 2, 3])",
+            JSON::Array(vec![JSON::Nat(3), JSON::Nat(2), JSON::Nat(1)])
+        );
     }
 
     #[test]
