@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-combine = "4.3.2"
+combine = "4.4.0"
 structopt = { version = "0.3", default-features = false }
 
 [[bin]]
