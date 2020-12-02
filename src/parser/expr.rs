@@ -135,13 +135,12 @@ parser! {
 
         // { statement...; expr }
         let blocked_expr = (
-            commentable_spaces(),
             char('{'),
             commentable_spaces(),
             config(),
             char('}'),
             commentable_spaces(),
-        ).map(|t: ((), char, (), Config, char, ())| Expr::Blocked(Box::new(t.3)));
+        ).map(|(_, _, inner, _, _): (char, (), Config, char, ())| Expr::Blocked(Box::new(inner)));
 
         // as cast
         let as_expr = {
@@ -212,277 +211,217 @@ mod test_expr {
     use Expr::*;
     use Value::*;
 
+    macro_rules! assert_expr {
+        ($code: expr, $expected: expr) => {
+            assert_eq!(expr().parse($code).ok().unwrap().0, $expected);
+        };
+    }
+
     #[test]
     fn test() {
-        assert_eq!(expr().parse("2"), Ok((Val(Nat(2)), "")));
-        assert_eq!(expr().parse("-1"), Ok((Val(Int(-1)), "")));
-        assert_eq!(expr().parse("x"), Ok((Val(Var("x".to_string())), "")));
-        assert_eq!(
-            expr().parse("0 + 1"),
-            Ok((Add(Box::new(Val(Nat(0))), Box::new(Val(Nat(1))),), ""))
+        assert_expr!("2", Val(Nat(2)));
+        assert_expr!("-1", Val(Int(-1)));
+        assert_expr!("x", Val(Var("x".to_string())));
+        assert_expr!("0 + 1", Add(Box::new(Val(Nat(0))), Box::new(Val(Nat(1)))));
+        assert_expr!(
+            "0 + x",
+            Add(Box::new(Val(Nat(0))), Box::new(Val(Var("x".to_string()))))
         );
-        assert_eq!(
-            expr().parse("0 + x"),
-            Ok((
-                Add(Box::new(Val(Nat(0))), Box::new(Val(Var("x".to_string()))),),
-                ""
-            ))
+        assert_expr!(
+            "x + 2",
+            Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))))
         );
-        assert_eq!(
-            expr().parse("x + 2"),
-            Ok((
-                Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))),),
-                ""
-            ))
-        );
-        assert_eq!(
-            expr().parse("x + y + z"),
-            Ok((
-                Add(
-                    Box::new(Add(
-                        Box::new(Val(Var("x".to_string()))),
-                        Box::new(Val(Var("y".to_string()))),
-                    )),
-                    Box::new(Val(Var("z".to_string()))),
-                ),
-                ""
-            ))
-        );
-        assert_eq!(
-            expr().parse("x - y"),
-            Ok((
-                Sub(
+        assert_expr!(
+            "x + y + z",
+            Add(
+                Box::new(Add(
                     Box::new(Val(Var("x".to_string()))),
                     Box::new(Val(Var("y".to_string()))),
-                ),
-                ""
-            ))
+                )),
+                Box::new(Val(Var("z".to_string()))),
+            )
         );
-        assert_eq!(
-            expr().parse("( 1 - 2 ) "),
-            Ok((Sub(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),), ""))
+        assert_expr!(
+            "x - y",
+            Sub(
+                Box::new(Val(Var("x".to_string()))),
+                Box::new(Val(Var("y".to_string()))),
+            )
         );
-        assert_eq!(
-            expr().parse("(x * y) / z"),
-            Ok((
-                Div(
-                    Box::new(Mul(
-                        Box::new(Val(Var("x".to_string()))),
-                        Box::new(Val(Var("y".to_string()))),
-                    )),
-                    Box::new(Val(Var("z".to_string())))
-                ),
-                ""
-            ))
+        assert_expr!(
+            "( 1 - 2 ) ",
+            Sub(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))))
+        );
+        assert_expr!(
+            "(x * y) / z",
+            Div(
+                Box::new(Mul(
+                    Box::new(Val(Var("x".to_string()))),
+                    Box::new(Val(Var("y".to_string()))),
+                )),
+                Box::new(Val(Var("z".to_string())))
+            )
         );
     }
 
     #[test]
     fn test_bool_expression() {
-        assert_eq!(expr().parse("true"), Ok((Val(Bool(true)), "")));
-        assert_eq!(expr().parse("false"), Ok((Val(Bool(false)), "")));
-        assert_eq!(
-            expr().parse("not false"),
-            Ok((Not(Box::new(Val(Bool(false)))), ""))
+        assert_expr!("true", Val(Bool(true)));
+        assert_expr!("false", Val(Bool(false)));
+        assert_expr!("not false", Not(Box::new(Val(Bool(false)))));
+        assert_expr!(
+            "true or false",
+            Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))
         );
-        assert_eq!(
-            expr().parse("true or false"),
-            Ok((
-                Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false)))),
-                ""
-            ))
+        assert_expr!(
+            "(a or not b) xor (not c and d)",
+            Xor(
+                Box::new(Or(
+                    Box::new(Val(Var("a".to_string()))),
+                    Box::new(Not(Box::new(Val(Var("b".to_string())))))
+                )),
+                Box::new(Not(Box::new(And(
+                    Box::new(Val(Var("c".to_string()))),
+                    Box::new(Val(Var("d".to_string())))
+                ))))
+            )
         );
-        assert_eq!(
-            expr().parse("(a or not b) xor (not c and d)"),
-            Ok((
-                Xor(
-                    Box::new(Or(
-                        Box::new(Val(Var("a".to_string()))),
-                        Box::new(Not(Box::new(Val(Var("b".to_string())))))
-                    )),
-                    Box::new(Not(Box::new(And(
-                        Box::new(Val(Var("c".to_string()))),
-                        Box::new(Val(Var("d".to_string())))
-                    ))))
-                ),
-                ""
-            ))
-        );
-        assert_eq!(
-            expr().parse("not not(true)"),
-            Ok((Not(Box::new(Not(Box::new(Val(Bool(true)))))), ""))
+        assert_expr!(
+            "not not(true)",
+            Not(Box::new(Not(Box::new(Val(Bool(true))))))
         );
     }
 
     #[test]
     fn test_dict() {
-        assert_eq!(
-            expr().parse("{{ x=1, z = 2 }}"),
-            Ok((
-                AnonymousStruct(vec![
-                    ("x".to_string(), Val(Nat(1))),
-                    ("z".to_string(), Val(Nat(2)))
-                ]),
-                ""
-            )),
+        assert_expr!(
+            "{{ x=1, z = 2 }}",
+            AnonymousStruct(vec![
+                ("x".to_string(), Val(Nat(1))),
+                ("z".to_string(), Val(Nat(2)))
+            ])
         );
-        assert_eq!(
-            expr().parse(
-                "{{
+        assert_expr!(
+            "{{
                 x= 1,
                 z = \"hoge\",
-            }}"
-            ),
-            Ok((
-                AnonymousStruct(vec![
-                    ("x".to_string(), Val(Nat(1))),
-                    ("z".to_string(), Val(Str("hoge".to_string())))
-                ]),
-                ""
-            )),
+                }}",
+            AnonymousStruct(vec![
+                ("x".to_string(), Val(Nat(1))),
+                ("z".to_string(), Val(Str("hoge".to_string())))
+            ])
         );
     }
 
     #[test]
     fn test_arrayed() {
-        assert_eq!(expr().parse("[]"), Ok((Arrayed(vec![]), "")));
-        assert_eq!(
-            expr().parse("[1, 2, 3,]"),
-            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        assert_expr!("[]", Arrayed(vec![]));
+        assert_expr!(
+            "[1, 2, 3,]",
+            Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))])
         );
-        assert_eq!(
-            expr().parse("[1, 2, 3]"),
-            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        assert_expr!(
+            "[1, 2, 3]",
+            Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))])
         );
-        assert_eq!(
-            expr().parse("[1, 2, 3]//comment"),
-            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+        assert_expr!(
+            "[1, 2, 3]//comment",
+            Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))])
         );
-        assert_eq!(
-            expr().parse(
-                "[1, //one
+        assert_expr!(
+            "[1, //one
                 2, //two
-                3]//comment"
-            ),
-            Ok((Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))]), ""))
+                3]//comment",
+            Arrayed(vec![Val(Nat(1)), Val(Nat(2)), Val(Nat(3))])
         );
     }
 
     #[test]
     fn test_apply() {
-        assert_eq!(
-            expr().parse("X(1, -2, \"x\")"),
-            Ok((
-                Apply(
-                    "X".to_string(),
-                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
-                ),
-                ""
-            ))
+        assert_expr!(
+            "X(1, -2, \"x\")",
+            Apply(
+                "X".to_string(),
+                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+            )
         );
-        assert_eq!(
-            expr().parse(
-                "X(1, // comment
-            -2, \"x\")//comment"
-            ),
-            Ok((
-                Apply(
-                    "X".to_string(),
-                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
-                ),
-                ""
-            ))
+        assert_expr!(
+            "X(1, // comment
+                -2, \"x\")//comment",
+            Apply(
+                "X".to_string(),
+                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+            )
         );
     }
 
     #[test]
     fn test_field_apply() {
-        assert_eq!(
-            expr().parse("X { x=1, y=-2, z=\"x\"}"),
-            Ok((
-                FieledApply(
-                    "X".to_string(),
-                    vec![
-                        ("x".to_string(), Val(Nat(1))),
-                        ("y".to_string(), Val(Int(-2))),
-                        ("z".to_string(), Val(Str("x".to_string())))
-                    ]
-                ),
-                ""
-            ))
+        assert_expr!(
+            "X { x=1, y=-2, z=\"x\"}",
+            FieledApply(
+                "X".to_string(),
+                vec![
+                    ("x".to_string(), Val(Nat(1))),
+                    ("y".to_string(), Val(Int(-2))),
+                    ("z".to_string(), Val(Str("x".to_string())))
+                ]
+            )
         );
-        assert_eq!(
-            expr().parse(
-                "X {//comment
+        assert_expr!(
+            "X {//comment
                 x=1, //comment
                 // comment
                 y=-2,//comment
                 z=\"x\"
-            } // comment"
-            ),
-            Ok((
-                FieledApply(
-                    "X".to_string(),
-                    vec![
-                        ("x".to_string(), Val(Nat(1))),
-                        ("y".to_string(), Val(Int(-2))),
-                        ("z".to_string(), Val(Str("x".to_string())))
-                    ]
-                ),
-                ""
-            ))
+                } // comment",
+            FieledApply(
+                "X".to_string(),
+                vec![
+                    ("x".to_string(), Val(Nat(1))),
+                    ("y".to_string(), Val(Int(-2))),
+                    ("z".to_string(), Val(Str("x".to_string())))
+                ]
+            )
         );
     }
 
     #[test]
     fn test_blocked() {
-        assert_eq!(
-            expr().parse(
-                "{
-                    let x: Int = 1;
-                    let y = -2;
-                    x + y
+        assert_expr!(
+            "{
+                let x: Int = 1;
+                let y = -2;
+                x + y
                 }
-                "
-            ),
-            Ok((
-                Blocked(Box::new(Config(
-                    vec![
-                        Statement::Let("x".to_string(), Typing::Int, Val(Nat(1))),
-                        Statement::Let("y".to_string(), Typing::Any, Val(Int(-2))),
-                    ],
-                    Expr::Add(
-                        Box::new(Val(Var("x".to_string()))),
-                        Box::new(Val(Var("y".to_string())))
-                    )
-                ))),
-                ""
-            ))
+                ",
+            Blocked(Box::new(Config(
+                vec![
+                    Statement::Let("x".to_string(), Typing::Int, Val(Nat(1))),
+                    Statement::Let("y".to_string(), Typing::Any, Val(Int(-2))),
+                ],
+                Add(
+                    Box::new(Val(Var("x".to_string()))),
+                    Box::new(Val(Var("y".to_string())))
+                )
+            )))
         );
     }
 
     #[test]
     fn test_as_cast() {
-        assert_eq!(
-            expr().parse("1 as Int"),
-            Ok((AsCast(Box::new(Val(Nat(1))), Typing::Int), ""))
+        assert_expr!("1 as Int", AsCast(Box::new(Val(Nat(1))), Typing::Int));
+        assert_expr!(
+            "1 as Int
+                // Nat -> Int",
+            AsCast(Box::new(Val(Nat(1))), Typing::Int)
         );
-        assert_eq!(
-            expr().parse(
-                "1 as Int
-                // Nat -> Int"
-            ),
-            Ok((AsCast(Box::new(Val(Nat(1))), Typing::Int), ""))
-        );
-        assert_eq!(
-            expr().parse("(1+1) as Int"),
-            Ok((
-                AsCast(
-                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
-                    Typing::Int
-                ),
-                ""
-            )),
+        assert_expr!(
+            "(1+1) as Int",
+            AsCast(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
+                Typing::Int
+            )
         );
     }
 }
