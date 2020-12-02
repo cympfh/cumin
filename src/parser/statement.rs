@@ -144,131 +144,107 @@ mod test_statement {
     use Statement::*;
     use Value::*;
 
+    macro_rules! assert_stmt {
+        ($code: expr, $expected: expr) => {
+            assert_eq!(stmt().parse($code).ok().unwrap().0, $expected);
+        };
+    }
+
     #[test]
     fn test_let() {
-        assert_eq!(
-            stmt().parse("let s = -2;"),
-            Ok((Let("s".to_string(), Typing::Any, Val(Int(-2))), ""))
+        assert_stmt!(
+            "let s = -2;",
+            Let("s".to_string(), Typing::Any, Val(Int(-2)))
         );
-        assert_eq!(
-            stmt().parse("let z: Nat = 3;"),
-            Ok((Let("z".to_string(), Typing::Nat, Val(Nat(3))), ""))
+        assert_stmt!(
+            "let z: Nat = 3;",
+            Let("z".to_string(), Typing::Nat, Val(Nat(3)))
         );
-        assert_eq!(
-            stmt().parse("let s:Nat=2; "),
-            Ok((Let("s".to_string(), Typing::Nat, Val(Nat(2))), ""))
+        assert_stmt!(
+            "let s:Nat=2; ",
+            Let("s".to_string(), Typing::Nat, Val(Nat(2)))
         );
-        assert_eq!(
-            stmt().parse("let name = \"hoge\" ; "),
-            Ok((
-                Let(
-                    "name".to_string(),
-                    Typing::Any,
-                    Val(Str("hoge".to_string()))
-                ),
-                ""
-            ))
+        assert_stmt!(
+            "let name = \"hoge\" ; ",
+            Let(
+                "name".to_string(),
+                Typing::Any,
+                Val(Str("hoge".to_string()))
+            )
         );
     }
 
     #[test]
     fn test_struct() {
-        assert_eq!(
-            stmt().parse("struct X {} "),
-            Ok((Struct("X".to_string(), vec![]), ""))
-        );
-        assert_eq!(
-            stmt().parse("struct X {} // comment"),
-            Ok((Struct("X".to_string(), vec![]), ""))
-        );
-        assert_eq!(
-            stmt().parse("struct Point { x: Int, y:Int} "),
-            Ok((
-                Struct(
-                    "Point".to_string(),
-                    vec![
-                        ("x".to_string(), Typing::Int, None),
-                        ("y".to_string(), Typing::Int, None),
-                    ]
-                ),
-                ""
-            ))
+        assert_stmt!("struct X {} ", Struct("X".to_string(), vec![]));
+        assert_stmt!("struct X {} // comment", Struct("X".to_string(), vec![]));
+        assert_stmt!(
+            "struct Point { x: Int, y:Int} ",
+            Struct(
+                "Point".to_string(),
+                vec![
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, None),
+                ]
+            )
         );
         // comma-trailing
-        assert_eq!(
-            stmt().parse("struct Point { x: Int, y:Int, } "),
-            Ok((
-                Struct(
-                    "Point".to_string(),
-                    vec![
-                        ("x".to_string(), Typing::Int, None),
-                        ("y".to_string(), Typing::Int, None),
-                    ]
-                ),
-                ""
-            ))
+        assert_stmt!(
+            "struct Point { x: Int, y:Int, } ",
+            Struct(
+                "Point".to_string(),
+                vec![
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, None),
+                ]
+            )
         );
         // with default values
-        assert_eq!(
-            stmt().parse(
-                "struct Point {
+        assert_stmt!(
+            "struct Point {
                 name: String = \"hoge\",
-                x: Int, y:Int=0, } "
-            ),
-            Ok((
-                Struct(
-                    "Point".to_string(),
-                    vec![
-                        (
-                            "name".to_string(),
-                            Typing::String,
-                            Some(Val(Str("hoge".to_string())))
-                        ),
-                        ("x".to_string(), Typing::Int, None),
-                        ("y".to_string(), Typing::Int, Some(Val(Nat(0)))),
-                    ]
-                ),
-                ""
-            ))
+                x: Int, y:Int=0, } ",
+            Struct(
+                "Point".to_string(),
+                vec![
+                    (
+                        "name".to_string(),
+                        Typing::String,
+                        Some(Val(Str("hoge".to_string())))
+                    ),
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, Some(Val(Nat(0)))),
+                ]
+            )
         );
     }
 
     #[test]
     fn test_enum() {
         // comma-separating
-        assert_eq!(
-            stmt().parse(
-                "enum Z {
+        assert_stmt!(
+            "enum Z {
                 A,B, C,D
             }
-            "
-            ),
-            Ok((
-                Enum(
-                    "Z".to_string(),
-                    vec![
-                        "A".to_string(),
-                        "B".to_string(),
-                        "C".to_string(),
-                        "D".to_string(),
-                    ]
-                ),
-                ""
-            ))
+            ",
+            Enum(
+                "Z".to_string(),
+                vec![
+                    "A".to_string(),
+                    "B".to_string(),
+                    "C".to_string(),
+                    "D".to_string(),
+                ]
+            )
         );
         // comma-trailing
-        assert_eq!(
-            stmt().parse(
-                "enum Z{
+        assert_stmt!(
+            "enum Z{
                 Z1,//,,,
                 Z2,
             }
-            "
-            ),
-            Ok((
-                Enum("Z".to_string(), vec!["Z1".to_string(), "Z2".to_string()]),
-                ""
-            ))
+            ",
+            Enum("Z".to_string(), vec!["Z1".to_string(), "Z2".to_string()])
         );
     }
 }

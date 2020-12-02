@@ -154,147 +154,111 @@ mod test_logic {
     use Expr::*;
     use Value::*;
 
+    macro_rules! assert_logic {
+        ($code: expr, $expected: expr) => {
+            assert_eq!(logic_expr().parse($code).ok().unwrap().0, $expected);
+        };
+    }
+
     #[test]
     fn test_arith() {
-        assert_eq!(
-            logic_expr().parse("1  /2"),
-            Ok((Div(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),), ""))
+        assert_logic!("1  /2", Div(Box::new(Val(Nat(1))), Box::new(Val(Nat(2)))));
+        assert_logic!(
+            "1 + 2 - 3",
+            Sub(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+                Box::new(Val(Nat(3)))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("1 + 2 - 3"),
-            Ok((
-                Sub(
-                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+        assert_logic!(
+            "1 * 2 * 3 / 4",
+            Div(
+                Box::new(Mul(
+                    Box::new(Mul(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
                     Box::new(Val(Nat(3)))
-                ),
-                ""
-            ))
+                )),
+                Box::new(Val(Nat(4)))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("1 * 2 * 3 / 4"),
-            Ok((
-                Div(
-                    Box::new(Mul(
-                        Box::new(Mul(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
-                        Box::new(Val(Nat(3)))
-                    )),
-                    Box::new(Val(Nat(4)))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "1 + 2 * 3",
+            Add(
+                Box::new(Val(Nat(1))),
+                Box::new(Mul(Box::new(Val(Nat(2))), Box::new(Val(Nat(3))),))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("1 + 2 * 3"),
-            Ok((
-                Add(
-                    Box::new(Val(Nat(1))),
-                    Box::new(Mul(Box::new(Val(Nat(2))), Box::new(Val(Nat(3))),))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "(1 + 2) * ((3) / 4 - 5)",
+            Mul(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+                Box::new(Sub(
+                    Box::new(Div(Box::new(Val(Nat(3))), Box::new(Val(Nat(4))),)),
+                    Box::new(Val(Nat(5)))
+                ))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("(1 + 2) * ((3) / 4 - 5)"),
-            Ok((
-                Mul(
-                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
-                    Box::new(Sub(
-                        Box::new(Div(Box::new(Val(Nat(3))), Box::new(Val(Nat(4))),)),
-                        Box::new(Val(Nat(5)))
-                    ))
-                ),
-                ""
-            ))
-        );
-        assert_eq!(
-            logic_expr().parse("-(-2)"),
-            Ok((Minus(Box::new(Val(Int(-2)))), ""))
-        );
-        assert_eq!(
-            logic_expr().parse("-x"),
-            Ok((Minus(Box::new(Val(Var("x".to_string())))), ""))
-        );
+        assert_logic!("-(-2)", Minus(Box::new(Val(Int(-2)))));
+        assert_logic!("-x", Minus(Box::new(Val(Var("x".to_string())))));
     }
 
     #[test]
     fn test_bool() {
-        assert_eq!(logic_expr().parse("true"), Ok((Val(Bool(true)), "")));
-        assert_eq!(
-            logic_expr().parse("not x"),
-            Ok((Not(Box::new(Val(Var("x".to_string())))), ""))
+        assert_logic!("true", Val(Bool(true)));
+        assert_logic!("not x", Not(Box::new(Val(Var("x".to_string())))));
+        assert_logic!(
+            "x and y",
+            And(
+                Box::new(Val(Var("x".to_string()))),
+                Box::new(Val(Var("y".to_string())))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("x and y"),
-            Ok((
-                And(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string())))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "true and false or true xor false",
+            Xor(
+                Box::new(Or(
+                    Box::new(And(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))),
+                    Box::new(Val(Bool(true)))
+                )),
+                Box::new(Val(Bool(false)))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("true and false or true xor false"),
-            Ok((
-                Xor(
-                    Box::new(Or(
-                        Box::new(And(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))),
-                        Box::new(Val(Bool(true)))
-                    )),
-                    Box::new(Val(Bool(false)))
-                ),
-                ""
-            ))
-        );
-        assert_eq!(
-            logic_expr().parse("true and (false or not true)"),
-            Ok((
-                And(
-                    Box::new(Val(Bool(true))),
-                    Box::new(Or(
-                        Box::new(Val(Bool(false))),
-                        Box::new(Not(Box::new(Val(Bool(true)))))
-                    ))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "true and (false or not true)",
+            And(
+                Box::new(Val(Bool(true))),
+                Box::new(Or(
+                    Box::new(Val(Bool(false))),
+                    Box::new(Not(Box::new(Val(Bool(true)))))
+                ))
+            )
         );
     }
     #[test]
     fn test_compare() {
-        assert_eq!(
-            logic_expr().parse("1 == 2"),
-            Ok((Equal(Box::new(Val(Nat(1))), Box::new(Val(Nat(2)))), ""))
+        assert_logic!(
+            "1 == 2",
+            Equal(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))))
         );
-        assert_eq!(
-            logic_expr().parse("1 <= 2"),
-            Ok((
-                Not(Box::new(Less(Box::new(Val(Nat(2))), Box::new(Val(Nat(1)))))),
-                ""
-            ))
+        assert_logic!(
+            "1 <= 2",
+            Not(Box::new(Less(Box::new(Val(Nat(2))), Box::new(Val(Nat(1))))))
         );
-        assert_eq!(
-            logic_expr().parse("1 + 1 == 2 - 0"),
-            Ok((
-                Equal(
-                    Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
-                    Box::new(Sub(Box::new(Val(Nat(2))), Box::new(Val(Nat(0)))))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "1 + 1 == 2 - 0",
+            Equal(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
+                Box::new(Sub(Box::new(Val(Nat(2))), Box::new(Val(Nat(0)))))
+            )
         );
-        assert_eq!(
-            logic_expr().parse("(1 <= 2) == false"),
-            Ok((
-                Equal(
-                    Box::new(Not(Box::new(Less(
-                        Box::new(Val(Nat(2))),
-                        Box::new(Val(Nat(1)))
-                    )))),
-                    Box::new(Val(Bool(false)))
-                ),
-                ""
-            ))
+        assert_logic!(
+            "(1 <= 2) == false",
+            Equal(
+                Box::new(Not(Box::new(Less(
+                    Box::new(Val(Nat(2))),
+                    Box::new(Val(Nat(1)))
+                )))),
+                Box::new(Val(Bool(false)))
+            )
         );
     }
 }

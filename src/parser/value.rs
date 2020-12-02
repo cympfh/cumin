@@ -154,62 +154,43 @@ mod test_value {
     use combine::Parser;
     use Value::*;
 
+    macro_rules! assert_value {
+        ($code: expr, $expected: expr) => {
+            assert_eq!(value().parse($code).ok().unwrap(), $expected);
+        };
+    }
     #[test]
     fn test_parse() {
-        assert_eq!(value().parse("23"), Ok((Value::Nat(23), "")));
-        assert_eq!(value().parse("23_"), Ok((Value::Nat(23), "_")));
-        assert_eq!(value().parse("-23_"), Ok((Value::Int(-23), "_")));
-        assert_eq!(value().parse("0.5"), Ok((Value::Float(0.5), "")));
-        assert_eq!(value().parse("21.5"), Ok((Value::Float(21.5), "")));
-        assert_eq!(value().parse("-0.5"), Ok((Value::Float(-0.5), "")));
-        assert_eq!(value().parse("-21.5"), Ok((Value::Float(-21.5), "")));
-        assert_eq!(value().parse("true"), Ok((Value::Bool(true), "")));
-        assert_eq!(value().parse("false"), Ok((Value::Bool(false), "")));
-        assert_eq!(
-            value().parse("\"hoge\""),
-            Ok((Value::Str("hoge".to_string()), ""))
+        assert_value!("23", (Value::Nat(23), ""));
+        assert_value!("23_", (Value::Nat(23), "_"));
+        assert_value!("-23_", (Value::Int(-23), "_"));
+        assert_value!("0.5", (Value::Float(0.5), ""));
+        assert_value!("21.5", (Value::Float(21.5), ""));
+        assert_value!("-0.5", (Value::Float(-0.5), ""));
+        assert_value!("-21.5", (Value::Float(-21.5), ""));
+        assert_value!("true", (Value::Bool(true), ""));
+        assert_value!("false", (Value::Bool(false), ""));
+        assert_value!("\"hoge\"", (Value::Str("hoge".to_string()), ""));
+        assert_value!("\"hoge !?\"", (Value::Str("hoge !?".to_string()), ""));
+        assert_value!("\"ho\\nge\"", (Value::Str("ho\nge".to_string()), ""));
+        assert_value!("\"ho\\\"ge\"", (Value::Str("ho\"ge".to_string()), ""));
+        assert_value!("\"ho\\\\ge\\'\"", (Value::Str("ho\\ge'".to_string()), ""));
+        assert_value!("hoge", (Value::Var("hoge".to_string()), ""));
+        assert_value!("_hoge0", (Value::Var("_hoge0".to_string()), ""));
+        assert_value!("$USER", (Value::Env("USER".to_string(), None), ""));
+        assert_value!(
+            "${USER_iD2}",
+            (Value::Env("USER_iD2".to_string(), None), "")
         );
-        assert_eq!(
-            value().parse("\"hoge !?\""),
-            Ok((Value::Str("hoge !?".to_string()), ""))
+        assert_value!(
+            "${X:-hoge}",
+            (Value::Env("X".to_string(), Some("hoge".to_string())), "")
         );
-        assert_eq!(
-            value().parse("\"ho\\nge\""),
-            Ok((Value::Str("ho\nge".to_string()), ""))
+        assert_value!(
+            "X::Zoo",
+            (Value::EnumVariant("X".to_string(), "Zoo".to_string()), "")
         );
-        assert_eq!(
-            value().parse("\"ho\\\"ge\""),
-            Ok((Value::Str("ho\"ge".to_string()), ""))
-        );
-        assert_eq!(
-            value().parse("\"ho\\\\ge\\'\""),
-            Ok((Value::Str("ho\\ge'".to_string()), ""))
-        );
-        assert_eq!(
-            value().parse("hoge"),
-            Ok((Value::Var("hoge".to_string()), ""))
-        );
-        assert_eq!(
-            value().parse("_hoge0"),
-            Ok((Value::Var("_hoge0".to_string()), ""))
-        );
-        assert_eq!(
-            value().parse("$USER"),
-            Ok((Value::Env("USER".to_string(), None), ""))
-        );
-        assert_eq!(
-            value().parse("${USER_iD2}"),
-            Ok((Value::Env("USER_iD2".to_string(), None), ""))
-        );
-        assert_eq!(
-            value().parse("${X:-hoge}"),
-            Ok((Value::Env("X".to_string(), Some("hoge".to_string())), ""))
-        );
-        assert_eq!(
-            value().parse("X::Zoo"),
-            Ok((Value::EnumVariant("X".to_string(), "Zoo".to_string()), ""))
-        );
-        assert_eq!(value().parse("None"), Ok((Value::Nothing, "")));
+        assert_value!("None", (Value::Nothing, ""));
     }
 
     #[test]
