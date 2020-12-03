@@ -84,6 +84,7 @@ parser! {
                 s.push_str(tail.as_str());
                 s.push('.');
                 s.push_str(under.as_str());
+                let s: String = s.chars().filter(|&c| c != '_').collect();
                 Value::Float(s.parse::<f64>().unwrap())
             });
 
@@ -96,6 +97,7 @@ parser! {
                 let mut s: String = sign.iter().collect();
                 s.push_str(head.as_str());
                 s.push_str(tail.as_str());
+                let s: String = s.chars().filter(|&c| c != '_').collect();
                 if sign.is_none() {
                     Value::Nat(s.parse::<u128>().unwrap())
                 } else {
@@ -158,53 +160,50 @@ mod test_value {
 
     macro_rules! assert_value {
         ($code: expr, $expected: expr) => {
-            assert_eq!(value().parse($code).ok().unwrap(), $expected);
+            assert_eq!(value().parse($code).ok().unwrap().0, $expected);
         };
     }
 
     #[test]
     fn test_num() {
-        assert_value!("23", (Value::Nat(23), ""));
-        assert_value!("23_", (Value::Nat(23), "_"));
-        assert_value!("-23_", (Value::Int(-23), "_"));
-        assert_value!("0.5", (Value::Float(0.5), ""));
-        assert_value!("21.5", (Value::Float(21.5), ""));
-        assert_value!("-0.5", (Value::Float(-0.5), ""));
-        assert_value!("-21.5", (Value::Float(-21.5), ""));
+        assert_value!("23", Value::Nat(23));
+        assert_value!("23_", Value::Nat(23));
+        assert_value!("-23_", Value::Int(-23));
+        assert_value!("0.5", Value::Float(0.5));
+        assert_value!("21.5", Value::Float(21.5));
+        assert_value!("-0.5", Value::Float(-0.5));
+        assert_value!("-21.5", Value::Float(-21.5));
     }
     #[test]
     fn test_const() {
-        assert_value!("true", (Value::Bool(true), ""));
-        assert_value!("false", (Value::Bool(false), ""));
-        assert_value!("None", (Value::Nothing, ""));
+        assert_value!("true", Value::Bool(true));
+        assert_value!("false", Value::Bool(false));
+        assert_value!("None", Value::Nothing);
     }
     #[test]
     fn test_str() {
-        assert_value!("\"hoge\"", (Value::Str("hoge".to_string()), ""));
-        assert_value!("\"hoge !?\"", (Value::Str("hoge !?".to_string()), ""));
-        assert_value!("\"ho\\nge\"", (Value::Str("ho\nge".to_string()), ""));
-        assert_value!("\"ho\\\"ge\"", (Value::Str("ho\"ge".to_string()), ""));
-        assert_value!("\"ho\\\\ge\\'\"", (Value::Str("ho\\ge'".to_string()), ""));
+        assert_value!("\"hoge\"", Value::Str("hoge".to_string()));
+        assert_value!("\"hoge !?\"", Value::Str("hoge !?".to_string()));
+        assert_value!("\"ho\\nge\"", Value::Str("ho\nge".to_string()));
+        assert_value!("\"ho\\\"ge\"", Value::Str("ho\"ge".to_string()));
+        assert_value!("\"ho\\\\ge\\'\"", Value::Str("ho\\ge'".to_string()));
     }
     #[test]
     fn test_var() {
-        assert_value!("hoge", (Value::Var("hoge".to_string()), ""));
-        assert_value!("_hoge0", (Value::Var("_hoge0".to_string()), ""));
-        assert_value!("$USER", (Value::Env("USER".to_string(), None), ""));
-        assert_value!(
-            "${USER_iD2}",
-            (Value::Env("USER_iD2".to_string(), None), "")
-        );
+        assert_value!("hoge", Value::Var("hoge".to_string()));
+        assert_value!("_hoge0", Value::Var("_hoge0".to_string()));
+        assert_value!("$USER", Value::Env("USER".to_string(), None));
+        assert_value!("${USER_iD2}", Value::Env("USER_iD2".to_string(), None));
     }
     #[test]
     fn test_enum() {
         assert_value!(
             "${X:-hoge}",
-            (Value::Env("X".to_string(), Some("hoge".to_string())), "")
+            Value::Env("X".to_string(), Some("hoge".to_string()))
         );
         assert_value!(
             "X::Zoo",
-            (Value::EnumVariant("X".to_string(), "Zoo".to_string()), "")
+            Value::EnumVariant("X".to_string(), "Zoo".to_string())
         );
     }
 
