@@ -4,7 +4,7 @@ use combine::error::ParseError;
 use combine::parser::char::{char, digit, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{any, between, choice, many, many1, none_of, optional, parser};
+use combine::{any, between, choice, many, many1, none_of, one_of, optional, parser};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -65,42 +65,46 @@ parser! {
         Input::Error: ParseError<char, Input::Range, Input::Position>,
     ]
     {
-        let none_value = string("None").map(|_| Value::Nothing);
-        let bool_value =
+        let const_value =
             choice!(
+                string("None").map(|_| Value::Nothing),
                 string("true").map(|_| Value::Bool(true)),
                 string("false").map(|_| Value::Bool(false)));
+
         let float_value =
             (
+                optional(char('-')),
                 many1(digit()),
+                many(one_of("_0123456789".chars())),
                 char('.'),
-                many1(digit()),
-            ).map(|(head, _, tail): (String, char, String)| {
-                let mut num: String = head;
-                num.push('.');
-                num.push_str(tail.as_str());
-                Value::Float(num.parse::<f64>().unwrap())
+                many(one_of("_0123456789".chars())),
+            ).map(|(sign, head, tail, _dot, under): (Option<char>, String, String, char, String)| {
+                let mut s: String = sign.iter().collect();
+                s.push_str(head.as_str());
+                s.push_str(tail.as_str());
+                s.push('.');
+                s.push_str(under.as_str());
+                let s: String = s.chars().filter(|&c| c != '_').collect();
+                Value::Float(s.parse::<f64>().unwrap())
             });
-        let minus_float_value =
+
+        let num_value =
             (
-                char('-'),
+                optional(char('-')),
                 many1(digit()),
-                char('.'),
-                many1(digit()),
-            ).map(|(_, head, _, tail): (char, String, char, String)| {
-                let mut num: String = head;
-                num.push('.');
-                num.push_str(tail.as_str());
-                Value::Float(-num.parse::<f64>().unwrap())
+                many(one_of("_0123456789".chars())),
+            ).map(|(sign, head, tail): (Option<char>, String, String)| {
+                let mut s: String = sign.iter().collect();
+                s.push_str(head.as_str());
+                s.push_str(tail.as_str());
+                let s: String = s.chars().filter(|&c| c != '_').collect();
+                if sign.is_none() {
+                    Value::Nat(s.parse::<u128>().unwrap())
+                } else {
+                    Value::Int(s.parse::<i128>().unwrap())
+                }
             });
-        let int_value =
-            (
-                char('-'),
-                many1(digit()),
-            ).map(|(_, x): (char, String)| {
-                Value::Int(-x.parse::<i128>().unwrap())
-            });
-        let nat_value = many1(digit()).map(|x: String| Value::Nat(x.parse::<u128>().unwrap()));
+
         let str_value =
             (
                 char('"'),
@@ -110,12 +114,14 @@ parser! {
                         attempt(none_of("\"".chars())))),
                 char('"'),
             ).map(|(_, s, _): (char, String, char)| Value::Str(s));
+
         let variant_value =
             (
                 identifier(),
                 string("::"),
                 identifier(),
             ).map(|t: (String, &str, String)| Value::EnumVariant(t.0, t.2));
+
         let env_value = {
             let default_string_value = (
                 string(":-"),
@@ -131,18 +137,16 @@ parser! {
                 Value::Env(name, default_value)
             })
         };
+
         let var_value = identifier().map(Value::Var);
 
         choice!(
-            attempt(minus_float_value),
             attempt(float_value),
-            int_value,
-            nat_value,
-            str_value,
-            env_value,
+            attempt(num_value),
+            attempt(str_value),
+            attempt(env_value),
             attempt(variant_value),
-            attempt(none_value),
-            attempt(bool_value),
+            attempt(const_value),
             var_value
         )
     }
@@ -156,41 +160,51 @@ mod test_value {
 
     macro_rules! assert_value {
         ($code: expr, $expected: expr) => {
-            assert_eq!(value().parse($code).ok().unwrap(), $expected);
+            assert_eq!(value().parse($code).ok().unwrap().0, $expected);
         };
     }
+
     #[test]
-    fn test_parse() {
-        assert_value!("23", (Value::Nat(23), ""));
-        assert_value!("23_", (Value::Nat(23), "_"));
-        assert_value!("-23_", (Value::Int(-23), "_"));
-        assert_value!("0.5", (Value::Float(0.5), ""));
-        assert_value!("21.5", (Value::Float(21.5), ""));
-        assert_value!("-0.5", (Value::Float(-0.5), ""));
-        assert_value!("-21.5", (Value::Float(-21.5), ""));
-        assert_value!("true", (Value::Bool(true), ""));
-        assert_value!("false", (Value::Bool(false), ""));
-        assert_value!("\"hoge\"", (Value::Str("hoge".to_string()), ""));
-        assert_value!("\"hoge !?\"", (Value::Str("hoge !?".to_string()), ""));
-        assert_value!("\"ho\\nge\"", (Value::Str("ho\nge".to_string()), ""));
-        assert_value!("\"ho\\\"ge\"", (Value::Str("ho\"ge".to_string()), ""));
-        assert_value!("\"ho\\\\ge\\'\"", (Value::Str("ho\\ge'".to_string()), ""));
-        assert_value!("hoge", (Value::Var("hoge".to_string()), ""));
-        assert_value!("_hoge0", (Value::Var("_hoge0".to_string()), ""));
-        assert_value!("$USER", (Value::Env("USER".to_string(), None), ""));
-        assert_value!(
-            "${USER_iD2}",
-            (Value::Env("USER_iD2".to_string(), None), "")
-        );
+    fn test_num() {
+        assert_value!("23", Value::Nat(23));
+        assert_value!("23_", Value::Nat(23));
+        assert_value!("-23_", Value::Int(-23));
+        assert_value!("0.5", Value::Float(0.5));
+        assert_value!("21.5", Value::Float(21.5));
+        assert_value!("-0.5", Value::Float(-0.5));
+        assert_value!("-21.5", Value::Float(-21.5));
+    }
+    #[test]
+    fn test_const() {
+        assert_value!("true", Value::Bool(true));
+        assert_value!("false", Value::Bool(false));
+        assert_value!("None", Value::Nothing);
+    }
+    #[test]
+    fn test_str() {
+        assert_value!("\"hoge\"", Value::Str("hoge".to_string()));
+        assert_value!("\"hoge !?\"", Value::Str("hoge !?".to_string()));
+        assert_value!("\"ho\\nge\"", Value::Str("ho\nge".to_string()));
+        assert_value!("\"ho\\\"ge\"", Value::Str("ho\"ge".to_string()));
+        assert_value!("\"ho\\\\ge\\'\"", Value::Str("ho\\ge'".to_string()));
+    }
+    #[test]
+    fn test_var() {
+        assert_value!("hoge", Value::Var("hoge".to_string()));
+        assert_value!("_hoge0", Value::Var("_hoge0".to_string()));
+        assert_value!("$USER", Value::Env("USER".to_string(), None));
+        assert_value!("${USER_iD2}", Value::Env("USER_iD2".to_string(), None));
+    }
+    #[test]
+    fn test_enum() {
         assert_value!(
             "${X:-hoge}",
-            (Value::Env("X".to_string(), Some("hoge".to_string())), "")
+            Value::Env("X".to_string(), Some("hoge".to_string()))
         );
         assert_value!(
             "X::Zoo",
-            (Value::EnumVariant("X".to_string(), "Zoo".to_string()), "")
+            Value::EnumVariant("X".to_string(), "Zoo".to_string())
         );
-        assert_value!("None", (Value::Nothing, ""));
     }
 
     #[test]
