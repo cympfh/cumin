@@ -1,4 +1,4 @@
-# cumin
+# cumin 🌿
 
 is a Structured Typed Configuration Language.
 
