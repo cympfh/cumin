@@ -30,11 +30,8 @@ impl Value {
             (Nat(_), Typing::Nat) => self.clone(),
             (Nat(x), Typing::Int) => Int((*x) as i128),
             (Nat(x), Typing::Float) => Float((*x) as f64),
-            (Int(x), Typing::Nat) => Nat((*x) as u128),
             (Int(_), Typing::Int) => self.clone(),
             (Int(x), Typing::Float) => Float((*x) as f64),
-            (Float(x), Typing::Nat) => Nat((*x) as u128),
-            (Float(x), Typing::Int) => Int((*x) as i128),
             (Float(_), Typing::Float) => self.clone(),
             (Str(_), Typing::String) => self.clone(),
             (Dict(dict_name, _), Typing::UserTyping(type_name))
@@ -54,7 +51,10 @@ impl Value {
         use Value::*;
         match (self, typ) {
             (Nat(x), Typing::String) => Str(format!("{}", x)),
+            (Int(x), Typing::Nat) => Nat((*x) as u128),
             (Int(x), Typing::String) => Str(format!("{}", x)),
+            (Float(x), Typing::Nat) => Nat((*x) as u128),
+            (Float(x), Typing::Int) => Int((*x) as i128),
             (Float(x), Typing::String) => Str(format!("{}", x)),
             (Str(x), Typing::Nat) => Nat(x.parse::<u128>().unwrap()),
             (Str(x), Typing::Int) => Int(x.parse::<i128>().unwrap()),
@@ -228,8 +228,9 @@ mod test_value {
     fn test_cast() {
         assert_eq!(Nat(0).cast(&Typing::Nat), Nat(0));
         assert_eq!(Nat(0).cast(&Typing::Int), Int(0));
-        assert_eq!(Int(0).cast(&Typing::Nat), Nat(0));
+        assert_eq!(Nat(0).cast(&Typing::Float), Float(0.0));
         assert_eq!(Int(0).cast(&Typing::Int), Int(0));
+        assert_eq!(Int(0).cast(&Typing::Float), Float(0.0));
         assert_eq!(
             Str("0".to_string()).cast(&Typing::String),
             Str("0".to_string())
@@ -240,6 +241,7 @@ mod test_value {
     fn test_coerce() {
         assert_eq!(Nat(0).coerce(&Typing::String), Str("0".to_string()));
         assert_eq!(Int(0).coerce(&Typing::String), Str("0".to_string()));
+        assert_eq!(Int(0).coerce(&Typing::Nat), Nat(0));
         assert_eq!(Str("0".to_string()).coerce(&Typing::Nat), Nat(0));
         assert_eq!(Str("0".to_string()).coerce(&Typing::Int), Int(0));
         assert_eq!(Str("true".to_string()).coerce(&Typing::Bool), Bool(true));
