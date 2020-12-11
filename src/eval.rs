@@ -41,9 +41,9 @@ fn eval_conf(env: &mut Environ, conf: &Config) -> Value {
     // collect let
     for stmt in conf.0.iter() {
         match stmt {
-            Let(id, ty, expr) => {
-                let val = eval_expr(&env, expr);
-                env.vars.insert(id.clone(), (ty.clone(), val));
+            Let(id, typ, expr) => {
+                let val = eval_expr(&env, expr).cast(typ);
+                env.vars.insert(id.clone(), (typ.clone(), val));
             }
             _ => (),
         }
@@ -82,13 +82,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                         .zip(values.iter())
                         .map(|((name, _ty, _default), value)| (name.to_string(), value.clone()))
                         .collect();
-                    Dict(items)
+                    Dict(Some(name.to_string()), items)
                 }
                 _ => panic!("Cannot resolve name {}", name),
             }
         }
-        FieledApply(f, items) => {
-            if let Some(fields) = env.structs.get(f) {
+        FieledApply(name, items) => {
+            if let Some(fields) = env.structs.get(name) {
                 let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
                 let items: Vec<(String, Value)> = fields
                     .iter()
@@ -104,9 +104,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                         }
                     })
                     .collect();
-                Dict(items)
+                Dict(Some(name.to_string()), items)
             } else {
-                panic!("Cannot resolve name {}", f)
+                panic!("Cannot resolve name {}", name)
             }
         }
         AnonymousStruct(items) => {
@@ -114,7 +114,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 .iter()
                 .map(|(name, val)| (name.to_string(), eval_expr(&env, &val)))
                 .collect();
-            Dict(items)
+            Dict(None, items)
         }
         Add(x, y) => {
             let a = eval_expr(&env, &x);
@@ -294,7 +294,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
         }
         AsCast(expr, typ) => {
             let val = eval_expr(&env, &expr);
-            val.cast(typ)
+            val.coerce(typ)
         }
     }
 }

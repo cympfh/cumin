@@ -15,7 +15,7 @@ pub enum Value {
     Str(String),
     Var(String),
     Env(String, Option<String>),
-    Dict(Vec<(String, Value)>),
+    Dict(Option<String>, Vec<(String, Value)>),
     EnumVariant(String, String),
     Array(Vec<Value>),
     Just(Box<Value>),
@@ -26,25 +26,42 @@ impl Value {
     pub fn cast(&self, typ: &Typing) -> Value {
         use Value::*;
         match (self, typ) {
-            (Nat(x), Typing::Nat) => Nat(*x),
+            (_, Typing::Any) => self.clone(),
+            (Nat(_), Typing::Nat) => self.clone(),
             (Nat(x), Typing::Int) => Int((*x) as i128),
             (Nat(x), Typing::Float) => Float((*x) as f64),
-            (Nat(x), Typing::String) => Str(format!("{}", x)),
             (Int(x), Typing::Nat) => Nat((*x) as u128),
-            (Int(x), Typing::Int) => Int(*x),
+            (Int(_), Typing::Int) => self.clone(),
             (Int(x), Typing::Float) => Float((*x) as f64),
-            (Int(x), Typing::String) => Str(format!("{}", x)),
             (Float(x), Typing::Nat) => Nat((*x) as u128),
             (Float(x), Typing::Int) => Int((*x) as i128),
-            (Float(x), Typing::Float) => Float(*x),
+            (Float(_), Typing::Float) => self.clone(),
+            (Str(_), Typing::String) => self.clone(),
+            (Dict(dict_name, _), Typing::UserTyping(type_name))
+                if &Some(type_name.to_string()) == dict_name =>
+            {
+                self.clone()
+            }
+            (EnumVariant(enum_name, _), Typing::UserTyping(type_name))
+                if enum_name == type_name =>
+            {
+                self.clone()
+            }
+            _ => panic!("Cannot cast {:?} => {:?}", self, typ),
+        }
+    }
+    pub fn coerce(&self, typ: &Typing) -> Value {
+        use Value::*;
+        match (self, typ) {
+            (Nat(x), Typing::String) => Str(format!("{}", x)),
+            (Int(x), Typing::String) => Str(format!("{}", x)),
             (Float(x), Typing::String) => Str(format!("{}", x)),
             (Str(x), Typing::Nat) => Nat(x.parse::<u128>().unwrap()),
             (Str(x), Typing::Int) => Int(x.parse::<i128>().unwrap()),
             (Str(x), Typing::Float) => Float(x.parse::<f64>().unwrap()),
             (Str(x), Typing::Bool) if x.as_str() == "true" => Bool(true),
             (Str(x), Typing::Bool) if x.as_str() == "false" => Bool(false),
-            (Str(x), Typing::String) => Str(x.to_string()),
-            _ => panic!("Cannot cast {:?} as {:?}", self, typ),
+            _ => self.cast(typ),
         }
     }
 }
@@ -211,17 +228,21 @@ mod test_value {
     fn test_cast() {
         assert_eq!(Nat(0).cast(&Typing::Nat), Nat(0));
         assert_eq!(Nat(0).cast(&Typing::Int), Int(0));
-        assert_eq!(Nat(0).cast(&Typing::String), Str("0".to_string()));
         assert_eq!(Int(0).cast(&Typing::Nat), Nat(0));
         assert_eq!(Int(0).cast(&Typing::Int), Int(0));
-        assert_eq!(Int(0).cast(&Typing::String), Str("0".to_string()));
-        assert_eq!(Str("0".to_string()).cast(&Typing::Nat), Nat(0));
-        assert_eq!(Str("0".to_string()).cast(&Typing::Int), Int(0));
         assert_eq!(
             Str("0".to_string()).cast(&Typing::String),
             Str("0".to_string())
         );
-        assert_eq!(Str("true".to_string()).cast(&Typing::Bool), Bool(true));
-        assert_eq!(Str("false".to_string()).cast(&Typing::Bool), Bool(false));
+    }
+
+    #[test]
+    fn test_coerce() {
+        assert_eq!(Nat(0).coerce(&Typing::String), Str("0".to_string()));
+        assert_eq!(Int(0).coerce(&Typing::String), Str("0".to_string()));
+        assert_eq!(Str("0".to_string()).coerce(&Typing::Nat), Nat(0));
+        assert_eq!(Str("0".to_string()).coerce(&Typing::Int), Int(0));
+        assert_eq!(Str("true".to_string()).coerce(&Typing::Bool), Bool(true));
+        assert_eq!(Str("false".to_string()).coerce(&Typing::Bool), Bool(false));
     }
 }

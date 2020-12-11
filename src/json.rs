@@ -48,7 +48,7 @@ impl JSON {
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
             Value::Env(v, _) => panic!("Env {} is unresolved", v),
-            Value::Dict(items) => {
+            Value::Dict(_name, items) => {
                 let items: Vec<(String, JSON)> = items
                     .iter()
                     .map(|(key, val)| (key.to_string(), JSON::from_cumin((*val).clone())))
