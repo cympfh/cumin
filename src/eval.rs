@@ -80,7 +80,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                     let items: Vec<(String, Value)> = fields
                         .iter()
                         .zip(values.iter())
-                        .map(|((name, _ty, _default), value)| (name.to_string(), value.clone()))
+                        .map(|((name, typ, _default), value)| (name.to_string(), value.cast(&typ)))
                         .collect();
                     Dict(Some(name.to_string()), items)
                 }
@@ -92,12 +92,12 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
                 let items: Vec<(String, Value)> = fields
                     .iter()
-                    .map(|(name, _ty, default)| {
+                    .map(|(name, typ, default)| {
                         if let Some(arg) = args.get(&name.to_string()) {
-                            (name.to_string(), eval_expr(&env, &arg))
+                            (name.to_string(), eval_expr(&env, &arg).cast(&typ))
                         } else {
                             if let Some(e) = default {
-                                (name.to_string(), eval_expr(&env, e))
+                                (name.to_string(), eval_expr(&env, e).cast(&typ))
                             } else {
                                 panic!("Cannot find field {}", name)
                             }
