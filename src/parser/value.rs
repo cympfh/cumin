@@ -1,5 +1,6 @@
 use crate::parser::typing::*;
 use crate::parser::util::*;
+use anyhow::Result;
 use combine::error::ParseError;
 use combine::parser::char::{char, digit, string};
 use combine::parser::combinator::attempt;
@@ -23,9 +24,9 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn cast(&self, typ: &Typing) -> Value {
+    pub fn cast(&self, typ: &Typing) -> Result<Value> {
         use Value::*;
-        match (self, typ) {
+        let ret = match (self, typ) {
             (_, Typing::Any) => self.clone(),
             (Nat(_), Typing::Nat) => self.clone(),
             (Nat(x), Typing::Int) => Int((*x) as i128),
@@ -35,7 +36,7 @@ impl Value {
             (Float(_), Typing::Float) => self.clone(),
             (Str(_), Typing::String) => self.clone(),
             (Array(elems), Typing::Array(t)) => {
-                let elems = elems.iter().map(|val| val.cast(t)).collect();
+                let elems = elems.iter().map(|val| val.cast(t)).collect::<Result<_>>()?;
                 Array(elems)
             }
             (Dict(dict_name, _), Typing::UserTyping(type_name))
@@ -48,12 +49,13 @@ impl Value {
             {
                 self.clone()
             }
-            _ => panic!("Cannot cast {:?} => {:?}", self, typ),
-        }
+            _ => bail!("Cannot cast {:?} => {:?}", self, typ),
+        };
+        Ok(ret)
     }
-    pub fn coerce(&self, typ: &Typing) -> Value {
+    pub fn coerce(&self, typ: &Typing) -> Result<Value> {
         use Value::*;
-        match (self, typ) {
+        let ret = match (self, typ) {
             (Nat(x), Typing::String) => Str(format!("{}", x)),
             (Int(x), Typing::Nat) => Nat((*x) as u128),
             (Int(x), Typing::String) => Str(format!("{}", x)),
@@ -65,8 +67,9 @@ impl Value {
             (Str(x), Typing::Float) => Float(x.parse::<f64>().unwrap()),
             (Str(x), Typing::Bool) if x.as_str() == "true" => Bool(true),
             (Str(x), Typing::Bool) if x.as_str() == "false" => Bool(false),
-            _ => self.cast(typ),
-        }
+            _ => self.cast(typ)?,
+        };
+        Ok(ret)
     }
 }
 
@@ -228,31 +231,41 @@ mod test_value {
         );
     }
 
+    macro_rules! assert_cast {
+        ($val:expr, $type:expr, $expected:expr) => {
+            assert_eq!($val.cast(&$type).unwrap(), $expected)
+        };
+    }
+
     #[test]
     fn test_cast() {
-        assert_eq!(Nat(0).cast(&Typing::Nat), Nat(0));
-        assert_eq!(Nat(0).cast(&Typing::Int), Int(0));
-        assert_eq!(Nat(0).cast(&Typing::Float), Float(0.0));
-        assert_eq!(Int(0).cast(&Typing::Int), Int(0));
-        assert_eq!(Int(0).cast(&Typing::Float), Float(0.0));
-        assert_eq!(
-            Str("0".to_string()).cast(&Typing::String),
-            Str("0".to_string())
-        );
-        assert_eq!(
-            Array(vec![Nat(0), Int(-1), Float(0.5)]).cast(&Typing::Array(Box::new(Typing::Float))),
+        assert_cast!(Nat(0), Typing::Nat, Nat(0));
+        assert_cast!(Nat(0), Typing::Int, Int(0));
+        assert_cast!(Nat(0), Typing::Float, Float(0.0));
+        assert_cast!(Int(0), Typing::Int, Int(0));
+        assert_cast!(Int(0), Typing::Float, Float(0.0));
+        assert_cast!(Str("0".to_string()), &Typing::String, Str("0".to_string()));
+        assert_cast!(
+            Array(vec![Nat(0), Int(-1), Float(0.5)]),
+            Typing::Array(Box::new(Typing::Float)),
             Array(vec![Float(0.0), Float(-1.0), Float(0.5)])
         );
     }
 
+    macro_rules! assert_coerce {
+        ($val:expr, $type:expr, $expected:expr) => {
+            assert_eq!($val.coerce(&$type).unwrap(), $expected)
+        };
+    }
+
     #[test]
     fn test_coerce() {
-        assert_eq!(Nat(0).coerce(&Typing::String), Str("0".to_string()));
-        assert_eq!(Int(0).coerce(&Typing::String), Str("0".to_string()));
-        assert_eq!(Int(0).coerce(&Typing::Nat), Nat(0));
-        assert_eq!(Str("0".to_string()).coerce(&Typing::Nat), Nat(0));
-        assert_eq!(Str("0".to_string()).coerce(&Typing::Int), Int(0));
-        assert_eq!(Str("true".to_string()).coerce(&Typing::Bool), Bool(true));
-        assert_eq!(Str("false".to_string()).coerce(&Typing::Bool), Bool(false));
+        assert_coerce!(Nat(0), Typing::String, Str("0".to_string()));
+        assert_coerce!(Int(0), Typing::String, Str("0".to_string()));
+        assert_coerce!(Int(0), Typing::Nat, Nat(0));
+        assert_coerce!(Str("0".to_string()), Typing::Nat, Nat(0));
+        assert_coerce!(Str("0".to_string()), Typing::Int, Int(0));
+        assert_coerce!(Str("true".to_string()), Typing::Bool, Bool(true));
+        assert_coerce!(Str("false".to_string()), Typing::Bool, Bool(false));
     }
 }
