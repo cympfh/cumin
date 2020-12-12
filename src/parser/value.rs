@@ -24,6 +24,29 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn type_of(&self) -> Option<Typing> {
+        match self {
+            Value::Nat(_) => Some(Typing::Nat),
+            Value::Int(_) => Some(Typing::Int),
+            Value::Float(_) => Some(Typing::Float),
+            Value::Bool(_) => Some(Typing::Bool),
+            Value::Str(_) | Value::Env(_, _) => Some(Typing::String),
+            Value::Dict(Some(name), _) | Value::EnumVariant(name, _) => {
+                Some(Typing::UserTyping(name.to_string()))
+            }
+            Value::Array(elems) => {
+                for elem in elems {
+                    if let Some(typ) = elem.type_of() {
+                        return Some(Typing::Array(Box::new(typ)));
+                    }
+                }
+                None
+            }
+            Value::Just(val) => val.type_of().map(|typ| Typing::Option(Box::new(typ))),
+            _ => None,
+        }
+    }
+
     pub fn cast(&self, typ: &Typing) -> Result<Value> {
         use Value::*;
         let ret = match (self, typ) {
@@ -34,11 +57,17 @@ impl Value {
             (Int(_), Typing::Int) => self.clone(),
             (Int(x), Typing::Float) => Float((*x) as f64),
             (Float(_), Typing::Float) => self.clone(),
+            (Bool(_), Typing::Bool) => self.clone(),
             (Str(_), Typing::String) => self.clone(),
             (Array(elems), Typing::Array(t)) => {
                 let elems = elems.iter().map(|val| val.cast(t)).collect::<Result<_>>()?;
                 Array(elems)
             }
+            (Just(x), Typing::Option(t)) => {
+                let val = x.cast(t)?;
+                Just(Box::new(val))
+            }
+            (Nothing, Typing::Option(_)) => self.clone(),
             (Dict(dict_name, _), Typing::UserTyping(type_name))
                 if &Some(type_name.to_string()) == dict_name =>
             {
@@ -245,6 +274,14 @@ mod test_value {
         assert_cast!(Int(0), Typing::Int, Int(0));
         assert_cast!(Int(0), Typing::Float, Float(0.0));
         assert_cast!(Str("0".to_string()), &Typing::String, Str("0".to_string()));
+        assert_cast!(Bool(true), Typing::Bool, Bool(true));
+        assert_cast!(Bool(false), Typing::Bool, Bool(false));
+        assert_cast!(Nothing, Typing::Option(Box::new(Typing::Int)), Nothing);
+        assert_cast!(
+            Just(Box::new(Nat(0))),
+            Typing::Option(Box::new(Typing::Int)),
+            Just(Box::new(Int(0)))
+        );
         assert_cast!(
             Array(vec![Nat(0), Int(-1), Float(0.5)]),
             Typing::Array(Box::new(Typing::Float)),
@@ -267,5 +304,26 @@ mod test_value {
         assert_coerce!(Str("0".to_string()), Typing::Int, Int(0));
         assert_coerce!(Str("true".to_string()), Typing::Bool, Bool(true));
         assert_coerce!(Str("false".to_string()), Typing::Bool, Bool(false));
+    }
+
+    macro_rules! assert_type_of {
+        ($val:expr, $type:expr) => {
+            assert_eq!($val.type_of(), $type);
+        };
+    }
+
+    #[test]
+    fn test_type_of() {
+        assert_type_of!(Value::Int(1), Some(Typing::Int));
+        assert_type_of!(Value::Nothing, None);
+        assert_type_of!(
+            Value::Just(Box::new(Value::Nat(2))),
+            Some(Typing::Option(Box::new(Typing::Nat)))
+        );
+        assert_type_of!(Value::Array(vec![]), None);
+        assert_type_of!(
+            Value::Array(vec![Value::Int(1)]),
+            Some(Typing::Array(Box::new(Typing::Int)))
+        );
     }
 }
