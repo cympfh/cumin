@@ -26,6 +26,7 @@ parser! {
     ]
     {
         let any_typing = string("Any").map(|_| Typing::Any);
+        let underscore_typing = string("_").map(|_| Typing::Any);
         let nat_typing = string("Nat").map(|_| Typing::Nat);
         let int_typing = string("Int").map(|_| Typing::Int);
         let float_typing = string("Float").map(|_| Typing::Float);
@@ -50,6 +51,7 @@ parser! {
             attempt(array_typing),
             attempt(option_typing),
             attempt(any_typing),
+            attempt(underscore_typing),
             attempt(nat_typing),
             attempt(int_typing),
             attempt(float_typing),
@@ -106,6 +108,7 @@ mod test_typing {
         assert_typing!("Float", Typing::Float);
         assert_typing!("Bool", Typing::Bool);
         assert_typing!("String", Typing::String);
+        assert_typing!("Array<_>", Typing::Array(Box::new(Typing::Any)));
         assert_typing!("Array<String>", Typing::Array(Box::new(Typing::String)));
         assert_typing!(
             "Array<Array<String>>",
