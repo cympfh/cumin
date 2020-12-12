@@ -5,19 +5,20 @@ use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::typing::*;
 use crate::parser::value::*;
+use anyhow::Result;
 use std::env;
 
 use std::collections::HashMap;
 
 use Statement::*;
 
-pub fn eval(config: Config) -> JSON {
+pub fn eval(config: Config) -> Result<JSON> {
     let mut env = Environ::new();
-    let val = eval_conf(&mut env, &config);
-    JSON::from_cumin(val)
+    let val = eval_conf(&mut env, &config)?;
+    Ok(JSON::from_cumin(val))
 }
 
-fn eval_conf(env: &mut Environ, conf: &Config) -> Value {
+fn eval_conf(env: &mut Environ, conf: &Config) -> Result<Value> {
     // collect struct
     for stmt in conf.0.iter() {
         match stmt {
@@ -41,9 +42,9 @@ fn eval_conf(env: &mut Environ, conf: &Config) -> Value {
     // collect let
     for stmt in conf.0.iter() {
         match stmt {
-            Let(id, ty, expr) => {
-                let val = eval_expr(&env, expr);
-                env.vars.insert(id.clone(), (ty.clone(), val));
+            Let(id, typ, expr) => {
+                let val = eval_expr(&env, expr)?.cast(typ)?;
+                env.vars.insert(id.clone(), (typ.clone(), val));
             }
             _ => (),
         }
@@ -52,17 +53,22 @@ fn eval_conf(env: &mut Environ, conf: &Config) -> Value {
     eval_expr(&env, &conf.1)
 }
 
-fn eval_expr(env: &Environ, expr: &Expr) -> Value {
+fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
     use Expr::*;
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
         Apply(name, args) => {
-            let values: Vec<Value> = args.iter().map(|x| eval_expr(&env, &x)).collect();
+            let values: Vec<Value> = args
+                .iter()
+                .map(|x| eval_expr(&env, &x))
+                .collect::<Result<_>>()?;
             match name.as_str() {
                 "Some" => {
                     assert!(values.len() == 1);
-                    Just(Box::new(values[0].clone()))
+                    let val = values[0].clone();
+                    let typ = val.type_of();
+                    Ok(Optional(typ, Box::new(Some(val))))
                 }
                 "not" => {
                     assert!(values.len() == 1);
@@ -77,49 +83,50 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 _ if env.structs.contains_key(name) => {
                     let fields = env.structs.get(name).unwrap();
                     assert!(fields.len() == values.len());
-                    let items: Vec<(String, Value)> = fields
-                        .iter()
-                        .zip(values.iter())
-                        .map(|((name, _ty, _default), value)| (name.to_string(), value.clone()))
-                        .collect();
-                    Dict(items)
+                    let mut items = vec![];
+                    for ((name, typ, _default), value) in fields.iter().zip(values.iter()) {
+                        let val = value.cast(typ)?;
+                        items.push((name.to_string(), val.clone()));
+                    }
+                    Ok(Dict(Some(name.to_string()), items))
                 }
-                _ => panic!("Cannot resolve name {}", name),
+                _ => bail!("Cannot resolve name {}", name),
             }
         }
-        FieledApply(f, items) => {
-            if let Some(fields) = env.structs.get(f) {
+        FieledApply(name, items) => {
+            if let Some(fields) = env.structs.get(name) {
                 let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
-                let items: Vec<(String, Value)> = fields
-                    .iter()
-                    .map(|(name, _ty, default)| {
-                        if let Some(arg) = args.get(&name.to_string()) {
-                            (name.to_string(), eval_expr(&env, &arg))
+                let mut values: Vec<(String, Value)> = vec![];
+                for (name, typ, default) in fields {
+                    if let Some(arg) = args.get(&name.to_string()) {
+                        let val = eval_expr(&env, &arg)?.cast(&typ)?;
+                        values.push((name.to_string(), val));
+                    } else {
+                        if let Some(e) = default {
+                            let val = eval_expr(&env, &e)?.cast(&typ)?;
+                            values.push((name.to_string(), val));
                         } else {
-                            if let Some(e) = default {
-                                (name.to_string(), eval_expr(&env, e))
-                            } else {
-                                panic!("Cannot find field {}", name)
-                            }
+                            bail!("Cannot find field {}", name)
                         }
-                    })
-                    .collect();
-                Dict(items)
+                    }
+                }
+                Ok(Dict(Some(name.to_string()), values))
             } else {
-                panic!("Cannot resolve name {}", f)
+                bail!("Cannot resolve name {}", name)
             }
         }
         AnonymousStruct(items) => {
-            let items = items
-                .iter()
-                .map(|(name, val)| (name.to_string(), eval_expr(&env, &val)))
-                .collect();
-            Dict(items)
+            let mut values = vec![];
+            for (name, val) in items.iter() {
+                let val = eval_expr(&env, &val)?;
+                values.push((name.to_string(), val.clone()));
+            }
+            Ok(Dict(None, values))
         }
         Add(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Nat(x + y),
                 (Nat(x), Int(y)) => Int(x as i128 + y),
                 (Nat(x), Float(y)) => Float(x as f64 + y),
@@ -134,13 +141,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                     z.push_str(&y);
                     Str(z)
                 }
-                _ => panic!("Cant compute {:?} + {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} + {:?}", x, y),
+            };
+            Ok(ret)
         }
         Sub(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => {
                     if x >= y {
                         Nat(x - y)
@@ -156,13 +164,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x - y as f64),
                 (Float(x), Int(y)) => Float(x - y as f64),
                 (Float(x), Float(y)) => Float(x - y),
-                _ => panic!("Cant compute {:?} - {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} - {:?}", x, y),
+            };
+            Ok(ret)
         }
         Mul(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Nat(x * y),
                 (Nat(x), Int(y)) => Int(x as i128 * y),
                 (Nat(x), Float(y)) => Float(x as f64 * y),
@@ -172,13 +181,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x * y as f64),
                 (Float(x), Int(y)) => Float(x * y as f64),
                 (Float(x), Float(y)) => Float(x * y),
-                _ => panic!("Cant compute {:?} * {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} * {:?}", x, y),
+            };
+            Ok(ret)
         }
         Div(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Nat(x / y),
                 (Nat(x), Int(y)) => Int(x as i128 / y),
                 (Nat(x), Float(y)) => Float(x as f64 / y),
@@ -188,13 +198,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x / y as f64),
                 (Float(x), Int(y)) => Float(x / y as f64),
                 (Float(x), Float(y)) => Float(x / y),
-                _ => panic!("Cant compute {:?} / {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} / {:?}", x, y),
+            };
+            Ok(ret)
         }
         Pow(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Nat(x.pow(y as u32)),
                 (Nat(x), Int(y)) => {
                     if y >= 0 {
@@ -216,114 +227,139 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Value {
                 (Float(x), Nat(y)) => Float(x.powi(y as i32)),
                 (Float(x), Int(y)) => Float(x.powi(y as i32)),
                 (Float(x), Float(y)) => Float(x.powf(y)),
-                _ => panic!("Cant compute {:?} / {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} / {:?}", x, y),
+            };
+            Ok(ret)
         }
         Minus(x) => {
-            let a = eval_expr(&env, &x);
-            match a {
+            let a = eval_expr(&env, &x)?;
+            let ret = match a {
                 Nat(x) => Int(-(x as i128)),
                 Int(x) => Int(-x),
                 Float(x) => Float(-x),
-                _ => panic!("Cant compute -({:?})", x),
-            }
+                _ => bail!("Cant compute -({:?})", x),
+            };
+            Ok(ret)
         }
         And(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x && y),
-                _ => panic!("Cant compute {:?} and {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} and {:?}", x, y),
+            };
+            Ok(ret)
         }
         Or(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x || y),
-                _ => panic!("Cant compute {:?} or {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} or {:?}", x, y),
+            };
+            Ok(ret)
         }
         Xor(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x ^ y),
-                _ => panic!("Cant compute {:?} xor {:?}", x, y),
-            }
+                _ => bail!("Cant compute {:?} xor {:?}", x, y),
+            };
+            Ok(ret)
         }
         Not(x) => {
-            let a = eval_expr(&env, &x);
-            match a {
+            let a = eval_expr(&env, &x)?;
+            let ret = match a {
                 Bool(x) => Bool(!x),
-                _ => panic!("Cant compute not {:?}", x),
-            }
+                _ => bail!("Cant compute not {:?}", x),
+            };
+            Ok(ret)
         }
         Equal(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Bool(x == y),
                 (Nat(x), Int(y)) => Bool(x as i128 == y),
                 (Int(x), Nat(y)) => Bool(x == y as i128),
                 (Int(x), Int(y)) => Bool(x == y),
                 (Float(x), Float(y)) => Bool(x == y),
                 (Bool(x), Bool(y)) => Bool(x == y),
-                _ => panic!("Cant compare {:?} == {:?}", x, y),
-            }
+                _ => bail!("Cant compare {:?} == {:?}", x, y),
+            };
+            Ok(ret)
         }
         Less(x, y) => {
-            let a = eval_expr(&env, &x);
-            let b = eval_expr(&env, &y);
-            match (a, b) {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
                 (Nat(x), Nat(y)) => Bool(x < y),
                 (Nat(x), Int(y)) => Bool((x as i128) < y),
                 (Int(x), Nat(y)) => Bool(x < y as i128),
                 (Int(x), Int(y)) => Bool(x < y),
                 (Float(x), Float(y)) => Bool(x < y),
-                _ => panic!("Cant compare {:?} < {:?}", x, y),
-            }
+                _ => bail!("Cant compare {:?} < {:?}", x, y),
+            };
+            Ok(ret)
         }
         Arrayed(elements) => {
-            let elements = elements.iter().map(|e| eval_expr(&env, &e)).collect();
-            Array(elements)
+            let elements: Vec<Value> = elements
+                .iter()
+                .map(|e| eval_expr(&env, &e))
+                .collect::<Result<_>>()?;
+            // type-unification
+            let mut element_type = Typing::Any;
+            for elem in elements.iter() {
+                if let Some(unified) = Typing::unify(&element_type, &elem.type_of()) {
+                    element_type = unified;
+                } else {
+                    bail!("Cannot infer type of Array({:?}); Hint: Array cannot contain values with different types.", &elements);
+                }
+            }
+            let mut values = vec![];
+            for elem in elements.iter() {
+                let val = elem.cast(&element_type)?;
+                values.push(val);
+            }
+            Ok(Array(element_type, values))
         }
         Blocked(conf_inner) => {
             let mut env_inner: Environ = (*env).clone();
             eval_conf(&mut env_inner, &conf_inner)
         }
         AsCast(expr, typ) => {
-            let val = eval_expr(&env, &expr);
-            val.cast(typ)
+            let val = eval_expr(&env, &expr)?;
+            val.coerce(typ)
         }
     }
 }
 
-fn eval_value(env: &Environ, value: &Value) -> Value {
+fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
     use Value::*;
     match value {
         Var(v) => match env.vars.get(v) {
-            Some((_, val)) => (*val).clone(),
-            None => panic!("Undefined variable {}", v),
+            Some((_, val)) => Ok((*val).clone()),
+            None => bail!("Undefined variable {}", v),
         },
         Env(v, default_value) => match (env.env_vars.get(v), default_value) {
-            (Some(val), _) => Str(val.to_string()),
-            (None, Some(def)) => Str(def.to_string()),
-            _ => panic!("Undefined env variable {}", v),
+            (Some(val), _) => Ok(Str(val.to_string())),
+            (None, Some(def)) => Ok(Str(def.to_string())),
+            _ => bail!("Undefined env variable {}", v),
         },
         EnumVariant(s, t) => {
             // check existence
-            let ok = if let Some(variants) = env.enums.get(s) {
-                variants.iter().any(|v| v == t)
+            if let Some(variants) = env.enums.get(s) {
+                if variants.iter().any(|v| v == t) {
+                    Ok(EnumVariant(s.to_string(), t.to_string()))
+                } else {
+                    bail!("Enum {} doesnt have {}", s, t)
+                }
             } else {
-                false
-            };
-            if !ok {
-                panic!("Not found Enum {}::{}", s, t);
+                bail!("Not found Enum {}", s)
             }
-            EnumVariant(s.to_string(), t.to_string())
         }
-        _ => value.clone(),
+        _ => Ok(value.clone()),
     }
 }
 
@@ -359,7 +395,7 @@ mod test_eval_from_parse {
 
     macro_rules! assert_eval {
         ($code:expr, $json:expr) => {
-            assert_eq!(eval(config().parse($code).unwrap().0), $json);
+            assert_eq!(eval(config().parse($code).unwrap().0).unwrap(), $json);
         };
     }
 
@@ -436,6 +472,18 @@ mod test_eval_from_parse {
             "[None, Some(1)]",
             JSON::Array(vec![JSON::Null, JSON::Nat(1)])
         );
+    }
+
+    #[test]
+    fn test_array() {
+        use JSON::*;
+        assert_eval!("[1, 2, 3]", Array(vec![Nat(1), Nat(2), Nat(3)]));
+        assert_eval!(
+            "[1, 2, 3, -1]",
+            Array(vec![Int(1), Int(2), Int(3), Int(-1)])
+        );
+        assert_eval!("[None]", Array(vec![Null]));
+        assert_eval!("[Some(1), Some(-1)]", Array(vec![Int(1), Int(-1)]));
     }
 
     #[test]

@@ -1,0 +1,13 @@
+/// Array can contain same typed values.
+
+// The elements infered as Array<Option<Vec<Nat>>>.
+let x = [None, Some([1]), None, Some([]), None];
+
+// Unknown part is typed with Any.
+// This is `Array<Option<Array<Any>>>
+let x = [None, Some([]), None, Some([]), None];
+
+// Of course, you can annotate explicitly.
+let x: Array<Option<Array<Nat>>> = [None, Some([])];
+
+x

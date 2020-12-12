@@ -1,0 +1,49 @@
+/// NOTE: This is an Example occurring `Type Errors`
+
+// let x: Int = "hoge";
+// FIX TO:
+let x: String = "hoge";
+
+struct X {}
+struct Y {}
+// let x: Y = X{};
+// FIX TO:
+let x: X = X{};
+
+enum A { a, b, c }
+enum S { s, t }
+// let x: S = A::a;
+// FIX TO:
+let x: A = A::a;
+
+struct Z {
+    x: Int = 0,
+    s: String,
+}
+// let x = Z(2, 3);
+// FIX TO:
+let x = Z(2, "three");
+
+// let x = Z { s = 3 };
+// FIX TO:
+let x = Z { s = "three" };
+
+// let x: Array<Int> = [1, -1, 2.1];
+// FIX TO:
+let x: Array<Int> = [1, -1, 2];
+
+let x = [
+    1,
+    -1,
+    1.1,
+    "one",
+    X{},
+];
+// FIX TO:
+// let x = [
+//     1,
+//     -1,
+//     1.1,
+// ];
+
+x

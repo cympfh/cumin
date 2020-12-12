@@ -48,7 +48,7 @@ impl JSON {
             Value::Str(x) => Str(x),
             Value::Var(v) => panic!("Var {} is unresolved", v),
             Value::Env(v, _) => panic!("Env {} is unresolved", v),
-            Value::Dict(items) => {
+            Value::Dict(_name, items) => {
                 let items: Vec<(String, JSON)> = items
                     .iter()
                     .map(|(key, val)| (key.to_string(), JSON::from_cumin((*val).clone())))
@@ -56,15 +56,17 @@ impl JSON {
                 Dict(items)
             }
             Value::EnumVariant(_, t) => Str(t),
-            Value::Array(elements) => {
+            Value::Array(_typ, elements) => {
                 let elements = elements
                     .iter()
                     .map(|e| JSON::from_cumin((*e).clone()))
                     .collect();
                 Array(elements)
             }
-            Value::Just(x) => JSON::from_cumin(*x),
-            Value::Nothing => JSON::Null,
+            Value::Optional(_typ, val) => match *val {
+                Some(x) => JSON::from_cumin(x),
+                None => JSON::Null,
+            },
         }
     }
 }
