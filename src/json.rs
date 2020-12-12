@@ -56,15 +56,17 @@ impl JSON {
                 Dict(items)
             }
             Value::EnumVariant(_, t) => Str(t),
-            Value::Array(elements) => {
+            Value::Array(_typ, elements) => {
                 let elements = elements
                     .iter()
                     .map(|e| JSON::from_cumin((*e).clone()))
                     .collect();
                 Array(elements)
             }
-            Value::Just(x) => JSON::from_cumin(*x),
-            Value::Nothing => JSON::Null,
+            Value::Optional(_typ, val) => match *val {
+                Some(x) => JSON::from_cumin(x),
+                None => JSON::Null,
+            },
         }
     }
 }

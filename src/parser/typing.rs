@@ -60,6 +60,33 @@ parser! {
     }
 }
 
+impl Typing {
+    pub fn unify(left: &Typing, right: &Typing) -> Option<Typing> {
+        match (left, right) {
+            // t * t = t.
+            (_, _) if left == right => Some(left.clone()),
+            // Any is 1.
+            (Typing::Any, _) => Some(right.clone()),
+            (_, Typing::Any) => Some(left.clone()),
+            // Numbers down-cast (Nat -> Int -> Float).
+            (Typing::Nat, Typing::Int) => Some(Typing::Int),
+            (Typing::Nat, Typing::Float) => Some(Typing::Float),
+            (Typing::Int, Typing::Nat) => Some(Typing::Int),
+            (Typing::Int, Typing::Float) => Some(Typing::Float),
+            (Typing::Float, Typing::Nat) => Some(Typing::Float),
+            (Typing::Float, Typing::Int) => Some(Typing::Float),
+            // struct
+            (Typing::Array(s), Typing::Array(t)) => {
+                Typing::unify(s, t).map(|typ| Typing::Array(Box::new(typ)))
+            }
+            (Typing::Option(s), Typing::Option(t)) => {
+                Typing::unify(s, t).map(|typ| Typing::Option(Box::new(typ)))
+            }
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test_typing {
     use crate::parser::typing::*;
@@ -72,7 +99,7 @@ mod test_typing {
     }
 
     #[test]
-    fn test() {
+    fn test_parse() {
         assert_typing!("Any", Typing::Any);
         assert_typing!("Nat", Typing::Nat);
         assert_typing!("Int", Typing::Int);
@@ -96,5 +123,25 @@ mod test_typing {
             ))))))
         );
         assert_typing!("Hoge_type", Typing::UserTyping("Hoge_type".to_string()));
+    }
+
+    macro_rules! assert_unify {
+        ($left:expr, $right:expr, $unified:expr) => {
+            assert_eq!(Typing::unify(&$left, &$right), $unified);
+        };
+    }
+
+    #[test]
+    fn test_unify() {
+        assert_unify!(Typing::Any, Typing::Any, Some(Typing::Any));
+        assert_unify!(Typing::Nat, Typing::Any, Some(Typing::Nat));
+        assert_unify!(Typing::Nat, Typing::Int, Some(Typing::Int));
+        assert_unify!(Typing::Float, Typing::Int, Some(Typing::Float));
+        assert_unify!(Typing::Option(Box::new(Typing::Any)), Typing::Int, None);
+        assert_unify!(
+            Typing::Option(Box::new(Typing::Any)),
+            Typing::Option(Box::new(Typing::Int)),
+            Some(Typing::Option(Box::new(Typing::Int)))
+        );
     }
 }

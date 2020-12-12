@@ -18,32 +18,24 @@ pub enum Value {
     Env(String, Option<String>),
     Dict(Option<String>, Vec<(String, Value)>),
     EnumVariant(String, String),
-    Array(Vec<Value>),
-    Just(Box<Value>),
-    Nothing,
+    Array(Typing, Vec<Value>),
+    Optional(Typing, Box<Option<Value>>),
 }
 
 impl Value {
-    pub fn type_of(&self) -> Option<Typing> {
+    pub fn type_of(&self) -> Typing {
         match self {
-            Value::Nat(_) => Some(Typing::Nat),
-            Value::Int(_) => Some(Typing::Int),
-            Value::Float(_) => Some(Typing::Float),
-            Value::Bool(_) => Some(Typing::Bool),
-            Value::Str(_) | Value::Env(_, _) => Some(Typing::String),
+            Value::Nat(_) => Typing::Nat,
+            Value::Int(_) => Typing::Int,
+            Value::Float(_) => Typing::Float,
+            Value::Bool(_) => Typing::Bool,
+            Value::Str(_) | Value::Env(_, _) => Typing::String,
             Value::Dict(Some(name), _) | Value::EnumVariant(name, _) => {
-                Some(Typing::UserTyping(name.to_string()))
+                Typing::UserTyping(name.to_string())
             }
-            Value::Array(elems) => {
-                for elem in elems {
-                    if let Some(typ) = elem.type_of() {
-                        return Some(Typing::Array(Box::new(typ)));
-                    }
-                }
-                None
-            }
-            Value::Just(val) => val.type_of().map(|typ| Typing::Option(Box::new(typ))),
-            _ => None,
+            Value::Array(typ, _) => Typing::Array(Box::new(typ.clone())),
+            Value::Optional(typ, _) => Typing::Option(Box::new(typ.clone())),
+            _ => Typing::Any,
         }
     }
 
@@ -59,15 +51,30 @@ impl Value {
             (Float(_), Typing::Float) => self.clone(),
             (Bool(_), Typing::Bool) => self.clone(),
             (Str(_), Typing::String) => self.clone(),
-            (Array(elems), Typing::Array(t)) => {
-                let elems = elems.iter().map(|val| val.cast(t)).collect::<Result<_>>()?;
-                Array(elems)
+            (Array(s, elems), Typing::Array(t)) => {
+                if let Some(typ) = Typing::unify(s, t) {
+                    let elems = elems
+                        .iter()
+                        .map(|val| val.cast(&typ))
+                        .collect::<Result<_>>()?;
+                    Array(typ, elems)
+                } else {
+                    bail!("Cannot unify Array<{:?}> and Array<{:?}>", &s, &t);
+                }
             }
-            (Just(x), Typing::Option(t)) => {
-                let val = x.cast(t)?;
-                Just(Box::new(val))
+            (Optional(s, val), Typing::Option(t)) => {
+                if let Some(typ) = Typing::unify(s, t) {
+                    match &**val {
+                        Some(x) => {
+                            let val = x.cast(&typ)?;
+                            Optional(typ, Box::new(Some(val)))
+                        }
+                        None => Optional(typ, Box::new(None)),
+                    }
+                } else {
+                    bail!("Cannot unify Option<{:?}> and Option<{:?}>", &s, &t);
+                }
             }
-            (Nothing, Typing::Option(_)) => self.clone(),
             (Dict(dict_name, _), Typing::UserTyping(type_name))
                 if &Some(type_name.to_string()) == dict_name =>
             {
@@ -78,7 +85,7 @@ impl Value {
             {
                 self.clone()
             }
-            _ => bail!("Cannot cast {:?} => {:?}", self, typ),
+            _ => bail!("No ways to cast {:?} => {:?}", self, typ),
         };
         Ok(ret)
     }
@@ -120,7 +127,7 @@ parser! {
     {
         let const_value =
             choice!(
-                string("None").map(|_| Value::Nothing),
+                string("None").map(|_| Value::Optional(Typing::Any, Box::new(None))),
                 string("true").map(|_| Value::Bool(true)),
                 string("false").map(|_| Value::Bool(false)));
 
@@ -231,7 +238,7 @@ mod test_value {
     fn test_const() {
         assert_value!("true", Value::Bool(true));
         assert_value!("false", Value::Bool(false));
-        assert_value!("None", Value::Nothing);
+        assert_value!("None", Value::Optional(Typing::Any, Box::new(None)));
     }
     #[test]
     fn test_str() {
@@ -276,16 +283,20 @@ mod test_value {
         assert_cast!(Str("0".to_string()), &Typing::String, Str("0".to_string()));
         assert_cast!(Bool(true), Typing::Bool, Bool(true));
         assert_cast!(Bool(false), Typing::Bool, Bool(false));
-        assert_cast!(Nothing, Typing::Option(Box::new(Typing::Int)), Nothing);
         assert_cast!(
-            Just(Box::new(Nat(0))),
+            Optional(Typing::Any, Box::new(None)),
             Typing::Option(Box::new(Typing::Int)),
-            Just(Box::new(Int(0)))
+            Optional(Typing::Int, Box::new(None))
         );
         assert_cast!(
-            Array(vec![Nat(0), Int(-1), Float(0.5)]),
+            Optional(Typing::Nat, Box::new(Some(Nat(0)))),
+            Typing::Option(Box::new(Typing::Int)),
+            Optional(Typing::Int, Box::new(Some(Int(0))))
+        );
+        assert_cast!(
+            Array(Typing::Any, vec![Nat(0), Int(-1), Float(0.5)]),
             Typing::Array(Box::new(Typing::Float)),
-            Array(vec![Float(0.0), Float(-1.0), Float(0.5)])
+            Array(Typing::Float, vec![Float(0.0), Float(-1.0), Float(0.5)])
         );
     }
 
@@ -314,16 +325,26 @@ mod test_value {
 
     #[test]
     fn test_type_of() {
-        assert_type_of!(Value::Int(1), Some(Typing::Int));
-        assert_type_of!(Value::Nothing, None);
+        assert_type_of!(Value::Int(1), Typing::Int);
         assert_type_of!(
-            Value::Just(Box::new(Value::Nat(2))),
-            Some(Typing::Option(Box::new(Typing::Nat)))
+            Value::Optional(Typing::Any, Box::new(None)),
+            Typing::Option(Box::new(Typing::Any))
         );
-        assert_type_of!(Value::Array(vec![]), None);
         assert_type_of!(
-            Value::Array(vec![Value::Int(1)]),
-            Some(Typing::Array(Box::new(Typing::Int)))
+            Value::Optional(Typing::Nat, Box::new(Some(Value::Nat(2)))),
+            Typing::Option(Box::new(Typing::Nat))
+        );
+        assert_type_of!(
+            Value::Array(Typing::Any, vec![]),
+            Typing::Array(Box::new(Typing::Any))
+        );
+        assert_type_of!(
+            Value::Array(Typing::Nat, vec![]),
+            Typing::Array(Box::new(Typing::Nat))
+        );
+        assert_type_of!(
+            Value::Array(Typing::Int, vec![Value::Int(1)]),
+            Typing::Array(Box::new(Typing::Int))
         );
     }
 }

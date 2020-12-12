@@ -12,10 +12,10 @@ use std::collections::HashMap;
 
 use Statement::*;
 
-pub fn eval(config: Config) -> JSON {
+pub fn eval(config: Config) -> Result<JSON> {
     let mut env = Environ::new();
-    let val = eval_conf(&mut env, &config);
-    JSON::from_cumin(val.unwrap())
+    let val = eval_conf(&mut env, &config)?;
+    Ok(JSON::from_cumin(val))
 }
 
 fn eval_conf(env: &mut Environ, conf: &Config) -> Result<Value> {
@@ -66,7 +66,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             match name.as_str() {
                 "Some" => {
                     assert!(values.len() == 1);
-                    Ok(Just(Box::new(values[0].clone())))
+                    let val = values[0].clone();
+                    let typ = val.type_of();
+                    Ok(Optional(typ, Box::new(Some(val))))
                 }
                 "not" => {
                     assert!(values.len() == 1);
@@ -302,11 +304,25 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             Ok(ret)
         }
         Arrayed(elements) => {
-            let elements = elements
+            let elements: Vec<Value> = elements
                 .iter()
                 .map(|e| eval_expr(&env, &e))
                 .collect::<Result<_>>()?;
-            Ok(Array(elements))
+            // type-unification
+            let mut element_type = Typing::Any;
+            for elem in elements.iter() {
+                if let Some(unified) = Typing::unify(&element_type, &elem.type_of()) {
+                    element_type = unified;
+                } else {
+                    bail!("Cannot infer type of Array({:?}); Hint: Array cannot contain values with different types.", &elements);
+                }
+            }
+            let mut values = vec![];
+            for elem in elements.iter() {
+                let val = elem.cast(&element_type)?;
+                values.push(val);
+            }
+            Ok(Array(element_type, values))
         }
         Blocked(conf_inner) => {
             let mut env_inner: Environ = (*env).clone();
@@ -379,7 +395,7 @@ mod test_eval_from_parse {
 
     macro_rules! assert_eval {
         ($code:expr, $json:expr) => {
-            assert_eq!(eval(config().parse($code).unwrap().0), $json);
+            assert_eq!(eval(config().parse($code).unwrap().0).unwrap(), $json);
         };
     }
 
@@ -456,6 +472,18 @@ mod test_eval_from_parse {
             "[None, Some(1)]",
             JSON::Array(vec![JSON::Null, JSON::Nat(1)])
         );
+    }
+
+    #[test]
+    fn test_array() {
+        use JSON::*;
+        assert_eval!("[1, 2, 3]", Array(vec![Nat(1), Nat(2), Nat(3)]));
+        assert_eval!(
+            "[1, 2, 3, -1]",
+            Array(vec![Int(1), Int(2), Int(3), Int(-1)])
+        );
+        assert_eval!("[None]", Array(vec![Null]));
+        assert_eval!("[Some(1), Some(-1)]", Array(vec![Int(1), Int(-1)]));
     }
 
     #[test]

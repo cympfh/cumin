@@ -11,8 +11,8 @@ enum Region {
 }
 
 [
-    UserRecord(1, "cympfh", Region::East),
-    UserRecord { id = 2, name = "Alan", region = Region::West, },
-    UserRecord { id = 3, name = "Bob" },
+    UserRecord(1, Some("cympfh"), Region::East),
+    UserRecord { id = 2, name = Some("Alan"), region = Region::West, },
+    UserRecord { id = 3, name = Some("Bob") },
     UserRecord { id = 4, region = Region::East },
 ]

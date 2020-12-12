@@ -1,6 +1,9 @@
+#[macro_use]
+extern crate anyhow;
 extern crate structopt;
 use structopt::StructOpt;
 
+use anyhow::Result;
 use combine::parser::Parser;
 use cumin::eval::eval;
 use cumin::parser::config::config;
@@ -32,18 +35,19 @@ fn cat(file_name: String) -> String {
     content
 }
 
-fn main() {
+fn main() -> Result<()> {
     let opt = Opt::from_args();
     let content = cat(opt.input_cumin);
     if let Ok((conf, rest)) = config().parse(content.as_str()) {
         if !rest.is_empty() {
             eprintln!("Parsing Stop with `{}`", rest);
             eprintln!("read conf: {:?}", &conf);
-            return;
+            bail!("Parsing Failed.");
         }
-        let json = eval(conf);
+        let json = eval(conf)?;
         println!("{}", json.stringify());
     } else {
-        eprintln!("Parse Error");
+        bail!("Parse Error");
     }
+    Ok(())
 }
