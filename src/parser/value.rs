@@ -34,6 +34,10 @@ impl Value {
             (Int(x), Typing::Float) => Float((*x) as f64),
             (Float(_), Typing::Float) => self.clone(),
             (Str(_), Typing::String) => self.clone(),
+            (Array(elems), Typing::Array(t)) => {
+                let elems = elems.iter().map(|val| val.cast(t)).collect();
+                Array(elems)
+            }
             (Dict(dict_name, _), Typing::UserTyping(type_name))
                 if &Some(type_name.to_string()) == dict_name =>
             {
@@ -234,6 +238,10 @@ mod test_value {
         assert_eq!(
             Str("0".to_string()).cast(&Typing::String),
             Str("0".to_string())
+        );
+        assert_eq!(
+            Array(vec![Nat(0), Int(-1), Float(0.5)]).cast(&Typing::Array(Box::new(Typing::Float))),
+            Array(vec![Float(0.0), Float(-1.0), Float(0.5)])
         );
     }
 
