@@ -4,13 +4,13 @@
 
 The `let` Statement gives names to data.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let x: Int = 1 + 2;
 ```
 
 Type annotation is freely optional.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let x = 1 + 2;
 ```
 
@@ -33,7 +33,7 @@ When some variables are defined already,
 you can declare the same names with `let`.
 New data shadows old data.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let x = 1;
 // Here, x is Nat 1.
 

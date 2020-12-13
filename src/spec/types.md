@@ -4,7 +4,7 @@
 
 There are following types in prior.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 Nat
 Int
 Float
@@ -26,7 +26,7 @@ is an array of an array of option of Int Values.
 
 After you declared `struct`s and `enum`s, the names are new types.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 struct X {}
 
 // `X` is a type.

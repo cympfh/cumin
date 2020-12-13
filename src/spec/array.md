@@ -7,7 +7,7 @@ therefore any Array can be called an Array of type `T` where `T` is the type of 
 For example,
 the following is an Array of `Int`.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 [
     1,
     2,

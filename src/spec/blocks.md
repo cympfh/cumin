@@ -10,14 +10,14 @@ In blocks, you can write whole cumin data.
 
 For example, following code is a valid cumin data.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let x = 1;
 x + 1
 ```
 
 So, you can write
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let z = {
     let x = 1;
     x + 1

@@ -5,22 +5,36 @@
         <meta charset="UTF-8">
         <title>Primitive Values - cumin spec</title>
         
+        
+
+
+        <!-- Custom HTML head -->
+        
+
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        
+        <link rel="icon" href="../favicon.svg">
+        
+        
         <link rel="shortcut icon" href="../favicon.png">
+        
         <link rel="stylesheet" href="../css/variables.css">
         <link rel="stylesheet" href="../css/general.css">
         <link rel="stylesheet" href="../css/chrome.css">
+        
         <link rel="stylesheet" href="../css/print.css" media="print">
+        
 
         <!-- Fonts -->
         <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+        
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="../highlight.css">
@@ -39,7 +53,7 @@
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
             var path_to_root = "../";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
@@ -119,9 +133,11 @@
                     <h1 class="menu-title">cumin spec</h1>
 
                     <div class="right-buttons">
+                        
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        
                         
                     </div>
                 </div>
@@ -156,27 +172,27 @@ In particular, primitive Values can be used in any context.</p>
 <h2><a class="header" href="#numbers" id="numbers">Numbers</a></h2>
 <p>Natural numbers and integers are represented as decimal literal.</p>
 <p>For examples,</p>
-<pre><code class="language-rust noplaypen">123
+<pre><code class="language-rust no_run noplayground">123
 </code></pre>
-<pre><code class="language-rust noplaypen">-100000
+<pre><code class="language-rust no_run noplayground">-100000
 </code></pre>
 <p>Zero or positive numbers are Natural numbers by default,
 and negative ones are Integers.</p>
 <p>Floating numbers are denoted with period (<code>.</code>), like</p>
-<pre><code class="language-rust noplaypen">1.234
+<pre><code class="language-rust no_run noplayground">1.234
 </code></pre>
-<pre><code class="language-rust noplaypen">-0.1
+<pre><code class="language-rust no_run noplayground">-0.1
 </code></pre>
 <p><em>NOTE</em>:
 Following literals are invalid in v0.9.3: <code>.1</code>, <code>1.</code>.
 You should write <code>0.1</code> and <code>1.0</code>.</p>
 <h2><a class="header" href="#strings" id="strings">Strings</a></h2>
 <p>Strings are denoted by quoting double-quotation (<code>&quot;</code>).</p>
-<pre><code class="language-rust noplaypen">&quot;Hello, World&quot;
+<pre><code class="language-rust no_run noplayground">&quot;Hello, World&quot;
 </code></pre>
 <h3><a class="header" href="#escape" id="escape">Escape</a></h3>
 <p>Escape with <code>\</code>.</p>
-<pre><code class="language-rust noplaypen">&quot;\n\r\t\&quot;&quot;
+<pre><code class="language-rust no_run noplayground">&quot;\n\r\t\&quot;&quot;
 </code></pre>
 <h2><a class="header" href="#booleans" id="booleans">Booleans</a></h2>
 <p>There are <code>true</code> and <code>false</code> as Booleans.</p>
@@ -219,14 +235,29 @@ You should write <code>0.1</code> and <code>1.0</code>.</p>
         </div>
 
         
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            var socket = new WebSocket("ws://localhost:3000/__livereload");
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        
 
         
 
         
-        
+
         
         <script type="text/javascript">
-            window.playpen_copyable = true;
+            window.playground_copyable = true;
         </script>
         
 

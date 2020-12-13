@@ -4,7 +4,7 @@
 
 You can introduce new types with `struct`.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 struct X {
     x: Int,
     n: Nat,
@@ -14,7 +14,7 @@ struct X {
 
 Each fields can have default Values.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 struct X {
     x: Int,
     n: Nat = 0,
@@ -46,13 +46,13 @@ After you declared structs, you can apply them.
 For example, the previous struct `X` has three fields `x`, `n` and `s`.
 You can create `X` Values by appling three Values.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 X(0, 123, "yellow")
 ```
 
 Applied Values can be any Expression.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 let n = -3;
 X(12 * 3, n, "yel" + "low")
 ```
@@ -60,14 +60,14 @@ X(12 * 3, n, "yel" + "low")
 This style is similar to the function apply in many Programming Languages.
 Cumin has another style.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 X { s = "yellow", n = 123, x = 0 }
 ```
 
 Because any fields are named, the appling Values can be in any order.
 And you can omit the fields having default Values.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 X { s = "yellow", x = 0 }  // n is omitted, and the default Value `0` be applied.
 ```
 

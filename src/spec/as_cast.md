@@ -2,7 +2,7 @@
 
 With `as` keyword, Values are casted to another types.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 // Inter Number Types
 let x = 1.0 as Int; // Float -> Int
 let y = 2 as Float; // Nat -> Float

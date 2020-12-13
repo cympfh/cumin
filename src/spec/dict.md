@@ -3,7 +3,7 @@
 Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with `{{` and `}}`.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 {{
     x = 1,
     y = -2.3,

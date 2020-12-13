@@ -5,7 +5,7 @@ but this is Mini-Programmable, Structured and Typed.
 
 cumin has [Rust](https://www.rust-lang.org/)-like syntax.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 /// example.cumin
 
 struct User {

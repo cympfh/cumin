@@ -9,11 +9,11 @@ Natural numbers and integers are represented as decimal literal.
 
 For examples,
 
-```rust,noplaypen
+```rust,no_run,noplayground
 123
 ```
 
-```rust,noplaypen
+```rust,no_run,noplayground
 -100000
 ```
 
@@ -22,11 +22,11 @@ and negative ones are Integers.
 
 Floating numbers are denoted with period (`.`), like
 
-```rust,noplaypen
+```rust,no_run,noplayground
 1.234
 ```
 
-```rust,noplaypen
+```rust,no_run,noplayground
 -0.1
 ```
 
@@ -38,7 +38,7 @@ You should write `0.1` and `1.0`.
 
 Strings are denoted by quoting double-quotation (`"`).
 
-```rust,noplaypen
+```rust,no_run,noplayground
 "Hello, World"
 ```
 
@@ -46,7 +46,7 @@ Strings are denoted by quoting double-quotation (`"`).
 
 Escape with `\`.
 
-```rust,noplaypen
+```rust,no_run,noplayground
 "\n\r\t\""
 ```
 

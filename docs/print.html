@@ -7,22 +7,36 @@
         
         <meta name="robots" content="noindex" />
         
+        
+
+
+        <!-- Custom HTML head -->
+        
+
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
+        
+        <link rel="icon" href="favicon.svg">
+        
+        
         <link rel="shortcut icon" href="favicon.png">
+        
         <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
+        
         <link rel="stylesheet" href="css/print.css" media="print">
+        
 
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+        
+        <link rel="stylesheet" href="fonts/fonts.css">
+        
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
@@ -41,7 +55,7 @@
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
             var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
@@ -121,9 +135,11 @@
                     <h1 class="menu-title">cumin spec</h1>
 
                     <div class="right-buttons">
+                        
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        
                         
                     </div>
                 </div>
@@ -156,7 +172,7 @@
 <p><strong>cumin</strong> is a Configuration Language like JSON, YAML or TOML,
 but this is Mini-Programmable, Structured and Typed.</p>
 <p>cumin has <a href="https://www.rust-lang.org/">Rust</a>-like syntax.</p>
-<pre><code class="language-rust noplaypen">/// example.cumin
+<pre><code class="language-rust no_run noplayground">/// example.cumin
 
 struct User {
     id: Int,
@@ -205,41 +221,41 @@ In particular, primitive Values can be used in any context.</p>
 <h2><a class="header" href="#numbers" id="numbers">Numbers</a></h2>
 <p>Natural numbers and integers are represented as decimal literal.</p>
 <p>For examples,</p>
-<pre><code class="language-rust noplaypen">123
+<pre><code class="language-rust no_run noplayground">123
 </code></pre>
-<pre><code class="language-rust noplaypen">-100000
+<pre><code class="language-rust no_run noplayground">-100000
 </code></pre>
 <p>Zero or positive numbers are Natural numbers by default,
 and negative ones are Integers.</p>
 <p>Floating numbers are denoted with period (<code>.</code>), like</p>
-<pre><code class="language-rust noplaypen">1.234
+<pre><code class="language-rust no_run noplayground">1.234
 </code></pre>
-<pre><code class="language-rust noplaypen">-0.1
+<pre><code class="language-rust no_run noplayground">-0.1
 </code></pre>
 <p><em>NOTE</em>:
 Following literals are invalid in v0.9.3: <code>.1</code>, <code>1.</code>.
 You should write <code>0.1</code> and <code>1.0</code>.</p>
 <h2><a class="header" href="#strings" id="strings">Strings</a></h2>
 <p>Strings are denoted by quoting double-quotation (<code>&quot;</code>).</p>
-<pre><code class="language-rust noplaypen">&quot;Hello, World&quot;
+<pre><code class="language-rust no_run noplayground">&quot;Hello, World&quot;
 </code></pre>
 <h3><a class="header" href="#escape" id="escape">Escape</a></h3>
 <p>Escape with <code>\</code>.</p>
-<pre><code class="language-rust noplaypen">&quot;\n\r\t\&quot;&quot;
+<pre><code class="language-rust no_run noplayground">&quot;\n\r\t\&quot;&quot;
 </code></pre>
 <h2><a class="header" href="#booleans" id="booleans">Booleans</a></h2>
 <p>There are <code>true</code> and <code>false</code> as Booleans.</p>
 <h1><a class="header" href="#struct" id="struct">Struct</a></h1>
 <h2><a class="header" href="#struct-declaration" id="struct-declaration">Struct Declaration</a></h2>
 <p>You can introduce new types with <code>struct</code>.</p>
-<pre><code class="language-rust noplaypen">struct X {
+<pre><code class="language-rust no_run noplayground">struct X {
     x: Int,
     n: Nat,
     s: String,
 }
 </code></pre>
 <p>Each fields can have default Values.</p>
-<pre><code class="language-rust noplaypen">struct X {
+<pre><code class="language-rust no_run noplayground">struct X {
     x: Int,
     n: Nat = 0,
     s: String,
@@ -262,23 +278,23 @@ where
 <p>After you declared structs, you can apply them.</p>
 <p>For example, the previous struct <code>X</code> has three fields <code>x</code>, <code>n</code> and <code>s</code>.
 You can create <code>X</code> Values by appling three Values.</p>
-<pre><code class="language-rust noplaypen">X(0, 123, &quot;yellow&quot;)
+<pre><code class="language-rust no_run noplayground">X(0, 123, &quot;yellow&quot;)
 </code></pre>
 <p>Applied Values can be any Expression.</p>
-<pre><code class="language-rust noplaypen">let n = -3;
+<pre><code class="language-rust no_run noplayground">let n = -3;
 X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
 </code></pre>
 <p>This style is similar to the function apply in many Programming Languages.
 Cumin has another style.</p>
-<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, n = 123, x = 0 }
+<pre><code class="language-rust no_run noplayground">X { s = &quot;yellow&quot;, n = 123, x = 0 }
 </code></pre>
 <p>Because any fields are named, the appling Values can be in any order.
 And you can omit the fields having default Values.</p>
-<pre><code class="language-rust noplaypen">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default Value `0` be applied.
+<pre><code class="language-rust no_run noplayground">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default Value `0` be applied.
 </code></pre>
 <h1><a class="header" href="#enum" id="enum">Enum</a></h1>
 <p>Cumin's Enum is very simple (likewise C-language).</p>
-<pre><code class="language-rust noplaypen">enum Z {
+<pre><code class="language-rust no_run noplayground">enum Z {
     A, B, C,
 }
 </code></pre>
@@ -287,10 +303,10 @@ And you can omit the fields having default Values.</p>
 <h1><a class="header" href="#let" id="let">let</a></h1>
 <h2><a class="header" href="#let-statement" id="let-statement">let Statement</a></h2>
 <p>The <code>let</code> Statement gives names to data.</p>
-<pre><code class="language-rust noplaypen">let x: Int = 1 + 2;
+<pre><code class="language-rust no_run noplayground">let x: Int = 1 + 2;
 </code></pre>
 <p>Type annotation is freely optional.</p>
-<pre><code class="language-rust noplaypen">let x = 1 + 2;
+<pre><code class="language-rust no_run noplayground">let x = 1 + 2;
 </code></pre>
 <p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
 and we call it <code>x</code>.
@@ -305,7 +321,7 @@ This Statement can be denoted by following BNF;</p>
 <p>When some variables are defined already,
 you can declare the same names with <code>let</code>.
 New data shadows old data.</p>
-<pre><code class="language-rust noplaypen">let x = 1;
+<pre><code class="language-rust no_run noplayground">let x = 1;
 // Here, x is Nat 1.
 
 let x = &quot;hoge&quot;;
@@ -315,7 +331,7 @@ let x = &quot;hoge&quot;;
 <h1><a class="header" href="#dictionary" id="dictionary">Dictionary</a></h1>
 <p>Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
-<pre><code class="language-rust noplaypen">{{
+<pre><code class="language-rust no_run noplayground">{{
     x = 1,
     y = -2.3,
     s = &quot;yellow&quot;,
@@ -330,7 +346,7 @@ It is required that all elements have same types,
 therefore any Array can be called an Array of type <code>T</code> where <code>T</code> is the type of elements.</p>
 <p>For example,
 the following is an Array of <code>Int</code>.</p>
-<pre><code class="language-rust noplaypen">[
+<pre><code class="language-rust no_run noplayground">[
     1,
     2,
     -3,
@@ -342,16 +358,16 @@ the following is an Array of <code>Int</code>.</p>
 <p>If you want <em>null</em>-able Values, <code>Option</code> is very suitable.
 For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is <em>null</em>-able.
 Null Value can be denoted as <code>None</code>.</p>
-<pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = None;
+<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = None;
 </code></pre>
 <p>In other hand, not <em>null</em> Values for <em>null</em>-able are denoted with <code>Some(_)</code>.</p>
-<pre><code class="language-rust noplaypen">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
+<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
 </code></pre>
 <p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> <em>null</em> Values.</p>
 <h1><a class="header" href="#types" id="types">Types</a></h1>
 <h2><a class="header" href="#primitive-types" id="primitive-types">Primitive Types</a></h2>
 <p>There are following types in prior.</p>
-<pre><code class="language-rust noplaypen">Nat
+<pre><code class="language-rust no_run noplayground">Nat
 Int
 Float
 Bool
@@ -368,7 +384,7 @@ Type parameters can be nested.
 is an array of an array of option of Int Values.</p>
 <h2><a class="header" href="#custom-types" id="custom-types">Custom Types</a></h2>
 <p>After you declared <code>struct</code>s and <code>enum</code>s, the names are new types.</p>
-<pre><code class="language-rust noplaypen">struct X {}
+<pre><code class="language-rust no_run noplayground">struct X {}
 
 // `X` is a type.
 
@@ -376,7 +392,7 @@ let x: X = X();
 </code></pre>
 <h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
 <p>With <code>as</code> keyword, Values are casted to another types.</p>
-<pre><code class="language-rust noplaypen">// Inter Number Types
+<pre><code class="language-rust no_run noplayground">// Inter Number Types
 let x = 1.0 as Int; // Float -&gt; Int
 let y = 2 as Float; // Nat -&gt; Float
 
@@ -398,11 +414,11 @@ In blocks, you can write whole cumin data.</p>
 &lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
 </code></pre>
 <p>For example, following code is a valid cumin data.</p>
-<pre><code class="language-rust noplaypen">let x = 1;
+<pre><code class="language-rust no_run noplayground">let x = 1;
 x + 1
 </code></pre>
 <p>So, you can write</p>
-<pre><code class="language-rust noplaypen">let z = {
+<pre><code class="language-rust no_run noplayground">let z = {
     let x = 1;
     x + 1
 };
@@ -476,14 +492,29 @@ $ cat &lt;file.cumin&gt; | cuminc
         </div>
 
         
+        <!-- Livereload script (if served using the cli tool) -->
+        <script type="text/javascript">
+            var socket = new WebSocket("ws://localhost:3000/__livereload");
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+        
 
         
 
         
-        
+
         
         <script type="text/javascript">
-            window.playpen_copyable = true;
+            window.playground_copyable = true;
         </script>
         
 

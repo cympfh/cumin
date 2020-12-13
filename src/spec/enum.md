@@ -2,7 +2,7 @@
 
 Cumin's Enum is very simple (likewise C-language).
 
-```rust,noplaypen
+```rust,no_run,noplayground
 enum Z {
     A, B, C,
 }
