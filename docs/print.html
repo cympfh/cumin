@@ -100,7 +100,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/types.html"><strong aria-hidden="true">2.9.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -364,10 +364,13 @@ Null Value can be denoted as <code>None</code>.</p>
 <pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
 </code></pre>
 <p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> <em>null</em> Values.</p>
+<h1><a class="header" href="#typing" id="typing">Typing</a></h1>
+<p>In cumin, all data are typed gradually. Enjoy!</p>
 <h1><a class="header" href="#types" id="types">Types</a></h1>
 <h2><a class="header" href="#primitive-types" id="primitive-types">Primitive Types</a></h2>
 <p>There are following types in prior.</p>
-<pre><code class="language-rust no_run noplayground">Nat
+<pre><code class="language-rust no_run noplayground">Any
+Nat
 Int
 Float
 Bool
@@ -375,21 +378,165 @@ String
 Array&lt;_&gt;
 Option&lt;_&gt;
 </code></pre>
-<p>where <code>Nat</code> is for Natural Numbers.
-<code>Array</code> and <code>Option</code> have type parameter.
+<p><code>Any</code> is the top type for any values.
+This is convenient for gradual typing.
+<code>_</code> is alias for <code>Any</code>.</p>
+<p><code>Nat</code> is for Natural Numbers (0 or positive integers), and <code>Int</code> is for Integers.</p>
+<p><code>Array</code> and <code>Option</code> have type parameter.
+<code>&lt;_&gt;</code> is the placeholder.
 In actual code, it should be filled <code>&lt;_&gt;</code> with some type.
 For example, <code>Array&lt;Int&gt;</code> is an array of Int Values.
 Type parameters can be nested.
 <code>Array&lt;Array&lt;Option&lt;Int&gt;&gt;&gt;</code>
 is an array of an array of option of Int Values.</p>
 <h2><a class="header" href="#custom-types" id="custom-types">Custom Types</a></h2>
-<p>After you declared <code>struct</code>s and <code>enum</code>s, the names are new types.</p>
+<p>After you declared <code>struct</code>-s and <code>enum</code>-s, the names are new types.
+The names will be the names of types.</p>
 <pre><code class="language-rust no_run noplayground">struct X {}
 
-// `X` is a type.
+// `X` is a type now.
 
 let x: X = X();
 </code></pre>
+<h1><a class="header" href="#type-annotation" id="type-annotation">Type Annotation</a></h1>
+<h2><a class="header" href="#typed-let" id="typed-let">Typed Let</a></h2>
+<p><code>let</code> statement may have type annotations.</p>
+<pre><code class="language-rust no_run noplayground">let x: Int = 100;
+</code></pre>
+<p><code>cuminc</code> evaluates this in the following steps:</p>
+<ol>
+<li>eval <code>100</code>
+<ul>
+<li>the type infered as <code>Nat</code> because it is a (non-negative) natural number.</li>
+</ul>
+</li>
+<li>natural cast
+<ul>
+<li><code>x</code> is annotated as <code>Int</code>.</li>
+<li><code>Nat</code> can be casted to <code>Int</code> naturally.</li>
+<li>get <code>100</code> as <code>Int</code>.</li>
+</ul>
+</li>
+<li>name it <code>x</code></li>
+</ol>
+<p>In the natural cast, <code>cuminc</code> doesn't coerce forcibly.
+For example, <code>String</code> to <code>Int</code>, <code>Int</code> to <code>Nat</code>.
+<strong>NOTE</strong>: If you need, <code>as</code>-cast coerce to other types.</p>
+<p>The type annotation is optional.
+If it is omitted, the step 2 will be skipped.</p>
+<pre><code class="language-rust no_run noplayground">let x = 100;
+</code></pre>
+<p>In this example, <code>x</code> is <code>Nat</code>.</p>
+<h2><a class="header" href="#typed-struct" id="typed-struct">Typed Struct</a></h2>
+<p>In structs, all fields should be type annotated.</p>
+<pre><code class="language-rust no_run noplayground">struct S {
+    x: Nat,
+    y: Int,
+    z: Array&lt;String&gt;,
+}
+</code></pre>
+<p>When constructing struct values (applying), <code>cuminc</code> checks the types of applied values.</p>
+<pre><code class="language-rust no_run noplayground">S {
+    x = 1,
+    y = -2,
+    z = [&quot;cumin&quot;],
+}
+</code></pre>
+<h1><a class="header" href="#type-checking" id="type-checking">Type Checking</a></h1>
+<h2><a class="header" href="#array-1" id="array-1">Array</a></h2>
+<p>In general JSON, Arrays can contain various values.</p>
+<pre><code class="language-json">// In JSON, this is OK.
+[1, 3.14, [&quot;cumin&quot;]]
+</code></pre>
+<p>But this is very strange and buggy.
+In cumin, Arrays should contain values with same type.</p>
+<pre><code class="language-rust no_run noplayground">// In cumin, this is NG.
+[1, 3.14, [&quot;cumin&quot;]]
+</code></pre>
+<p>This occurs and error</p>
+<pre><code>Error: Cannot infer type of Array([Nat(1), Float(3.14), Array(String, [Str(&quot;cumin&quot;)])]); Hint: Array cannot contain values with different types.
+</code></pre>
+<h2><a class="header" href="#any-type" id="any-type">Any Type</a></h2>
+<p><code>Any</code> is the top type.</p>
+<pre><code class="language-rust no_run noplayground">let x: Any = 100;
+</code></pre>
+<p>This is ok. And don't worry. <code>cuminc</code> knows that <code>x</code> is <code>Nat</code> (because <code>100</code> is <code>Nat</code>).
+<code>Any</code> is convenient in some cases.
+This example is trivial, and it is equivalent to <code>let</code> statement without type annotation.</p>
+<p>For example, <code>Array&lt;Any&gt;</code> is a type for <strong>Something Arrays</strong>.</p>
+<pre><code class="language-rust no_run noplayground">let xs: Array&lt;Any&gt; = [
+    1, 2, 3
+];
+</code></pre>
+<p>In this example,</p>
+<ol>
+<li>The elements are all <code>Nat</code>.</li>
+<li><code>xs</code> is a something array <code>Array&lt;_&gt;</code>.</li>
+<li>These facts conclude that <code>xs</code> is <code>Array&lt;Nat&gt;</code>.</li>
+</ol>
+<p>Because <code>_</code> is an alias for <code>Any</code>, you can write</p>
+<pre><code class="language-rust no_run noplayground">let xs: Array&lt;_&gt; = [
+    1, 2, 3
+];
+</code></pre>
+<p>It is <strong>unsafe</strong> that struct fields are declared as <code>Any</code>.</p>
+<pre><code class="language-rust no_run noplayground">struct Data {
+    data: Any,
+}
+</code></pre>
+<p>Since <code>data</code> can be any values, followings are all valid.</p>
+<pre><code class="language-rust no_run noplayground">let x = Data {
+    data = 1,  // Nat
+};
+
+let y = Data {
+    data = 3.14,  // Float
+};
+
+let z = Data {
+    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
+};
+</code></pre>
+<p>And <code>cuminc</code> knows only that <code>x</code>, <code>y</code> and <code>z</code> are just <code>Data</code>, and ignores the type of <code>data</code>.
+So they have all same type!</p>
+<h3><a class="header" href="#hack-array-with-various-data" id="hack-array-with-various-data">Hack: Array with various data.</a></h3>
+<p>In cumin v0.9.7, This is ok.</p>
+<pre><code class="language-rust no_run noplayground">struct Data {
+    data: Any,
+}
+
+let x = Data {
+    data = 1,  // Nat
+};
+
+let y = Data {
+    data = 3.14,  // Float
+};
+
+let z = Data {
+    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
+};
+
+[x, y, z]
+</code></pre>
+<p>Because the last data is just <code>Array&lt;Data&gt;</code>.
+<strong>NOTE</strong>: No warrantry to support this hack.</p>
+<h1><a class="header" href="#natural-cast" id="natural-cast">Natural Cast</a></h1>
+<p>For types <code>S</code> and <code>T</code>,
+we denote <code>S -&gt; T</code> describing that <code>S</code> can be casted to <code>T</code> naturally.</p>
+<p>And <code>S -&gt; T</code> if and only if the following code is valid when <code>x</code> has type <code>S</code>:</p>
+<pre><code class="language-rust no_run noplayground">let y: T = x;  // when x:S.
+</code></pre>
+<p>There are two rules for natural cast.</p>
+<h2><a class="header" href="#numbers-downcast" id="numbers-downcast">Numbers downcast</a></h2>
+<pre><code class="language-rust no_run noplayground">Nat -&gt; Int -&gt; Float
+</code></pre>
+<p><strong>NOTE</strong>: <code>-&gt;</code> is transitive.
+The fact that <code>S -&gt; T</code>, <code>T -&gt; U</code> and <code>S -&gt; U</code> are denoted as <code>S -&gt; T -&gt; U</code>.</p>
+<p>Any natural numbers can be considered as integers or as floating numbers.
+But the inverse doesn't hold on.</p>
+<h2><a class="header" href="#all-values-are-any" id="all-values-are-any">All values are <code>Any</code></a></h2>
+<p>For any type <code>S</code>, <code>S -&gt; Any</code>.</p>
 <h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
 <p>With <code>as</code> keyword, Values are casted to another types.</p>
 <pre><code class="language-rust no_run noplayground">// Inter Number Types
@@ -491,21 +638,6 @@ $ cat &lt;file.cumin&gt; | cuminc
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3000/__livereload");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

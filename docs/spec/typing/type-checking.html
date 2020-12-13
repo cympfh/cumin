@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>let - cumin spec</title>
+        <title>Type Checking - cumin spec</title>
         
         
 
@@ -18,28 +18,28 @@
         <meta name="theme-color" content="#ffffff" />
 
         
-        <link rel="icon" href="../favicon.svg">
+        <link rel="icon" href="../../favicon.svg">
         
         
-        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="shortcut icon" href="../../favicon.png">
         
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
         
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
         
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
         
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
         
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="../highlight.css">
-        <link rel="stylesheet" href="../tomorrow-night.css">
-        <link rel="stylesheet" href="../ayu-highlight.css">
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
         
@@ -52,7 +52,7 @@
     <body>
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
-            var path_to_root = "../";
+            var path_to_root = "../../";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
@@ -98,7 +98,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../spec/let.html" class="active"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="../spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li></ol></li><li class="chapter-item expanded "><a href="../spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../../spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../../spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="../../spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="../../spec/typing/type-checking.html" class="active"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="../../spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li></ol></li><li class="chapter-item expanded "><a href="../../spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../../spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="../../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -134,7 +134,7 @@
 
                     <div class="right-buttons">
                         
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         
@@ -166,47 +166,98 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#let" id="let">let</a></h1>
-<h2><a class="header" href="#let-statement" id="let-statement">let Statement</a></h2>
-<p>The <code>let</code> Statement gives names to data.</p>
-<pre><code class="language-rust no_run noplayground">let x: Int = 1 + 2;
+                        <h1><a class="header" href="#type-checking" id="type-checking">Type Checking</a></h1>
+<h2><a class="header" href="#array" id="array">Array</a></h2>
+<p>In general JSON, Arrays can contain various values.</p>
+<pre><code class="language-json">// In JSON, this is OK.
+[1, 3.14, [&quot;cumin&quot;]]
 </code></pre>
-<p>Type annotation is freely optional.</p>
-<pre><code class="language-rust no_run noplayground">let x = 1 + 2;
+<p>But this is very strange and buggy.
+In cumin, Arrays should contain values with same type.</p>
+<pre><code class="language-rust no_run noplayground">// In cumin, this is NG.
+[1, 3.14, [&quot;cumin&quot;]]
 </code></pre>
-<p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
-and we call it <code>x</code>.
-Frankly, this is a variable,
-and you can use <code>x</code> as a Value.</p>
-<p>The last <code>;</code> is required.
-This Statement can be denoted by following BNF;</p>
-<pre><code>&lt;let&gt; ::= `let` &lt;id&gt; `=` &lt;expression&gt; `;`
-        | `let` &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt; `;`
+<p>This occurs and error</p>
+<pre><code>Error: Cannot infer type of Array([Nat(1), Float(3.14), Array(String, [Str(&quot;cumin&quot;)])]); Hint: Array cannot contain values with different types.
 </code></pre>
-<h2><a class="header" href="#shadowing" id="shadowing">shadowing</a></h2>
-<p>When some variables are defined already,
-you can declare the same names with <code>let</code>.
-New data shadows old data.</p>
-<pre><code class="language-rust no_run noplayground">let x = 1;
-// Here, x is Nat 1.
+<h2><a class="header" href="#any-type" id="any-type">Any Type</a></h2>
+<p><code>Any</code> is the top type.</p>
+<pre><code class="language-rust no_run noplayground">let x: Any = 100;
+</code></pre>
+<p>This is ok. And don't worry. <code>cuminc</code> knows that <code>x</code> is <code>Nat</code> (because <code>100</code> is <code>Nat</code>).
+<code>Any</code> is convenient in some cases.
+This example is trivial, and it is equivalent to <code>let</code> statement without type annotation.</p>
+<p>For example, <code>Array&lt;Any&gt;</code> is a type for <strong>Something Arrays</strong>.</p>
+<pre><code class="language-rust no_run noplayground">let xs: Array&lt;Any&gt; = [
+    1, 2, 3
+];
+</code></pre>
+<p>In this example,</p>
+<ol>
+<li>The elements are all <code>Nat</code>.</li>
+<li><code>xs</code> is a something array <code>Array&lt;_&gt;</code>.</li>
+<li>These facts conclude that <code>xs</code> is <code>Array&lt;Nat&gt;</code>.</li>
+</ol>
+<p>Because <code>_</code> is an alias for <code>Any</code>, you can write</p>
+<pre><code class="language-rust no_run noplayground">let xs: Array&lt;_&gt; = [
+    1, 2, 3
+];
+</code></pre>
+<p>It is <strong>unsafe</strong> that struct fields are declared as <code>Any</code>.</p>
+<pre><code class="language-rust no_run noplayground">struct Data {
+    data: Any,
+}
+</code></pre>
+<p>Since <code>data</code> can be any values, followings are all valid.</p>
+<pre><code class="language-rust no_run noplayground">let x = Data {
+    data = 1,  // Nat
+};
 
-let x = &quot;hoge&quot;;
-// Here, x is String &quot;hoge&quot;.
+let y = Data {
+    data = 3.14,  // Float
+};
+
+let z = Data {
+    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
+};
 </code></pre>
-<p>Once variables are shadowed, they cannot be used.</p>
+<p>And <code>cuminc</code> knows only that <code>x</code>, <code>y</code> and <code>z</code> are just <code>Data</code>, and ignores the type of <code>data</code>.
+So they have all same type!</p>
+<h3><a class="header" href="#hack-array-with-various-data" id="hack-array-with-various-data">Hack: Array with various data.</a></h3>
+<p>In cumin v0.9.7, This is ok.</p>
+<pre><code class="language-rust no_run noplayground">struct Data {
+    data: Any,
+}
+
+let x = Data {
+    data = 1,  // Nat
+};
+
+let y = Data {
+    data = 3.14,  // Float
+};
+
+let z = Data {
+    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
+};
+
+[x, y, z]
+</code></pre>
+<p>Because the last data is just <code>Array&lt;Data&gt;</code>.
+<strong>NOTE</strong>: No warrantry to support this hack.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../spec/enum.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../spec/typing/type-annotation.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../spec/dict.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../../spec/typing/natural-cast.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -218,13 +269,13 @@ let x = &quot;hoge&quot;;
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="../spec/enum.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../spec/typing/type-annotation.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="../spec/dict.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../../spec/typing/natural-cast.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
@@ -247,14 +298,14 @@ let x = &quot;hoge&quot;;
         
 
         
-        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../searcher.js" type="text/javascript" charset="utf-8"></script>
         
 
-        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         
