@@ -7,7 +7,7 @@ use combine::error::ParseError;
 use combine::parser::char::{char, spaces, string};
 use combine::parser::combinator::attempt;
 use combine::stream::Stream;
-use combine::{choice, many, parser, sep_by};
+use combine::{choice, many, parser, sep_by, sep_by1};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
@@ -39,8 +39,11 @@ parser! {
         Input::Error: ParseError<char, Input::Range, Input::Position>,
     ]
     {
-        // F(x,...)
+        // <identifier>.<identifier>(<expr>, <expr>)
         let apply_expr = {
+            let composed_func = sep_by1::<Vec<String>, _, _, _>(
+                identifier(),
+                char('.'));
             let inner_sep = sep_by::<Vec<Expr>,_, _, _>(
                 (
                     expr(),
@@ -55,18 +58,29 @@ parser! {
                     commentable_spaces()
                 ).map(|t: (Expr, (), char, ())| t.0));
             (
-                identifier(),
+                composed_func,
                 commentable_spaces(),
                 char('('),
                 commentable_spaces(),
                 choice!(attempt(inner_trailing), inner_sep),
                 char(')'),
                 commentable_spaces(),
-            ).map(|t| Expr::Apply(t.0, t.4))
+            ).map(|(fs, _, _, _, args, _, _): (Vec<String>, (), char, (), Vec<Expr>, char, _)| {
+                let n = fs.len();
+                assert!(n > 0);
+                let mut e = Expr::Apply(fs[n-1].to_string(), args);
+                for i in (0..n-1).rev() {
+                    e = Expr::Apply(fs[i].to_string(), vec![e]);
+                }
+                e
+            })
         };
 
         // F { id = expr [,] }
         let fielded_apply_expr = {
+            let composed_func = sep_by1::<Vec<String>, _, _, _>(
+                identifier(),
+                char('.'));
             let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
                 (
                     identifier(),
@@ -89,14 +103,22 @@ parser! {
                     commentable_spaces(),
                 ).map(|t| (t.0, t.4)));
             (
-                identifier(),
+                composed_func,
                 commentable_spaces(),
                 char('{'),
                 commentable_spaces(),
                 choice!(attempt(inner_trailing), inner_sep),
                 char('}'),
                 commentable_spaces(),
-            ).map(|t| Expr::FieledApply(t.0, t.4))
+            ).map(|(fs, _, _, _, args, _, _): (Vec<String>, (), char, (), Vec<(String, Expr)>, char, ())| {
+                let n = fs.len();
+                assert!(n > 0);
+                let mut e = Expr::FieledApply(fs[n-1].to_string(), args);
+                for i in (0..n-1).rev() {
+                    e = Expr::Apply(fs[i].to_string(), vec![e]);
+                }
+                e
+            })
         };
 
         // {{ id = expr [,] }}
@@ -353,6 +375,16 @@ mod test_expr {
                 vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
             )
         );
+        assert_expr!(
+            "X.Y(1, -2, \"x\")",
+            Apply(
+                "X".to_string(),
+                vec![Apply(
+                    "Y".to_string(),
+                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+                )]
+            )
+        );
     }
 
     #[test]
@@ -382,6 +414,16 @@ mod test_expr {
                     ("y".to_string(), Val(Int(-2))),
                     ("z".to_string(), Val(Str("x".to_string())))
                 ]
+            )
+        );
+        assert_expr!(
+            "X.Y.Z{}",
+            Apply(
+                "X".to_string(),
+                vec![Apply(
+                    "Y".to_string(),
+                    vec![FieledApply("Z".to_string(), vec![])]
+                )]
             )
         );
     }
