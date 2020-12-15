@@ -20,6 +20,7 @@ pub enum Value {
     EnumVariant(String, String),
     Array(Typing, Vec<Value>),
     Optional(Typing, Box<Option<Value>>),
+    Wrapped(Typing, Box<Value>),
 }
 
 impl Value {
@@ -35,6 +36,7 @@ impl Value {
             }
             Value::Array(typ, _) => Typing::Array(Box::new(typ.clone())),
             Value::Optional(typ, _) => Typing::Option(Box::new(typ.clone())),
+            Value::Wrapped(typ, _) => typ.clone(),
             _ => Typing::Any,
         }
     }
@@ -43,14 +45,10 @@ impl Value {
         use Value::*;
         let ret = match (self, typ) {
             (_, Typing::Any) => self.clone(),
-            (Nat(_), Typing::Nat) => self.clone(),
+            (val, typ) if &val.type_of() == typ => self.clone(),
             (Nat(x), Typing::Int) => Int((*x) as i128),
             (Nat(x), Typing::Float) => Float((*x) as f64),
-            (Int(_), Typing::Int) => self.clone(),
             (Int(x), Typing::Float) => Float((*x) as f64),
-            (Float(_), Typing::Float) => self.clone(),
-            (Bool(_), Typing::Bool) => self.clone(),
-            (Str(_), Typing::String) => self.clone(),
             (Array(s, elems), Typing::Array(t)) => {
                 if let Some(typ) = Typing::unify(s, t) {
                     let elems = elems

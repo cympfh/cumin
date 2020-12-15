@@ -19,6 +19,17 @@ pub fn eval(config: Config) -> Result<JSON> {
 }
 
 fn eval_conf(env: &mut Environ, conf: &Config) -> Result<Value> {
+    // collect types
+    for stmt in conf.0.iter() {
+        match stmt {
+            Type(name, types) => {
+                let _ = env
+                    .types
+                    .insert(name.to_string(), types.iter().cloned().collect());
+            }
+            _ => (),
+        }
+    }
     // collect struct
     for stmt in conf.0.iter() {
         match stmt {
@@ -90,7 +101,24 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     }
                     Ok(Dict(Some(name.to_string()), items))
                 }
-                _ => bail!("Cannot resolve name {}", name),
+                _ if env.types.contains_key(name) => {
+                    assert!(values.len() == 1);
+                    let value = values[0].clone();
+                    let typ = values[0].type_of();
+                    // up-cast
+                    for variant_typ in env.types.get(name).unwrap().iter() {
+                        if let Ok(val) = value.cast(variant_typ) {
+                            return Ok(Wrapped(
+                                Typing::UserTyping(name.to_string()),
+                                Box::new(val),
+                            ));
+                        } else {
+                            continue;
+                        }
+                    }
+                    bail!("Cannot up-cast {:?} <: {}.", typ, name.to_string());
+                }
+                _ => bail!("Cannot resolve name {}.", name),
             }
         }
         FieledApply(name, items) => {
@@ -365,6 +393,7 @@ fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
 
 #[derive(Clone)]
 struct Environ {
+    types: HashMap<String, Vec<Typing>>,
     structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (Typing, Value)>,
@@ -373,11 +402,13 @@ struct Environ {
 
 impl Environ {
     pub fn new() -> Self {
+        let types = HashMap::new();
         let structs = HashMap::new();
         let enums = HashMap::new();
         let env_vars = env::vars().collect();
         let vars = HashMap::new();
         Self {
+            types,
             structs,
             enums,
             env_vars,
@@ -518,5 +549,13 @@ mod test_eval_from_parse {
             JSON::Str("Park".to_string())
         );
         assert_eval!("enum X { Zoo, Park } X::Zoo", JSON::Str("Zoo".to_string()));
+    }
+
+    #[test]
+    fn test_type() {
+        assert_eval!(
+            "type T = Int | String; [T(1), T(\"hoge\")]",
+            JSON::Array(vec![JSON::Int(1), JSON::Str("hoge".to_string())])
+        );
     }
 }
