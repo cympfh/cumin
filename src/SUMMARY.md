@@ -15,6 +15,7 @@
         - [Type Annotation](spec/typing/type-annotation.md)
         - [Type Checking](spec/typing/type-checking.md)
         - [Natural Cast](spec/typing/natural-cast.md)
+        - [Union Types](spec/typing/union-types.md)
     - [as-cast](spec/as_cast.md)
     - [blocks](spec/blocks.md)
     - [operators](spec/ops.md)

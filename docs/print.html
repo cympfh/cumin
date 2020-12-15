@@ -100,7 +100,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="spec/typing/union-types.html"><strong aria-hidden="true">2.9.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -537,6 +537,72 @@ The fact that <code>S -&gt; T</code>, <code>T -&gt; U</code> and <code>S -&gt; U
 But the inverse doesn't hold on.</p>
 <h2><a class="header" href="#all-values-are-any" id="all-values-are-any">All values are <code>Any</code></a></h2>
 <p>For any type <code>S</code>, <code>S -&gt; Any</code>.</p>
+<h1><a class="header" href="#union-types" id="union-types">Union Types</a></h1>
+<h2><a class="header" href="#type-statement" id="type-statement"><code>type</code> statement</a></h2>
+<p>Union Types are declared with <code>type</code> keyword and variants are described one or more types separated by <code>|</code>.</p>
+<pre><code class="language-rust no_run noplayground">type T = Int | String;
+</code></pre>
+<p>Using this <code>T</code>,
+<code>Int</code> values and <code>String</code> values can be same type values.
+This is convenient to construct an array of <code>Int</code> or <code>String</code> (i.e. <code>Array&lt;T&gt;</code>).</p>
+<p>You can represent more complicated types with <code>struct</code>.</p>
+<pre><code class="language-rust no_run noplayground">struct A { a: Nat }
+struct B { b: String }
+struct C { c: Array&lt;String&gt; }
+type T = A | B | C;
+</code></pre>
+<h3><a class="header" href="#note" id="note">NOTE</a></h3>
+<p>Union Types is like union-sets, and <strong>not</strong> Sum Types (or disjoint union).
+For example,</p>
+<pre><code class="language-rust no_run noplayground">type T = Int | Int;
+</code></pre>
+<p>this equals to just <code>Int</code> exactly,
+because nobody distinguish left <code>Int</code> from right one.</p>
+<h3><a class="header" href="#note-1" id="note-1">NOTE</a></h3>
+<p>Union Types define subtypes.
+In primitive, cumin defines the following subtype system:</p>
+<pre><code>Nat &lt;: Int &lt;: Float
+</code></pre>
+<p>and induces the following implicit type-cast:</p>
+<pre><code>Nat -&gt; Int -&gt; Float
+</code></pre>
+<p>And, when <code>type T = A | B;</code>,</p>
+<pre><code>A &lt;: T,
+B &lt;: T
+</code></pre>
+<p>holds on.
+So, you can cast <code>A -&gt; T</code> and <code>B -&gt; T</code>, but we don't cast them implicitly.
+In next section, we will show how to cast them.</p>
+<h2><a class="header" href="#casting-for-union-types" id="casting-for-union-types">Casting for Union Types</a></h2>
+<p>The names of union types can be <strong>casting functions</strong> (or injection).</p>
+<pre><code class="language-rust no_run noplayground">type T = Int | String;
+
+let x: Int = 2;
+let t = T(x);  // Int -&gt; T
+
+let s = T(&quot;hello&quot;);  // String -&gt; T
+</code></pre>
+<pre><code class="language-rust no_run noplayground">struct A { a: Nat }
+struct B { b: String }
+struct C { c: Array&lt;String&gt; }
+type T = A | B | C;
+
+let t = T(A(1));  // A -&gt; T
+let u = T(C { c = [] });  // C -&gt; T
+</code></pre>
+<p>If you mind of the mount of parenthesis, we prepared a syntax-sugar.</p>
+<h2><a class="header" href="#composite-applying-syntax" id="composite-applying-syntax">Composite Applying Syntax</a></h2>
+<p><code>A.B(x)</code> will be <code>A(B(x))</code>.
+<code>A.B{x = y}</code> will be <code>A(B{x=y})</code>.</p>
+<pre><code class="language-rust no_run noplayground">struct A { a: Nat }
+struct B { b: String }
+struct C { c: Array&lt;String&gt; }
+type T = A | B | C;
+
+let t = T.A(1);  // T(A(1))
+let u = T.C{c=[]};  // T(C { c = [] })
+</code></pre>
+<p>Yay!</p>
 <h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
 <p>With <code>as</code> keyword, Values are casted to another types.</p>
 <pre><code class="language-rust no_run noplayground">// Inter Number Types
