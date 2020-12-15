@@ -67,6 +67,7 @@ impl JSON {
                 Some(x) => JSON::from_cumin(x),
                 None => JSON::Null,
             },
+            Value::Wrapped(_typ, val) => JSON::from_cumin(*val),
         }
     }
 }

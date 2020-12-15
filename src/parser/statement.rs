@@ -12,6 +12,7 @@ pub enum Statement {
     Let(String, Typing, Expr),
     Struct(String, Vec<(String, Typing, Option<Expr>)>), // StructName, [(name, type, default)]
     Enum(String, Vec<String>),
+    Type(String, Vec<Typing>),
 }
 
 parser! {
@@ -127,10 +128,36 @@ parser! {
                 .map(|t| Statement::Enum(t.3, t.7))
         };
 
+        // type <id> = <Typing> | ... | <Typing> ;
+        let type_stmt = {
+            let inner_separated = sep_by::<Vec<Typing>, _, _, _>(
+                (
+                    typing(),
+                    commentable_spaces(),
+                ).map(|t: (Typing, ())| t.0),
+                char('|').with(commentable_spaces()));
+            (
+                string("type"),
+                space(),
+                spaces(),
+                identifier(),
+                commentable_spaces(),
+                char('='),
+                commentable_spaces(),
+                inner_separated,
+                char(';'),
+                commentable_spaces(),
+            )
+                .map(|(_, _, _, typ, _, _, _, unions, _, _): (&str, char, (), String, (), char, (), Vec<Typing>, char, ())| {
+                    Statement::Type(typ, unions)
+                })
+        };
+
         choice!(
             attempt(struct_stmt),
             attempt(let_stmt),
-            enum_stmst
+            attempt(enum_stmst),
+            attempt(type_stmt)
         )
     }
 }
@@ -245,6 +272,25 @@ mod test_statement {
             }
             ",
             Enum("Z".to_string(), vec!["Z1".to_string(), "Z2".to_string()])
+        );
+    }
+
+    #[test]
+    fn test_type() {
+        assert_stmt!(
+            "type T = A;",
+            Type("T".to_string(), vec![Typing::UserTyping("A".to_string())])
+        );
+        assert_stmt!(
+            "type T = A | B | Int;",
+            Type(
+                "T".to_string(),
+                vec![
+                    Typing::UserTyping("A".to_string()),
+                    Typing::UserTyping("B".to_string()),
+                    Typing::Int,
+                ]
+            )
         );
     }
 }

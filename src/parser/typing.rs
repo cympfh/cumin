@@ -5,7 +5,7 @@ use combine::parser::combinator::attempt;
 use combine::stream::Stream;
 use combine::{choice, parser};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Typing {
     Any,
     Nat,
