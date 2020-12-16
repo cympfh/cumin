@@ -1,0 +1,22 @@
+type Num_or_Str = Nat | String;
+
+let ids = [
+    Num_or_Str(0),
+    Num_or_Str("a"),
+    Num_or_Str(1),
+    Num_or_Str("b"),
+];
+
+struct A { x: Int }
+struct B { x: Int, y: Int }
+type P = A | B;
+
+let ps: Array<P> = [
+    P.A(1),
+    P.B(2, 3),
+];
+
+{{
+    ids = ids,
+    ps = ps,
+}}
