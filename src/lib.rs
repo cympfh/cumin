@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate anyhow;
-extern crate combine;
+extern crate nom;
 
 pub mod builtins;
 pub mod eval;
