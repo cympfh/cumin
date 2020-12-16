@@ -1,4 +1,4 @@
-pub mod config;
+pub mod cumin;
 pub mod expr;
 pub mod logic;
 pub mod statement;

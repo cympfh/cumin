@@ -1,167 +1,122 @@
 use crate::parser::expr::*;
-use crate::parser::util::commentable_spaces;
+use crate::parser::util::{commentable_spaces, spaces};
 use crate::parser::value::value;
-use combine::error::ParseError;
-use combine::parser::char::{char, space, spaces, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{chainl1, choice, parser};
 
-parser! {
-    pub fn logic_expr[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let compare =
-            (
-                bool_expr(),
-                commentable_spaces(),
-                choice!(
-                    attempt(string("==")),
-                    attempt(string("!=")),
-                    attempt(string("<=")),
-                    attempt(string(">=")),
-                    attempt(string("<")),
-                    attempt(string(">"))),
-                commentable_spaces(),
-                bool_expr(),
-                commentable_spaces(),
-            ).map(|(x, _, op, _, y, _): (Expr, (), &str, (), Expr, ())| {
-                match op {
-                    "==" => Expr::Equal(Box::new(x), Box::new(y)),
-                    "!=" => Expr::Not(Box::new(Expr::Equal(Box::new(x), Box::new(y)))),
-                    "<=" => Expr::Not(Box::new(Expr::Less(Box::new(y), Box::new(x)))),
-                    ">=" => Expr::Not(Box::new(Expr::Less(Box::new(x), Box::new(y)))),
-                    "<" => Expr::Less(Box::new(x), Box::new(y)),
-                    ">" => Expr::Less(Box::new(y), Box::new(x)),
-                    _ => panic!(),
-                }
-            });
-        choice!(attempt(compare), bool_expr())
-    }
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    combinator::map,
+    multi::fold_many0,
+    sequence::{preceded, terminated, tuple},
+    IResult,
+};
+
+pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
+    let compare = map(
+        tuple((
+            ab_expr,
+            commentable_spaces,
+            alt((
+                tag("=="),
+                tag("!="),
+                tag("<="),
+                tag(">="),
+                tag("<"),
+                tag(">"),
+            )),
+            commentable_spaces,
+            ab_expr,
+            commentable_spaces,
+        )),
+        |(x, _, op, _, y, _)| match op {
+            "==" => Expr::Equal(Box::new(x), Box::new(y)),
+            "!=" => Expr::Not(Box::new(Expr::Equal(Box::new(x), Box::new(y)))),
+            "<=" => Expr::Not(Box::new(Expr::Less(Box::new(y), Box::new(x)))),
+            ">=" => Expr::Not(Box::new(Expr::Less(Box::new(x), Box::new(y)))),
+            "<" => Expr::Less(Box::new(x), Box::new(y)),
+            ">" => Expr::Less(Box::new(y), Box::new(x)),
+            _ => panic!(),
+        },
+    );
+    alt((compare, ab_expr))(input)
 }
 
-parser! {
-    pub fn bool_expr[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let p = arith_expr().skip(commentable_spaces());
-        let op_token = choice!(
-            attempt(string("and")),
-            attempt(string("or")),
-            attempt(string("xor")));
-        let op = (
-            op_token,
-            space(),
-            commentable_spaces()
-        ).map(|(token, _, _): (&str, char, ())| move |left: Expr, right: Expr|
-            match &token {
-                &"and" => Expr::And(Box::new(left), Box::new(right)),
-                &"or" => Expr::Or(Box::new(left), Box::new(right)),
-                _ => Expr::Xor(Box::new(left), Box::new(right)),
-            });
-        chainl1(p, op)
-    }
+fn ab_expr(input: &str) -> IResult<&str, Expr> {
+    let (input, x) = term(input)?;
+    let (input, _) = commentable_spaces(input)?;
+    fold_many0(
+        tuple((
+            alt((tag("and"), tag("or"), tag("xor"), tag("+"), tag("-"))),
+            commentable_spaces,
+            term,
+        )),
+        x,
+        |acc, (op, _, val)| match op {
+            "and" => Expr::And(Box::new(acc), Box::new(val)),
+            "or" => Expr::Or(Box::new(acc), Box::new(val)),
+            "xor" => Expr::Xor(Box::new(acc), Box::new(val)),
+            "+" => Expr::Add(Box::new(acc), Box::new(val)),
+            "-" => Expr::Sub(Box::new(acc), Box::new(val)),
+            _ => panic!(),
+        },
+    )(input)
 }
 
-parser! {
-    fn arith_expr[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let p = (term(), commentable_spaces()).map(|t| t.0);
-        let op_token = choice!(char('+'), char('-'));
-        let op = op_token.skip(commentable_spaces()).map(|token: char| move |left: Expr, right: Expr|
-            match token {
-                '+' => Expr::Add(Box::new(left), Box::new(right)),
-                _ => Expr::Sub(Box::new(left), Box::new(right)),
-            });
-        chainl1(p, op)
-    }
+fn term(input: &str) -> IResult<&str, Expr> {
+    let (input, x) = factor(input)?;
+    let (input, _) = commentable_spaces(input)?;
+    fold_many0(
+        tuple((
+            alt((tag("**"), tag("*"), tag("/"))),
+            commentable_spaces,
+            factor,
+        )),
+        x,
+        |acc, (op, _, val)| match op {
+            "**" => Expr::Pow(Box::new(acc), Box::new(val)),
+            "*" => Expr::Mul(Box::new(acc), Box::new(val)),
+            "/" => Expr::Div(Box::new(acc), Box::new(val)),
+            _ => panic!(),
+        },
+    )(input)
 }
 
-parser! {
-    fn term[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let p = (factor(), commentable_spaces()).map(|t| t.0);
-        let op_token = choice!(
-            attempt(string("**").map(|_| '^')),
-            char('*'),
-            char('/'),
-            char('^'));
-        let op = op_token.skip(commentable_spaces()).map(|token: char| move |left: Expr, right: Expr|
-            match token {
-                '*' => Expr::Mul(Box::new(left), Box::new(right)),
-                '/' => Expr::Div(Box::new(left), Box::new(right)),
-                _ => Expr::Pow(Box::new(left), Box::new(right)),
-            });
-        chainl1(p, op)
-    }
-}
-
-parser! {
-    fn factor[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let parened =
-            (
-                char('('),
-                commentable_spaces(),
-                expr(),
-                commentable_spaces(),
-                char(')'),
-                commentable_spaces(),
-            ).map(|(_, _, x, _, _, _): (char, (), Expr, (), char, ())| x);
-        let minused =
-            (
-                char('-'),
-                arith_expr(),
-            ).map(|(_, e): (char, Expr)| Expr::Minus(Box::new(e)));
-        let notted =
-            (
-                string("not"),
-                spaces(),
-                logic_expr(),
-            ).map(|(_, _, e): (&str, (), Expr)| Expr::Not(Box::new(e)));
-        choice!(
-            attempt(parened),
-            attempt(notted),
-            attempt(value().map(Expr::Val)),
-            attempt(minused)
-        )
-    }
+fn factor(input: &str) -> IResult<&str, Expr> {
+    let parened = map(
+        tuple((
+            tag("("),
+            commentable_spaces,
+            expr,
+            commentable_spaces,
+            tag(")"),
+        )),
+        |(_, _, e, _, _)| e,
+    );
+    let minused = map(preceded(tag("-"), ab_expr), |e| Expr::Minus(Box::new(e)));
+    let notted = map(preceded(tag("not"), preceded(spaces, term)), |e| {
+        Expr::Not(Box::new(e))
+    });
+    let avalue = map(value, Expr::Val);
+    terminated(alt((parened, notted, avalue, minused)), commentable_spaces)(input)
 }
 
 #[cfg(test)]
 mod test_logic {
     use crate::parser::logic::*;
     use crate::parser::value::*;
-    use combine::Parser;
     use Expr::*;
     use Value::*;
 
     macro_rules! assert_logic {
         ($code: expr, $expected: expr) => {
-            assert_eq!(logic_expr().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(logic_expr($code), Ok(("", $expected)))
         };
     }
 
     #[test]
     fn test_arith() {
+        assert_logic!("1 // one", Val(Nat(1)));
+        assert_logic!("1+-1", Add(Box::new(Val(Nat(1))), Box::new(Val(Int(-1)))));
         assert_logic!("1  /2", Div(Box::new(Val(Nat(1))), Box::new(Val(Nat(2)))));
         assert_logic!(
             "1 + 2 - 3",
@@ -205,6 +160,20 @@ mod test_logic {
     fn test_bool() {
         assert_logic!("true", Val(Bool(true)));
         assert_logic!("not x", Not(Box::new(Val(Var("x".to_string())))));
+        assert_logic!(
+            "not true or true",
+            Or(
+                Box::new(Not(Box::new(Val(Bool(true))))),
+                Box::new(Val(Bool(true)))
+            )
+        );
+        assert_logic!(
+            "true or not true",
+            Or(
+                Box::new(Val(Bool(true))),
+                Box::new(Not(Box::new(Val(Bool(true)))))
+            )
+        );
         assert_logic!(
             "x and y",
             And(

@@ -1,6 +1,6 @@
 use crate::builtins;
 use crate::json::*;
-use crate::parser::config::*;
+use crate::parser::cumin::*;
 use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::typing::*;
@@ -12,13 +12,13 @@ use std::collections::HashMap;
 
 use Statement::*;
 
-pub fn eval(config: Config) -> Result<JSON> {
+pub fn eval(cumin: Cumin) -> Result<JSON> {
     let mut env = Environ::new();
-    let val = eval_conf(&mut env, &config)?;
+    let val = eval_conf(&mut env, &cumin)?;
     Ok(JSON::from_cumin(val))
 }
 
-fn eval_conf(env: &mut Environ, conf: &Config) -> Result<Value> {
+fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // collect types
     for stmt in conf.0.iter() {
         match stmt {
@@ -421,12 +421,11 @@ impl Environ {
 mod test_eval_from_parse {
     use crate::eval::eval;
     use crate::json::JSON;
-    use crate::parser::config::config;
-    use combine::parser::Parser;
+    use crate::parser::cumin::cumin;
 
     macro_rules! assert_eval {
         ($code:expr, $json:expr) => {
-            assert_eq!(eval(config().parse($code).unwrap().0).unwrap(), $json);
+            assert_eq!(eval(cumin($code).unwrap().1).unwrap(), $json);
         };
     }
 

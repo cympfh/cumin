@@ -1,11 +1,16 @@
 use crate::parser::typing::*;
 use crate::parser::util::*;
 use anyhow::Result;
-use combine::error::ParseError;
-use combine::parser::char::{char, digit, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{any, between, choice, many, many1, none_of, one_of, optional, parser};
+use nom::combinator;
+use nom::{
+    branch::alt,
+    bytes::complete::{escaped_transform, is_not, tag},
+    character::complete::{char, one_of},
+    combinator::{map, opt, recognize},
+    multi::{many0, many1},
+    sequence::{pair, terminated, tuple},
+    IResult,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
@@ -107,130 +112,108 @@ impl Value {
     }
 }
 
-fn escaped_character(c: char) -> char {
-    match c {
-        'n' => '\n',
-        't' => '\t',
-        'r' => '\r',
-        _ => c,
+pub fn value(input: &str) -> IResult<&str, Value> {
+    let const_values = alt((
+        combinator::value(Value::Optional(Typing::Any, Box::new(None)), tag("None")),
+        combinator::value(Value::Bool(true), tag("true")),
+        combinator::value(Value::Bool(false), tag("false")),
+    ));
+
+    fn decimal(input: &str) -> IResult<&str, &str> {
+        recognize(many1(terminated(one_of("0123456789"), many0(char('_')))))(input)
     }
-}
 
-parser! {
-    pub fn value[Input]()(Input) -> Value
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let const_value =
-            choice!(
-                string("None").map(|_| Value::Optional(Typing::Any, Box::new(None))),
-                string("true").map(|_| Value::Bool(true)),
-                string("false").map(|_| Value::Bool(false)));
+    let float_value = map(
+        alt((
+            recognize(tuple((opt(char('-')), char('.'), decimal))),
+            recognize(tuple((opt(char('-')), decimal, char('.'), decimal))),
+        )),
+        |num_str: &str| {
+            let x: f64 = num_str.parse().unwrap();
+            Value::Float(x)
+        },
+    );
 
-        let float_value =
-            (
-                optional(char('-')),
-                many1(digit()),
-                many(one_of("_0123456789".chars())),
-                char('.'),
-                many(one_of("_0123456789".chars())),
-            ).map(|(sign, head, tail, _dot, under): (Option<char>, String, String, char, String)| {
-                let mut s: String = sign.iter().collect();
-                s.push_str(head.as_str());
-                s.push_str(tail.as_str());
-                s.push('.');
-                s.push_str(under.as_str());
-                let s: String = s.chars().filter(|&c| c != '_').collect();
-                Value::Float(s.parse::<f64>().unwrap())
-            });
+    let num_value = map(pair(opt(tag("-")), decimal), |(sign, num): (_, &str)| {
+        let num: String = num.chars().filter(|&c| c != '_').collect();
+        match sign {
+            None => Value::Nat(num.parse::<u128>().unwrap()),
+            _ => Value::Int(-num.parse::<i128>().unwrap()),
+        }
+    });
 
-        let num_value =
-            (
-                optional(char('-')),
-                many1(digit()),
-                many(one_of("_0123456789".chars())),
-            ).map(|(sign, head, tail): (Option<char>, String, String)| {
-                let mut s: String = sign.iter().collect();
-                s.push_str(head.as_str());
-                s.push_str(tail.as_str());
-                let s: String = s.chars().filter(|&c| c != '_').collect();
-                if sign.is_none() {
-                    Value::Nat(s.parse::<u128>().unwrap())
-                } else {
-                    Value::Int(s.parse::<i128>().unwrap())
-                }
-            });
+    let str_value = map(
+        tuple((
+            tag("\""),
+            escaped_transform(
+                is_not("\"\\"),
+                '\\',
+                alt((
+                    combinator::value("\\", tag("\\")),
+                    combinator::value("\"", tag("\"")),
+                    combinator::value("\'", tag("\'")),
+                    combinator::value("\n", tag("n")),
+                    combinator::value("\r", tag("r")),
+                    combinator::value("\t", tag("t")),
+                )),
+            ),
+            tag("\""),
+        )),
+        |(_, s, _)| Value::Str(s),
+    );
 
-        let str_value =
-            (
-                char('"'),
-                many::<String, _, _>(
-                    choice!(
-                        attempt(char('\\').with(any()).map(escaped_character)),
-                        attempt(none_of("\"".chars())))),
-                char('"'),
-            ).map(|(_, s, _): (char, String, char)| Value::Str(s));
+    let variant_value = map(tuple((identifier, tag("::"), identifier)), |(x, _, y)| {
+        Value::EnumVariant(x, y)
+    });
 
-        let variant_value =
-            (
-                identifier(),
-                string("::"),
-                identifier(),
-            ).map(|t: (String, &str, String)| Value::EnumVariant(t.0, t.2));
+    let env_value = {
+        let default_value = map(tuple((tag(":-"), is_not("}"))), |(_, val): (_, &str)| {
+            val.to_string()
+        });
+        alt((
+            map(
+                tuple((tag("${"), identifier, opt(default_value), tag("}"))),
+                |(_, name, default, _)| Value::Env(name, default),
+            ),
+            map(tuple((tag("$"), identifier)), |(_, name)| {
+                Value::Env(name, None)
+            }),
+        ))
+    };
 
-        let env_value = {
-            let default_string_value = (
-                string(":-"),
-                many::<String, _, _>(none_of("}".chars())),
-            ).map(|t| t.1);
-            (
-                char('$'),
-                choice!(
-                    identifier().map(|s: String| (s, None)),
-                    between(char('{'), char('}'), (identifier(), optional(default_string_value)))
-                ),
-            ).map(|(_, (name, default_value)): (char, (String, Option<String>))| {
-                Value::Env(name, default_value)
-            })
-        };
+    let var_value = map(identifier, Value::Var);
 
-        let var_value = identifier().map(Value::Var);
-
-        choice!(
-            attempt(float_value),
-            attempt(num_value),
-            attempt(str_value),
-            attempt(env_value),
-            attempt(variant_value),
-            attempt(const_value),
-            var_value
-        )
-    }
+    alt((
+        const_values,
+        float_value,
+        num_value,
+        str_value,
+        variant_value,
+        env_value,
+        var_value,
+    ))(input)
 }
 
 #[cfg(test)]
 mod test_value {
     use crate::parser::value::*;
-    use combine::Parser;
     use Value::*;
 
     macro_rules! assert_value {
         ($code: expr, $expected: expr) => {
-            assert_eq!(value().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(value($code), Ok(("", $expected)));
         };
     }
 
     #[test]
     fn test_num() {
-        assert_value!("23", Value::Nat(23));
-        assert_value!("23_", Value::Nat(23));
-        assert_value!("-23_", Value::Int(-23));
+        assert_value!("0", Value::Nat(0));
+        assert_value!("123", Value::Nat(123));
+        assert_value!("-123", Value::Int(-123));
+        assert_value!("123_456_789", Value::Nat(123_456_789));
+        assert_value!("0.0", Value::Float(0.0));
         assert_value!("0.5", Value::Float(0.5));
-        assert_value!("21.5", Value::Float(21.5));
         assert_value!("-0.5", Value::Float(-0.5));
-        assert_value!("-21.5", Value::Float(-21.5));
     }
     #[test]
     fn test_const() {
@@ -245,24 +228,31 @@ mod test_value {
         assert_value!("\"ho\\nge\"", Value::Str("ho\nge".to_string()));
         assert_value!("\"ho\\\"ge\"", Value::Str("ho\"ge".to_string()));
         assert_value!("\"ho\\\\ge\\'\"", Value::Str("ho\\ge'".to_string()));
+        assert_value!(
+            "\"[\\n\\r\\t][\\\\][\\\"\\\']\"",
+            Value::Str("[\n\r\t][\\][\"\']".to_string())
+        );
+    }
+    #[test]
+    fn test_enum() {
+        assert_value!(
+            "X::Zoo",
+            Value::EnumVariant("X".to_string(), "Zoo".to_string())
+        );
+    }
+    #[test]
+    fn test_env() {
+        assert_value!("$USER", Value::Env("USER".to_string(), None));
+        assert_value!("${USER}", Value::Env("USER".to_string(), None));
+        assert_value!(
+            "${USER:-hoge}",
+            Value::Env("USER".to_string(), Some("hoge".to_string()))
+        );
     }
     #[test]
     fn test_var() {
         assert_value!("hoge", Value::Var("hoge".to_string()));
         assert_value!("_hoge0", Value::Var("_hoge0".to_string()));
-        assert_value!("$USER", Value::Env("USER".to_string(), None));
-        assert_value!("${USER_iD2}", Value::Env("USER_iD2".to_string(), None));
-    }
-    #[test]
-    fn test_enum() {
-        assert_value!(
-            "${X:-hoge}",
-            Value::Env("X".to_string(), Some("hoge".to_string()))
-        );
-        assert_value!(
-            "X::Zoo",
-            Value::EnumVariant("X".to_string(), "Zoo".to_string())
-        );
     }
 
     macro_rules! assert_cast {

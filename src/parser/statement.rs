@@ -1,11 +1,16 @@
 use crate::parser::expr::*;
 use crate::parser::typing::*;
 use crate::parser::util::*;
-use combine::error::ParseError;
-use combine::parser::char::{char, space, spaces, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{choice, many, many1, optional, parser, sep_by};
+
+use nom::combinator;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    combinator::{map, opt},
+    multi::{separated_list0, separated_list1},
+    sequence::{terminated, tuple},
+    IResult,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
@@ -15,165 +20,128 @@ pub enum Statement {
     Type(String, Vec<Typing>),
 }
 
-parser! {
-    pub fn stmt[Input]()(Input) -> Statement
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        // let id = expr;
-        // let id: typing = expr;
-        let let_stmt = {
-            let type_annotation = choice!(
-                attempt((spaces(), char(':'), spaces(), typing(), spaces()).map(|t| t.3)),
-                spaces().map(|_: ()| Typing::Any)
-            );
-            (
-                string("let"),
-                space(),
-                spaces(),
-                identifier(),
+pub fn stmt(input: &str) -> IResult<&str, Statement> {
+    // let id = expr;
+    // let id: typing = expr;
+    let let_stmt = {
+        let type_annotation = alt((
+            map(
+                tuple((tag(":"), commentable_spaces, typing, commentable_spaces)),
+                |(_, _, typ, _)| typ,
+            ),
+            combinator::value(Typing::Any, commentable_spaces),
+        ));
+        map(
+            tuple((
+                tag("let"),
+                commentable_spaces,
+                identifier,
                 type_annotation,
-                char('='),
-                spaces(),
-                expr(),
-                spaces(),
-                char(';'),
-                commentable_spaces(),
-            )
-                .map(|t| Statement::Let(t.3, t.4, t.7))
-        };
-
-        // struct id { id: typing [= expr] [,] }
-        let struct_stmt = {
-            let inner_separated = sep_by::<Vec<(String, Typing, Option<Expr>)>, _, _, _>(
-                (
-                    identifier(),
-                    spaces(),
-                    char(':'),
-                    spaces(),
-                    typing(),
-                    commentable_spaces(),
-                    optional(
-                        (
-                            char('='),
-                            spaces(),
-                            expr(),
-                        ).map(|t| t.2)),
-                    commentable_spaces()
-                ).map(|t| (t.0, t.4, t.6)),
-                char(',').with(commentable_spaces()));
-            let inner_trailing = many::<Vec<(String, Typing, Option<Expr>)>, _, _>(
-                (
-                    identifier(),
-                    spaces(),
-                    char(':'),
-                    spaces(),
-                    typing(),
-                    spaces(),
-                    optional(
-                        (
-                            char('='),
-                            spaces(),
-                            expr(),
-                        ).map(|t| t.2)),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.0, t.4, t.6)));
-            (
-                string("struct"),
-                space(),
-                spaces(),
-                identifier(),
-                spaces(),
-                char('{'),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_separated),
-                char('}'),
-                commentable_spaces(),
-            )
-                .map(|t| Statement::Struct(t.3, t.7))
-        };
-
-        // enum id { id, id [,] }
-        let enum_stmst = {
-            let inner_separated = sep_by::<Vec<String>, _, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                ).map(|t: (String, ())| t.0),
-                char(',').with(commentable_spaces()));
-            let inner_trailing = many1::<Vec<String>, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t: (String, (), char, ())| t.0)
-            );
-            (
-                string("enum"),
-                space(),
-                spaces(),
-                identifier(),
-                spaces(),
-                char('{'),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_separated),
-                char('}'),
-                commentable_spaces()
-            )
-                .map(|t| Statement::Enum(t.3, t.7))
-        };
-
-        // type <id> = <Typing> | ... | <Typing> ;
-        let type_stmt = {
-            let inner_separated = sep_by::<Vec<Typing>, _, _, _>(
-                (
-                    typing(),
-                    commentable_spaces(),
-                ).map(|t: (Typing, ())| t.0),
-                char('|').with(commentable_spaces()));
-            (
-                string("type"),
-                space(),
-                spaces(),
-                identifier(),
-                commentable_spaces(),
-                char('='),
-                commentable_spaces(),
-                inner_separated,
-                char(';'),
-                commentable_spaces(),
-            )
-                .map(|(_, _, _, typ, _, _, _, unions, _, _): (&str, char, (), String, (), char, (), Vec<Typing>, char, ())| {
-                    Statement::Type(typ, unions)
-                })
-        };
-
-        choice!(
-            attempt(struct_stmt),
-            attempt(let_stmt),
-            attempt(enum_stmst),
-            attempt(type_stmt)
+                tag("="),
+                commentable_spaces,
+                expr,
+                tag(";"),
+            )),
+            |(_, _, name, typ, _, _, e, _)| Statement::Let(name, typ, e),
         )
-    }
+    };
+
+    // struct id { id: typing [= expr] [,] }
+    let struct_stmt = {
+        let inner = separated_list0(
+            tuple((tag(","), commentable_spaces)),
+            map(
+                tuple((
+                    identifier,
+                    commentable_spaces,
+                    tag(":"),
+                    commentable_spaces,
+                    typing,
+                    commentable_spaces,
+                    opt(map(
+                        tuple((tag("="), commentable_spaces, expr, commentable_spaces)),
+                        |(_, _, e, _)| e,
+                    )),
+                )),
+                |(name, _, _, _, typ, _, default_value)| (name, typ, default_value),
+            ),
+        );
+        map(
+            tuple((
+                tag("struct"),
+                commentable_spaces,
+                identifier,
+                commentable_spaces,
+                tag("{"),
+                commentable_spaces,
+                inner,
+                opt(tuple((tag(","), commentable_spaces))),
+                tag("}"),
+            )),
+            |(_, _, name, _, _, _, items, _, _)| Statement::Struct(name, items),
+        )
+    };
+
+    // enum id { id, id [,] }
+    let enum_stmst = {
+        let inner = separated_list0(
+            tuple((tag(","), commentable_spaces)),
+            terminated(identifier, commentable_spaces),
+        );
+        map(
+            tuple((
+                tag("enum"),
+                commentable_spaces,
+                identifier,
+                commentable_spaces,
+                tag("{"),
+                commentable_spaces,
+                inner,
+                opt(tuple((tag(","), commentable_spaces))),
+                tag("}"),
+            )),
+            |(_, _, name, _, _, _, items, _, _)| Statement::Enum(name, items),
+        )
+    };
+
+    // type <id> = <Typing> | ... | <Typing> ;
+    let type_stmt = {
+        let typelist = separated_list1(
+            tuple((tag("|"), commentable_spaces)),
+            terminated(typing, commentable_spaces),
+        );
+        map(
+            tuple((
+                tag("type"),
+                commentable_spaces,
+                identifier,
+                commentable_spaces,
+                tag("="),
+                commentable_spaces,
+                typelist,
+                tag(";"),
+            )),
+            |(_, _, name, _, _, _, typs, _)| Statement::Type(name, typs),
+        )
+    };
+
+    terminated(
+        alt((let_stmt, struct_stmt, enum_stmst, type_stmt)),
+        commentable_spaces,
+    )(input)
 }
 
 #[cfg(test)]
 mod test_statement {
     use crate::parser::statement::*;
     use crate::parser::value::*;
-    use combine::Parser;
     use Expr::*;
     use Statement::*;
     use Value::*;
 
     macro_rules! assert_stmt {
         ($code: expr, $expected: expr) => {
-            assert_eq!(stmt().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(stmt($code), Ok(("", $expected)))
         };
     }
 
@@ -248,7 +216,9 @@ mod test_statement {
 
     #[test]
     fn test_enum() {
-        // comma-separating
+        assert_stmt!("enum A{}", Enum("A".to_string(), vec![]));
+        assert_stmt!("enum A{B}", Enum("A".to_string(), vec!["B".to_string()]));
+        assert_stmt!("enum A{B,}", Enum("A".to_string(), vec!["B".to_string()]));
         assert_stmt!(
             "enum Z {
                 A,B, C,D
