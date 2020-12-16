@@ -1,9 +1,6 @@
-use crate::parser::util::identifier;
-use combine::error::ParseError;
-use combine::parser::char::{char, spaces, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{choice, parser};
+use crate::parser::util::{identifier, spaces};
+use nom::combinator;
+use nom::{branch::alt, bytes::complete::tag, combinator::map, sequence::tuple, IResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Typing {
@@ -18,48 +15,43 @@ pub enum Typing {
     UserTyping(String),
 }
 
-parser! {
-    pub fn typing[Input]()(Input) -> Typing
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        let any_typing = string("Any").map(|_| Typing::Any);
-        let underscore_typing = string("_").map(|_| Typing::Any);
-        let nat_typing = string("Nat").map(|_| Typing::Nat);
-        let int_typing = string("Int").map(|_| Typing::Int);
-        let float_typing = string("Float").map(|_| Typing::Float);
-        let bool_typing = string("Bool").map(|_| Typing::Bool);
-        let string_typing = string("String").map(|_| Typing::String);
-        let array_typing = (
-            string("Array<"),
-            spaces(),
-            typing(),
-            spaces(),
-            char('>'),
-        ).map(|(_, _, elements, _, _): (&str, (), Typing, (), char)| Typing::Array(Box::new(elements)));
-        let option_typing = (
-            string("Option<"),
-            spaces(),
-            typing(),
-            spaces(),
-            char('>'),
-        ).map(|(_, _, elements, _, _): (&str, (), Typing, (), char)| Typing::Option(Box::new(elements)));
-        let user_typing = identifier().map(Typing::UserTyping);
-        choice!(
-            attempt(array_typing),
-            attempt(option_typing),
-            attempt(any_typing),
-            attempt(underscore_typing),
-            attempt(nat_typing),
-            attempt(int_typing),
-            attempt(float_typing),
-            attempt(bool_typing),
-            attempt(string_typing),
-            user_typing
-        )
-    }
+pub fn typing(input: &str) -> IResult<&str, Typing> {
+    alt((
+        combinator::value(Typing::Any, tag("Any")),
+        combinator::value(Typing::Any, tag("_")),
+        combinator::value(Typing::Nat, tag("Nat")),
+        combinator::value(Typing::Int, tag("Int")),
+        combinator::value(Typing::Float, tag("Float")),
+        combinator::value(Typing::Bool, tag("Bool")),
+        combinator::value(Typing::String, tag("String")),
+        map(
+            tuple((
+                tag("Array"),
+                spaces,
+                tag("<"),
+                spaces,
+                typing,
+                spaces,
+                tag(">"),
+                spaces,
+            )),
+            |item| Typing::Array(Box::new(item.4)),
+        ),
+        map(
+            tuple((
+                tag("Option"),
+                spaces,
+                tag("<"),
+                spaces,
+                typing,
+                spaces,
+                tag(">"),
+                spaces,
+            )),
+            |item| Typing::Option(Box::new(item.4)),
+        ),
+        map(identifier, |s| Typing::UserTyping(s)),
+    ))(input)
 }
 
 impl Typing {
@@ -92,11 +84,10 @@ impl Typing {
 #[cfg(test)]
 mod test_typing {
     use crate::parser::typing::*;
-    use combine::Parser;
 
     macro_rules! assert_typing {
         ($code: expr, $expected: expr) => {
-            assert_eq!(typing().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(typing($code), Ok(("", $expected)))
         };
     }
 

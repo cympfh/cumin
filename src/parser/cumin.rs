@@ -1,64 +1,52 @@
 use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::util::*;
-use combine::error::ParseError;
-use combine::stream::Stream;
-use combine::{many, parser};
+
+use nom::{combinator::map, multi::many0, sequence::tuple, IResult};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Config(pub Vec<Statement>, pub Expr);
+pub struct Cumin(pub Vec<Statement>, pub Expr);
 
-parser! {
-    pub fn config[Input]()(Input) -> Config
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-    ]
-    {
-        (
-            commentable_spaces(),
-            many(stmt()),
-            expr(),
-            commentable_spaces(),
-        )
-            .map(|t: ((), Vec<Statement>, Expr, ())| Config(t.1, t.2))
-    }
+pub fn cumin(input: &str) -> IResult<&str, Cumin> {
+    map(
+        tuple((commentable_spaces, many0(stmt), expr, commentable_spaces)),
+        |(_, ss, e, _)| Cumin(ss, e),
+    )(input)
 }
 
 #[cfg(test)]
-mod test_config {
-    use crate::parser::config::*;
+mod test_cumin {
+    use crate::parser::cumin::*;
     use crate::parser::typing::*;
     use crate::parser::value::*;
-    use combine::Parser;
     use Expr::*;
     use Statement::*;
     use Value::*;
 
-    macro_rules! assert_config {
+    macro_rules! assert_cumin {
         ($code: expr, $expected: expr) => {
-            assert_eq!(config().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(cumin($code), Ok(("", $expected)));
         };
     }
 
     #[test]
     fn test() {
-        assert_config!("-1", Config(vec![], Val(Int(-1))));
-        assert_config!(
+        assert_cumin!("-1", Cumin(vec![], Val(Int(-1))));
+        assert_cumin!(
             "let x=1; x",
-            Config(
+            Cumin(
                 vec![Let("x".to_string(), Typing::Any, Val(Nat(1)))],
                 Val(Var("x".to_string()))
             )
         );
-        assert_config!(
+        assert_cumin!(
             "let x:Int=1; //comment
                 // comment
                 let y = x + 2;
                 // comment
                 // comment
                 x + y",
-            Config(
+            Cumin(
                 vec![
                     Let("x".to_string(), Typing::Int, Val(Nat(1))),
                     Let(
@@ -73,9 +61,9 @@ mod test_config {
                 )
             )
         );
-        assert_config!(
+        assert_cumin!(
             "struct X { x: Int } x + y",
-            Config(
+            Cumin(
                 vec![Struct(
                     "X".to_string(),
                     vec![("x".to_string(), Typing::Int, None)]
@@ -86,9 +74,9 @@ mod test_config {
                 )
             )
         );
-        assert_config!(
+        assert_cumin!(
             "struct X { x: Int } let x=1; X(x)",
-            Config(
+            Cumin(
                 vec![
                     Struct("X".to_string(), vec![("x".to_string(), Typing::Int, None)]),
                     Let("x".to_string(), Typing::Any, Val(Nat(1)))

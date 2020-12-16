@@ -1,85 +1,75 @@
-use combine::error::ParseError;
-use combine::parser::char::{alpha_num, char, letter, spaces, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{choice, eof, many, many1, none_of, one_of, Parser};
+use nom::{
+    branch::alt,
+    bytes::complete::{is_not, tag, take_while, take_while1},
+    combinator::eof,
+    multi::many0,
+    sequence::tuple,
+    IResult,
+};
 
-fn comment<Input>() -> impl Parser<Input, Output = ()>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    (
-        spaces(),
-        string("//"),
-        many::<String, _, _>(none_of("\n".chars())),
-        choice!(char('\n').map(|_: char| ()), eof()),
-        spaces(),
-    )
-        .map(|_: ((), &str, String, (), ())| ())
+pub fn spaces(input: &str) -> IResult<&str, &str> {
+    take_while(|c: char| c.is_whitespace())(input)
 }
 
-pub fn commentable_spaces<Input>() -> impl Parser<Input, Output = ()>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    choice!(attempt(many1(comment())), spaces())
+fn comment(input: &str) -> IResult<&str, &str> {
+    let (input, _) = tag("//")(input)?;
+    let (input, _) = is_not("\n\r")(input)?;
+    alt((eof, spaces))(input)
 }
 
-pub fn identifier<Input>() -> impl Parser<Input, Output = String>
-where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-{
-    let allowed_other_chars = "_@/#".chars();
-    let head = letter().or(one_of(allowed_other_chars.clone()));
-    let tail = alpha_num().or(one_of(allowed_other_chars));
-    (many1::<String, _, _>(head), many::<String, _, _>(tail)).map(|(head, tail)| {
-        let mut s = head.to_string();
-        s.push_str(tail.as_str());
-        s
-    })
+pub fn commentable_spaces(input: &str) -> IResult<&str, ()> {
+    let (input, _) = spaces(input)?;
+    let (input, _) = many0(tuple((comment, spaces)))(input)?;
+    Ok((input, ()))
+}
+
+pub fn identifier(input: &str) -> IResult<&str, String> {
+    fn head(c: char) -> bool {
+        c.is_alphabetic() || c == '_' || c == '#' || c == '@'
+    }
+    fn tail(c: char) -> bool {
+        c.is_alphanumeric() || head(c)
+    }
+    let (input, s) = take_while1(head)(input)?;
+    let (input, t) = take_while(tail)(input)?;
+    let mut name = String::new();
+    name.push_str(s);
+    name.push_str(t);
+    Ok((input, name))
 }
 
 #[cfg(test)]
 mod test_comment {
     use crate::parser::util::*;
-    use combine::error::StringStreamError;
 
     #[test]
     fn test_comment() {
-        assert_eq!(commentable_spaces().parse(" "), Ok(((), "")));
-        assert_eq!(commentable_spaces().parse("// hoge"), Ok(((), "")));
+        assert_eq!(commentable_spaces(""), Ok(("", ())));
+        assert_eq!(commentable_spaces(" \t\n"), Ok(("", ())));
+        assert_eq!(commentable_spaces("// hoge"), Ok(("", ())));
         assert_eq!(
-            commentable_spaces().parse(
+            commentable_spaces(
                 "// hoge
-                // fuga // piyo"
+                // fuga"
             ),
-            Ok(((), ""))
+            Ok(("", ()))
         );
         assert_eq!(
-            commentable_spaces().parse(
+            commentable_spaces(
                 "// hoge
 
                 let x = 1; // fuga"
             ),
-            Ok(((), "let x = 1; // fuga"))
+            Ok(("let x = 1; // fuga", ()))
         );
     }
 
     #[test]
     fn test_identifier() {
-        assert_eq!(
-            identifier().parse("3"),
-            Err(StringStreamError::UnexpectedParse)
-        );
-        assert_eq!(
-            identifier().parse("3x"),
-            Err(StringStreamError::UnexpectedParse)
-        );
-        assert_eq!(identifier().parse("x"), Ok(("x".to_string(), "")));
-        assert_eq!(identifier().parse("Hoge0"), Ok(("Hoge0".to_string(), "")));
-        assert_eq!(identifier().parse("_oge0"), Ok(("_oge0".to_string(), "")));
+        assert!(identifier("3").is_err());
+        assert!(identifier("3x").is_err());
+        assert_eq!(identifier("x").unwrap(), ("", "x".to_string()));
+        assert_eq!(identifier("x0").unwrap(), ("", "x0".to_string()));
+        assert_eq!(identifier("_x").unwrap(), ("", "_x".to_string()));
     }
 }

@@ -1,13 +1,17 @@
-use crate::parser::config::*;
+use crate::parser::cumin::*;
 use crate::parser::logic::logic_expr;
 use crate::parser::typing::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
-use combine::error::ParseError;
-use combine::parser::char::{char, spaces, string};
-use combine::parser::combinator::attempt;
-use combine::stream::Stream;
-use combine::{choice, many, parser, sep_by, sep_by1};
+
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    combinator::{map, opt},
+    multi::{separated_list0, separated_list1},
+    sequence::{delimited, terminated, tuple},
+    IResult,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
@@ -28,222 +32,182 @@ pub enum Expr {
     Equal(Box<Expr>, Box<Expr>),
     Less(Box<Expr>, Box<Expr>),
     Arrayed(Vec<Expr>),
-    Blocked(Box<Config>),
+    Blocked(Box<Cumin>),
     AsCast(Box<Expr>, Typing),
 }
 
-parser! {
-    pub fn expr[Input]()(Input) -> Expr
-    where [
-        Input: Stream<Token = char>,
-        Input::Error: ParseError<char, Input::Range, Input::Position>,
-    ]
-    {
-        // <identifier>.<identifier>(<expr>, <expr>)
-        let apply_expr = {
-            let composed_func = sep_by1::<Vec<String>, _, _, _>(
-                identifier(),
-                char('.'));
-            let inner_sep = sep_by::<Vec<Expr>,_, _, _>(
-                (
-                    expr(),
-                    commentable_spaces()
-                ).map(|t: (Expr, ())| t.0),
-                char(',').with(commentable_spaces()));
-            let inner_trailing = many::<Vec<Expr>, _, _>(
-                (
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces()
-                ).map(|t: (Expr, (), char, ())| t.0));
-            (
-                composed_func,
-                commentable_spaces(),
-                char('('),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_sep),
-                char(')'),
-                commentable_spaces(),
-            ).map(|(fs, _, _, _, args, _, _): (Vec<String>, (), char, (), Vec<Expr>, char, _)| {
-                let n = fs.len();
-                assert!(n > 0);
-                let mut e = Expr::Apply(fs[n-1].to_string(), args);
-                for i in (0..n-1).rev() {
-                    e = Expr::Apply(fs[i].to_string(), vec![e]);
-                }
-                e
-            })
-        };
+pub fn expr(input: &str) -> IResult<&str, Expr> {
+    // <identifier>.<identifier> ( <expr>, )
+    let apply_expr = map(
+        tuple((
+            separated_list1(tag("."), identifier),
+            spaces,
+            tag("("),
+            commentable_spaces,
+            separated_list0(tuple((tag(","), commentable_spaces)), expr),
+            opt(tuple((tag(","), commentable_spaces))),
+            tag(")"),
+        )),
+        |(fs, _, _, _, args, _, _)| {
+            let n = fs.len();
+            assert!(n > 0);
+            let mut e = Expr::Apply(fs[n - 1].to_string(), args);
+            for i in (0..n - 1).rev() {
+                e = Expr::Apply(fs[i].to_string(), vec![e]);
+            }
+            e
+        },
+    );
 
-        // F { id = expr [,] }
-        let fielded_apply_expr = {
-            let composed_func = sep_by1::<Vec<String>, _, _, _>(
-                identifier(),
-                char('.'));
-            let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                ).map(|t| (t.0, t.4)),
-                char(',').with(commentable_spaces()));
-            let inner_trailing = many::<Vec<(String, Expr)>, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.0, t.4)));
-            (
-                composed_func,
-                commentable_spaces(),
-                char('{'),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_sep),
-                char('}'),
-                commentable_spaces(),
-            ).map(|(fs, _, _, _, args, _, _): (Vec<String>, (), char, (), Vec<(String, Expr)>, char, ())| {
-                let n = fs.len();
-                assert!(n > 0);
-                let mut e = Expr::FieledApply(fs[n-1].to_string(), args);
-                for i in (0..n-1).rev() {
-                    e = Expr::Apply(fs[i].to_string(), vec![e]);
-                }
-                e
-            })
-        };
+    // <identifier>.<identifier> { <identifier> = <expr> }
+    let field_apply_expr = map(
+        tuple((
+            separated_list1(tag("."), identifier),
+            commentable_spaces,
+            tag("{"),
+            commentable_spaces,
+            separated_list0(
+                tuple((tag(","), commentable_spaces)),
+                map(
+                    tuple((
+                        identifier,
+                        commentable_spaces,
+                        tag("="),
+                        commentable_spaces,
+                        expr,
+                        commentable_spaces,
+                    )),
+                    |(name, _, _, _, e, _)| (name, e),
+                ),
+            ),
+            opt(tuple((tag(","), commentable_spaces))),
+            tag("}"),
+        )),
+        |(fs, _, _, _, args, _, _)| {
+            let n = fs.len();
+            assert!(n > 0);
+            let mut e = Expr::FieledApply(fs[n - 1].to_string(), args);
+            for i in (0..n - 1).rev() {
+                e = Expr::Apply(fs[i].to_string(), vec![e]);
+            }
+            e
+        },
+    );
 
-        // {{ id = expr [,] }}
-        let dict_expr = {
-            let inner_sep = sep_by::<Vec<(String, Expr)>, _, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                ).map(|t: (String, (), char, (), Expr, ())| (t.0, t.4)),
-                char(',').with(commentable_spaces())
-            );
-            let inner_trailing = many::<Vec<(String, Expr)>, _, _>(
-                (
-                    identifier(),
-                    commentable_spaces(),
-                    char('='),
-                    commentable_spaces(),
-                    expr(),
-                    commentable_spaces(),
-                    char(','),
-                    commentable_spaces(),
-                ).map(|t| (t.0, t.4))
-            );
-            (
-                string("{{"),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_sep),
-                string("}}"),
-                commentable_spaces(),
-            ).map(|t: (&str, (), Vec<(String, Expr)>, &str, ())| Expr::AnonymousStruct(t.2))
-        };
+    // {{ <identifier> = <exp> , }}
+    let dict_expr = map(
+        tuple((
+            tag("{{"),
+            commentable_spaces,
+            separated_list0(
+                tuple((tag(","), commentable_spaces)),
+                map(
+                    tuple((
+                        identifier,
+                        commentable_spaces,
+                        tag("="),
+                        commentable_spaces,
+                        expr,
+                        commentable_spaces,
+                    )),
+                    |(name, _, _, _, e, _)| (name, e),
+                ),
+            ),
+            opt(tuple((tag(","), commentable_spaces))),
+            tag("}}"),
+        )),
+        |(_, _, items, _, _)| Expr::AnonymousStruct(items),
+    );
 
-        // { statement...; expr }
-        let blocked_expr = (
-            char('{'),
-            commentable_spaces(),
-            config(),
-            char('}'),
-            commentable_spaces(),
-        ).map(|(_, _, inner, _, _): (char, (), Config, char, ())| Expr::Blocked(Box::new(inner)));
+    // { <cumin> }
+    let blocked_expr = map(delimited(tag("{"), cumin, tag("}")), |cumin| {
+        Expr::Blocked(Box::new(cumin))
+    });
 
-        // as cast
-        let as_expr = {
-            let plain_value = value().map(Expr::Val);
-            let parenthesis_expr = (
-                char('('),
-                commentable_spaces(),
-                expr(),
-                char(')'),
-            ).map(|t: (char, (), Expr, char)| t.2);
-            (
-                choice!(parenthesis_expr, plain_value),
-                spaces(),
-                string("as"),
-                spaces(),
-                typing(),
-                commentable_spaces(),
-            ).map(|t: (Expr, (), &str, (), Typing, ())| Expr::AsCast(Box::new(t.0), t.4))
-        };
+    // <expr> as <typing>
+    let as_expr = map(
+        tuple((
+            alt((
+                map(
+                    tuple((
+                        tag("("),
+                        commentable_spaces,
+                        expr,
+                        commentable_spaces,
+                        tag(")"),
+                    )),
+                    |(_, _, e, _, _)| e,
+                ),
+                map(value, Expr::Val),
+            )),
+            commentable_spaces,
+            tag("as"),
+            commentable_spaces,
+            typing,
+        )),
+        |(e, _, _, _, typ)| Expr::AsCast(Box::new(e), typ),
+    );
 
-        let value_expr = value().map(|x: Value| Expr::Val(x));
+    // [ <expr> , ]
+    let arrayed_expr = map(
+        tuple((
+            tag("["),
+            commentable_spaces,
+            separated_list0(
+                tuple((tag(","), commentable_spaces)),
+                terminated(expr, commentable_spaces),
+            ),
+            opt(tuple((tag(","), commentable_spaces))),
+            tag("]"),
+        )),
+        |(_, _, elems, _, _)| Expr::Arrayed(elems),
+    );
 
-        // [ Expr [,] ]
-        let arrayed_expr = {
-            let inner_sep =
-                sep_by::<Vec<Expr>, _, _, _>(
-                    (
-                        expr(),
-                        commentable_spaces()
-                    ).map(|t: (Expr, ())| t.0),
-                    char(',').with(commentable_spaces())
-                );
-            let inner_trailing = many::<Vec<Expr>, _, _>(
-                    (
-                        expr(),
-                        commentable_spaces(),
-                        char(','),
-                        commentable_spaces()
-                    ).map(|t: (Expr, (), char, ())| t.0)
-                );
-            (
-                char('['),
-                commentable_spaces(),
-                choice!(attempt(inner_trailing), inner_sep),
-                char(']'),
-                commentable_spaces(),
-            ).map(|t: (char, (), Vec<Expr>, char, ())| Expr::Arrayed(t.2))
-        };
+    // <value>
+    let value_expr = map(value, |val| Expr::Val(val));
 
-        choice!(
-            attempt(apply_expr),
-            attempt(dict_expr),
-            attempt(blocked_expr),
-            attempt(arrayed_expr),
-            attempt(fielded_apply_expr),
-            attempt(as_expr),
-            attempt(logic_expr()),
-            value_expr
-        )
-    }
+    terminated(
+        alt((
+            dict_expr,
+            blocked_expr,
+            arrayed_expr,
+            apply_expr,
+            field_apply_expr,
+            as_expr,
+            logic_expr,
+            value_expr,
+        )),
+        commentable_spaces,
+    )(input)
 }
 
 #[cfg(test)]
 mod test_expr {
     use crate::parser::expr::*;
     use crate::parser::statement::*;
-    use combine::Parser;
     use Expr::*;
     use Value::*;
 
     macro_rules! assert_expr {
         ($code: expr, $expected: expr) => {
-            assert_eq!(expr().parse($code).ok().unwrap().0, $expected);
+            assert_eq!(expr($code), Ok(("", $expected)));
         };
     }
 
     #[test]
-    fn test() {
-        assert_expr!("2", Val(Nat(2)));
-        assert_expr!("-1", Val(Int(-1)));
-        assert_expr!("x", Val(Var("x".to_string())));
+    fn test_value() {
+        assert_expr!("1 // one", Val(Nat(1)));
+        assert_expr!("-1 // one", Val(Int(-1)));
+        assert_expr!(
+            "true
+            // one",
+            Val(Bool(true))
+        );
+        assert_expr!("x // var", Val(Var("x".to_string())));
+    }
+
+    #[test]
+    fn test_arith() {
         assert_expr!("0 + 1", Add(Box::new(Val(Nat(0))), Box::new(Val(Nat(1)))));
         assert_expr!(
             "0 + x",
@@ -302,10 +266,10 @@ mod test_expr {
                     Box::new(Val(Var("a".to_string()))),
                     Box::new(Not(Box::new(Val(Var("b".to_string())))))
                 )),
-                Box::new(Not(Box::new(And(
-                    Box::new(Val(Var("c".to_string()))),
+                Box::new(And(
+                    Box::new(Not(Box::new(Val(Var("c".to_string()))))),
                     Box::new(Val(Var("d".to_string())))
-                ))))
+                ))
             )
         );
         assert_expr!(
@@ -360,6 +324,8 @@ mod test_expr {
 
     #[test]
     fn test_apply() {
+        assert_expr!("f()", Apply("f".to_string(), vec![]));
+        assert_expr!("f(1)", Apply("f".to_string(), vec![Val(Nat(1))]));
         assert_expr!(
             "X(1, -2, \"x\")",
             Apply(
@@ -389,6 +355,11 @@ mod test_expr {
 
     #[test]
     fn test_field_apply() {
+        assert_expr!("X{}", FieledApply("X".to_string(), vec![]));
+        assert_expr!(
+            "X{x=1}",
+            FieledApply("X".to_string(), vec![("x".to_string(), Val(Nat(1)))])
+        );
         assert_expr!(
             "X { x=1, y=-2, z=\"x\"}",
             FieledApply(
@@ -437,7 +408,7 @@ mod test_expr {
                 x + y
                 }
                 ",
-            Blocked(Box::new(Config(
+            Blocked(Box::new(Cumin(
                 vec![
                     Statement::Let("x".to_string(), Typing::Int, Val(Nat(1))),
                     Statement::Let("y".to_string(), Typing::Any, Val(Int(-2))),

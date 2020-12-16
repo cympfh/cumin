@@ -4,9 +4,8 @@ extern crate structopt;
 use structopt::StructOpt;
 
 use anyhow::Result;
-use combine::parser::Parser;
 use cumin::eval::eval;
-use cumin::parser::config::config;
+use cumin::parser::cumin::cumin;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -38,13 +37,13 @@ fn cat(file_name: String) -> String {
 fn main() -> Result<()> {
     let opt = Opt::from_args();
     let content = cat(opt.input_cumin);
-    if let Ok((conf, rest)) = config().parse(content.as_str()) {
+    if let Ok((rest, cumin)) = cumin(content.as_str()) {
         if !rest.is_empty() {
             eprintln!("Parsing Stop with `{}`", rest);
-            eprintln!("read conf: {:?}", &conf);
+            eprintln!("read conf: {:?}", &cumin);
             bail!("Parsing Failed.");
         }
-        let json = eval(conf)?;
+        let json = eval(cumin)?;
         println!("{}", json.stringify());
     } else {
         bail!("Parse Error");
