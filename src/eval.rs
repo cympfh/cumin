@@ -145,8 +145,8 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         }
         AnonymousStruct(items) => {
             let mut values = vec![];
-            for (name, val) in items.iter() {
-                let val = eval_expr(&env, &val)?;
+            for (name, typ, val) in items.iter() {
+                let val = eval_expr(&env, &val)?.cast(typ)?;
                 values.push((name.to_string(), val.clone()));
             }
             Ok(Dict(None, values))
@@ -501,6 +501,25 @@ mod test_eval_from_parse {
         assert_eval!(
             "[None, Some(1)]",
             JSON::Array(vec![JSON::Null, JSON::Nat(1)])
+        );
+    }
+
+    #[test]
+    fn test_dict() {
+        assert_eval!("{{}}", JSON::Dict(vec![]));
+        assert_eval!(
+            "{{ x = 1, y = 2, }}",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "{{ x: Float = 1, y = 2, }}",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Float(1.0)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
         );
     }
 
