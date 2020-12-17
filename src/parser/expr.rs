@@ -18,7 +18,7 @@ pub enum Expr {
     Val(Value),
     Apply(String, Vec<Expr>),
     FieledApply(String, Vec<(String, Expr)>),
-    AnonymousStruct(Vec<(String, Expr)>),
+    AnonymousStruct(Vec<(String, Typing, Expr)>),
     Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
     Mul(Box<Expr>, Box<Expr>),
@@ -105,12 +105,16 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
                     tuple((
                         identifier,
                         commentable_spaces,
+                        opt(map(
+                            tuple((tag(":"), commentable_spaces, typing, commentable_spaces)),
+                            |(_, _, typ, _)| typ,
+                        )),
                         tag("="),
                         commentable_spaces,
                         expr,
                         commentable_spaces,
                     )),
-                    |(name, _, _, _, e, _)| (name, e),
+                    |(name, _, typ, _, _, e, _)| (name, typ.unwrap_or(Typing::Any), e),
                 ),
             ),
             opt(tuple((tag(","), commentable_spaces))),
@@ -280,21 +284,30 @@ mod test_expr {
 
     #[test]
     fn test_dict() {
+        assert_expr!("{{ }}", AnonymousStruct(vec![]));
+        assert_expr!(
+            "{{x=1,}}",
+            AnonymousStruct(vec![("x".to_string(), Typing::Any, Val(Nat(1)))])
+        );
+        assert_expr!(
+            "{{x: Int = 1,}}",
+            AnonymousStruct(vec![("x".to_string(), Typing::Int, Val(Nat(1)))])
+        );
         assert_expr!(
             "{{ x=1, z = 2 }}",
             AnonymousStruct(vec![
-                ("x".to_string(), Val(Nat(1))),
-                ("z".to_string(), Val(Nat(2)))
+                ("x".to_string(), Typing::Any, Val(Nat(1))),
+                ("z".to_string(), Typing::Any, Val(Nat(2)))
             ])
         );
         assert_expr!(
             "{{
-                x= 1,
+                x:Int= 1,
                 z = \"hoge\",
                 }}",
             AnonymousStruct(vec![
-                ("x".to_string(), Val(Nat(1))),
-                ("z".to_string(), Val(Str("hoge".to_string())))
+                ("x".to_string(), Typing::Int, Val(Nat(1))),
+                ("z".to_string(), Typing::Any, Val(Str("hoge".to_string())))
             ])
         );
     }
