@@ -4,3 +4,5 @@ all:
 
 install:
 	cargo install --path . --force
+	@echo "Enjoy!"
+	@echo "=> $(HOME)/.cargo/bin/cuminc"
