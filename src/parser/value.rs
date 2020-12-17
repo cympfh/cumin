@@ -8,7 +8,7 @@ use nom::{
     character::complete::{char, one_of},
     combinator::{map, opt, recognize},
     multi::{many0, many1},
-    sequence::{pair, terminated, tuple},
+    sequence::{delimited, pair, terminated, tuple},
     IResult,
 };
 
@@ -142,25 +142,28 @@ pub fn value(input: &str) -> IResult<&str, Value> {
         }
     });
 
-    let str_value = map(
-        tuple((
-            tag("\""),
-            escaped_transform(
-                is_not("\"\\"),
-                '\\',
-                alt((
-                    combinator::value("\\", tag("\\")),
-                    combinator::value("\"", tag("\"")),
-                    combinator::value("\'", tag("\'")),
-                    combinator::value("\n", tag("n")),
-                    combinator::value("\r", tag("r")),
-                    combinator::value("\t", tag("t")),
-                )),
+    let str_value = alt((
+        combinator::value(Value::Str(String::new()), tag("\"\"")),
+        map(
+            delimited(
+                tag("\""),
+                escaped_transform(
+                    is_not("\"\\"),
+                    '\\',
+                    alt((
+                        combinator::value("\\", tag("\\")),
+                        combinator::value("\"", tag("\"")),
+                        combinator::value("\'", tag("\'")),
+                        combinator::value("\n", tag("n")),
+                        combinator::value("\r", tag("r")),
+                        combinator::value("\t", tag("t")),
+                    )),
+                ),
+                tag("\""),
             ),
-            tag("\""),
-        )),
-        |(_, s, _)| Value::Str(s),
-    );
+            Value::Str,
+        ),
+    ));
 
     let variant_value = map(tuple((identifier, tag("::"), identifier)), |(x, _, y)| {
         Value::EnumVariant(x, y)
@@ -223,6 +226,7 @@ mod test_value {
     }
     #[test]
     fn test_str() {
+        assert_value!("\"\"", Value::Str("".to_string()));
         assert_value!("\"hoge\"", Value::Str("hoge".to_string()));
         assert_value!("\"hoge !?\"", Value::Str("hoge !?".to_string()));
         assert_value!("\"ho\\nge\"", Value::Str("ho\nge".to_string()));
