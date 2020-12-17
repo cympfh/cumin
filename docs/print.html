@@ -100,7 +100,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="spec/typing/union-types.html"><strong aria-hidden="true">2.9.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="spec/typing/union-types.html"><strong aria-hidden="true">2.9.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li><li class="chapter-item expanded "><a href="spec/modules.html"><strong aria-hidden="true">2.13.</strong> Modules</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -662,6 +662,21 @@ It is one-way <code>Nat -&gt; Int -&gt; Float</code>.</p>
 <tr><td align="center">Xor</td><td align="center"><code>xor</code></td><td align="center"><code>x xor y</code></td><td align="center">\( a \oplus b \)</td></tr>
 <tr><td align="center">Not</td><td align="center"><code>not</code></td><td align="center"><code>not x</code></td><td align="center">\( \lnot a \)</td></tr>
 </tbody></table>
+<h1><a class="header" href="#modules" id="modules">Modules</a></h1>
+<h2><a class="header" href="#module-file" id="module-file">Module file</a></h2>
+<p>Module files must contain only statements.</p>
+<pre><code>&lt;module&gt; ::= &lt;statements&gt;
+&lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
+</code></pre>
+<h2><a class="header" href="#importing-modules" id="importing-modules">Importing modules</a></h2>
+<pre><code class="language-rust no_run noplayground">use &quot;./path/to/module.cumin&quot;;
+</code></pre>
+<p>The path will be read as</p>
+<ol>
+<li>Absolute path</li>
+<li>Relative path from the current directory</li>
+<li>Relative path from the file</li>
+</ol>
 <h1><a class="header" href="#tools" id="tools">Tools</a></h1>
 <h1><a class="header" href="#cuminc" id="cuminc">cuminc</a></h1>
 <p><strong>cuminc</strong> is a compiler for cumin.</p>
@@ -704,21 +719,6 @@ $ cat &lt;file.cumin&gt; | cuminc
 
         </div>
 
-        
-        <!-- Livereload script (if served using the cli tool) -->
-        <script type="text/javascript">
-            var socket = new WebSocket("ws://localhost:3000/__livereload");
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
         
 
         

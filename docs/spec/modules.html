@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>let - cumin spec</title>
+        <title>Modules - cumin spec</title>
         
         
 
@@ -98,7 +98,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../spec/let.html" class="active"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="../spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="../spec/typing/union-types.html"><strong aria-hidden="true">2.9.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="../spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li><li class="chapter-item expanded "><a href="../spec/modules.html"><strong aria-hidden="true">2.13.</strong> Modules</a></li></ol></li><li class="chapter-item expanded "><a href="../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="../spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="../spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="../spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="../spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="../spec/dict.html"><strong aria-hidden="true">2.6.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="../spec/array.html"><strong aria-hidden="true">2.7.</strong> Array</a></li><li class="chapter-item expanded "><a href="../spec/option.html"><strong aria-hidden="true">2.8.</strong> Option</a></li><li class="chapter-item expanded "><a href="../spec/typing.html"><strong aria-hidden="true">2.9.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../spec/typing/types.html"><strong aria-hidden="true">2.9.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-annotation.html"><strong aria-hidden="true">2.9.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="../spec/typing/type-checking.html"><strong aria-hidden="true">2.9.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="../spec/typing/natural-cast.html"><strong aria-hidden="true">2.9.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="../spec/typing/union-types.html"><strong aria-hidden="true">2.9.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="../spec/as_cast.html"><strong aria-hidden="true">2.10.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="../spec/blocks.html"><strong aria-hidden="true">2.11.</strong> blocks</a></li><li class="chapter-item expanded "><a href="../spec/ops.html"><strong aria-hidden="true">2.12.</strong> operators</a></li><li class="chapter-item expanded "><a href="../spec/modules.html" class="active"><strong aria-hidden="true">2.13.</strong> Modules</a></li></ol></li><li class="chapter-item expanded "><a href="../tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -166,47 +166,34 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#let" id="let">let</a></h1>
-<h2><a class="header" href="#let-statement" id="let-statement">let Statement</a></h2>
-<p>The <code>let</code> Statement gives names to data.</p>
-<pre><code class="language-rust no_run noplayground">let x: Int = 1 + 2;
+                        <h1><a class="header" href="#modules" id="modules">Modules</a></h1>
+<h2><a class="header" href="#module-file" id="module-file">Module file</a></h2>
+<p>Module files must contain only statements.</p>
+<pre><code>&lt;module&gt; ::= &lt;statements&gt;
+&lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
 </code></pre>
-<p>Type annotation is freely optional.</p>
-<pre><code class="language-rust no_run noplayground">let x = 1 + 2;
+<h2><a class="header" href="#importing-modules" id="importing-modules">Importing modules</a></h2>
+<pre><code class="language-rust no_run noplayground">use &quot;./path/to/module.cumin&quot;;
 </code></pre>
-<p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
-and we call it <code>x</code>.
-Frankly, this is a variable,
-and you can use <code>x</code> as a Value.</p>
-<p>The last <code>;</code> is required.
-This Statement can be denoted by following BNF;</p>
-<pre><code>&lt;let&gt; ::= `let` &lt;id&gt; `=` &lt;expression&gt; `;`
-        | `let` &lt;id&gt; `:` &lt;type&gt; `=` &lt;expression&gt; `;`
-</code></pre>
-<h2><a class="header" href="#shadowing" id="shadowing">shadowing</a></h2>
-<p>When some variables are defined already,
-you can declare the same names with <code>let</code>.
-New data shadows old data.</p>
-<pre><code class="language-rust no_run noplayground">let x = 1;
-// Here, x is Nat 1.
-
-let x = &quot;hoge&quot;;
-// Here, x is String &quot;hoge&quot;.
-</code></pre>
-<p>Once variables are shadowed, they cannot be used.</p>
+<p>The path will be read as</p>
+<ol>
+<li>Absolute path</li>
+<li>Relative path from the current directory</li>
+<li>Relative path from the file</li>
+</ol>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="../spec/enum.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../spec/ops.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="../spec/dict.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../tools.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -218,13 +205,13 @@ let x = &quot;hoge&quot;;
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a rel="prev" href="../spec/enum.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../spec/ops.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a rel="next" href="../spec/dict.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../tools.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
