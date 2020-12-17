@@ -1,0 +1,6 @@
+/// This file is a Module, and used by `import.cumin`
+
+struct User {
+    name: String,
+    age: Option<Nat>,
+}

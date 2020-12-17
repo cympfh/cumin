@@ -1,14 +1,13 @@
 use crate::parser::expr::*;
 use crate::parser::typing::*;
 use crate::parser::util::*;
-
 use nom::combinator;
 use nom::{
     branch::alt,
-    bytes::complete::tag,
+    bytes::complete::{is_not, tag},
     combinator::{map, opt},
     multi::{separated_list0, separated_list1},
-    sequence::{terminated, tuple},
+    sequence::{delimited, terminated, tuple},
     IResult,
 };
 
@@ -18,6 +17,7 @@ pub enum Statement {
     Struct(String, Vec<(String, Typing, Option<Expr>)>), // StructName, [(name, type, default)]
     Enum(String, Vec<String>),
     Type(String, Vec<Typing>),
+    Import(String),
 }
 
 pub fn stmt(input: &str) -> IResult<&str, Statement> {
@@ -125,8 +125,20 @@ pub fn stmt(input: &str) -> IResult<&str, Statement> {
         )
     };
 
+    // use "<path>" ;
+    let use_stmt = map(
+        tuple((
+            tag("use"),
+            commentable_spaces,
+            delimited(tag("\""), is_not("\""), tag("\"")),
+            commentable_spaces,
+            tag(";"),
+        )),
+        |(_, _, path, _, _)| Statement::Import(path.to_string()),
+    );
+
     terminated(
-        alt((let_stmt, struct_stmt, enum_stmst, type_stmt)),
+        alt((let_stmt, struct_stmt, enum_stmst, type_stmt, use_stmt)),
         commentable_spaces,
     )(input)
 }
@@ -261,6 +273,18 @@ mod test_statement {
                     Typing::Int,
                 ]
             )
+        );
+    }
+
+    #[test]
+    fn test_use() {
+        assert_stmt!(
+            "use \"hoge/fuga/piyo\";",
+            Import("hoge/fuga/piyo".to_string())
+        );
+        assert_stmt!(
+            "use \"hoge/fuga/piyo\" ; // import",
+            Import("hoge/fuga/piyo".to_string())
         );
     }
 }
