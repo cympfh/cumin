@@ -7,7 +7,7 @@ use crate::parser::statement::*;
 use crate::parser::typing::*;
 use crate::parser::value::*;
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::read_to_string;
 use std::path::Path;
@@ -72,6 +72,11 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         match stmt {
             Import(path) => match find(path.to_string(), &env.cd) {
                 Some(path) => {
+                    if env.loaded_modules.contains(&path) {
+                        continue;
+                    }
+                    env.loaded_modules.insert(path.to_string());
+
                     let path = Path::new(&path);
                     match read_to_string(&path) {
                         Ok(content) => match load_module(&content) {
@@ -446,6 +451,7 @@ struct Environ {
     enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (Typing, Value)>,
     env_vars: HashMap<String, String>,
+    loaded_modules: HashSet<String>,
 }
 
 impl Environ {
@@ -455,6 +461,7 @@ impl Environ {
         let enums = HashMap::new();
         let env_vars = env::vars().collect();
         let vars = HashMap::new();
+        let loaded_modules = HashSet::new();
         Self {
             cd,
             types,
@@ -462,6 +469,7 @@ impl Environ {
             enums,
             env_vars,
             vars,
+            loaded_modules,
         }
     }
 }
