@@ -1,0 +1,6 @@
+use "./module.cumin";
+
+[
+    User("A", Some(17)),
+    User("B", None),
+]

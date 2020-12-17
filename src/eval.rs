@@ -2,23 +2,40 @@ use crate::builtins;
 use crate::json::*;
 use crate::parser::cumin::*;
 use crate::parser::expr::*;
+use crate::parser::module::load_module;
 use crate::parser::statement::*;
 use crate::parser::typing::*;
 use crate::parser::value::*;
 use anyhow::Result;
-use std::env;
-
 use std::collections::HashMap;
-
+use std::env;
+use std::fs::read_to_string;
+use std::path::Path;
 use Statement::*;
 
-pub fn eval(cumin: Cumin) -> Result<JSON> {
-    let mut env = Environ::new();
+pub fn eval(cumin: Cumin, cd: Option<String>) -> Result<JSON> {
+    let mut env = Environ::new(cd);
     let val = eval_conf(&mut env, &cumin)?;
     Ok(JSON::from_cumin(val))
 }
 
-fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
+fn find(path: String, cd: &Option<String>) -> Option<String> {
+    let f = Path::new(&path);
+    if f.is_file() {
+        return Some(path);
+    }
+    if f.is_relative() {
+        if let Some(dir) = cd {
+            let f = Path::new(&dir).join(f);
+            if f.is_file() {
+                return Some(String::from(f.to_str().unwrap()));
+            }
+        }
+    }
+    None
+}
+
+fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // collect types
     for stmt in conf.0.iter() {
         match stmt {
@@ -46,6 +63,36 @@ fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
             Enum(name, variants) => {
                 env.enums.insert(name.clone(), variants.clone());
             }
+            _ => (),
+        }
+    }
+
+    // load modules
+    for stmt in conf.0.iter() {
+        match stmt {
+            Import(path) => match find(path.to_string(), &env.cd) {
+                Some(path) => {
+                    let path = Path::new(&path);
+                    match read_to_string(&path) {
+                        Ok(content) => match load_module(&content) {
+                            Ok((_, data)) => {
+                                let cumin = Cumin(data, Expr::Val(Value::Nat(0)));
+                                let _ = eval_conf(&mut env, &cumin)?;
+                            }
+                            err => {
+                                eprintln!("Error in loading {:?}", path);
+                                eprintln!("{:?}", err)
+                            }
+                        },
+                        _err => {
+                            eprintln!("Cannot read File {:?}", path);
+                        }
+                    }
+                }
+                _err => {
+                    eprintln!("Cannot find File {:?}", path);
+                }
+            },
             _ => (),
         }
     }
@@ -393,6 +440,7 @@ fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
 
 #[derive(Clone)]
 struct Environ {
+    cd: Option<String>,
     types: HashMap<String, Vec<Typing>>,
     structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
@@ -401,13 +449,14 @@ struct Environ {
 }
 
 impl Environ {
-    pub fn new() -> Self {
+    pub fn new(cd: Option<String>) -> Self {
         let types = HashMap::new();
         let structs = HashMap::new();
         let enums = HashMap::new();
         let env_vars = env::vars().collect();
         let vars = HashMap::new();
         Self {
+            cd,
             types,
             structs,
             enums,
@@ -425,7 +474,7 @@ mod test_eval_from_parse {
 
     macro_rules! assert_eval {
         ($code:expr, $json:expr) => {
-            assert_eq!(eval(cumin($code).unwrap().1).unwrap(), $json);
+            assert_eq!(eval(cumin($code).unwrap().1, None).unwrap(), $json);
         };
     }
 

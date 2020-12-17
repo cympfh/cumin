@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate anyhow;
 extern crate structopt;
-use structopt::StructOpt;
-
 use anyhow::Result;
 use cumin::eval::eval;
 use cumin::parser::cumin::cumin;
+use std::path::Path;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -16,7 +16,7 @@ struct Opt {
     input_cumin: String,
 }
 
-fn cat(file_name: String) -> String {
+fn cat(file_name: &String) -> String {
     use std::fs::File;
     use std::io::BufReader;
     use std::io::{self, Read};
@@ -36,14 +36,17 @@ fn cat(file_name: String) -> String {
 
 fn main() -> Result<()> {
     let opt = Opt::from_args();
-    let content = cat(opt.input_cumin);
+    let content = cat(&opt.input_cumin);
     if let Ok((rest, cumin)) = cumin(content.as_str()) {
         if !rest.is_empty() {
             eprintln!("Parsing Stop with `{}`", rest);
             eprintln!("read conf: {:?}", &cumin);
             bail!("Parsing Failed.");
         }
-        let json = eval(cumin)?;
+        let cd = Path::new(&opt.input_cumin)
+            .parent()
+            .map(|path| String::from(path.to_str().unwrap()));
+        let json = eval(cumin, cd)?;
         println!("{}", json.stringify());
     } else {
         bail!("Parse Error");
