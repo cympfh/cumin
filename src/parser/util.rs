@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while, take_while1},
-    combinator::eof,
+    combinator::{eof, opt},
     multi::many0,
     sequence::tuple,
     IResult,
@@ -13,7 +13,7 @@ pub fn spaces(input: &str) -> IResult<&str, &str> {
 
 fn comment(input: &str) -> IResult<&str, &str> {
     let (input, _) = tag("//")(input)?;
-    let (input, _) = is_not("\n\r")(input)?;
+    let (input, _) = opt(is_not("\n\r"))(input)?;
     alt((eof, spaces))(input)
 }
 
@@ -46,7 +46,17 @@ mod test_comment {
     fn test_comment() {
         assert_eq!(commentable_spaces(""), Ok(("", ())));
         assert_eq!(commentable_spaces(" \t\n"), Ok(("", ())));
+        assert_eq!(commentable_spaces("//"), Ok(("", ())));
+        assert_eq!(commentable_spaces("// "), Ok(("", ())));
         assert_eq!(commentable_spaces("// hoge"), Ok(("", ())));
+        assert_eq!(
+            commentable_spaces(
+                "//
+                // hoge
+                //"
+            ),
+            Ok(("", ()))
+        );
         assert_eq!(
             commentable_spaces(
                 "// hoge
