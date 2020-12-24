@@ -14,10 +14,17 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn load(input: &str) -> String {
-    if let Ok((_, data)) = cumin(input) {
-        if let Ok(data) = eval_wasm(data) {
-            return data.stringify();
+    match cumin(input) {
+        Ok((rest, data)) => {
+            if rest == "" {
+                match eval_wasm(data) {
+                    Ok(data) => data.stringify(),
+                    Err(err) => format!("Error: eval failed ({:?})", err),
+                }
+            } else {
+                format!("Error: Parsing stopped at {}", &rest)
+            }
         }
+        Err(err) => format!("Error: Parsing failed ({:?})", &err),
     }
-    String::new()
 }
