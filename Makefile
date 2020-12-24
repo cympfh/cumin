@@ -1,10 +1,5 @@
-all: test
-	make install
+wasm:
+	wasm-pack build --target no-modules
 
 test:
 	cargo test
-
-install:
-	cargo install --path . --force
-	@echo "Enjoy!"
-	@echo "=> $(HOME)/.cargo/bin/cuminc"
