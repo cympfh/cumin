@@ -1,6 +1,7 @@
 # Summary
 
 - [Introduction](intro.md)
+    - [Try Online](try-online.md)
 - [Language Spec](spec.md)
     - [Overview](spec/overview.md)
     - [Primitive Values](spec/values.md)

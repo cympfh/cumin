@@ -1,6 +1,6 @@
 # Introduction
 
-**cumin** is a Configuration Language like JSON, YAML or TOML,
+**Cumin** is a Configuration Language like JSON, YAML or TOML,
 but this is Mini-Programmable, Structured and Typed.
 
 cumin has [Rust](https://www.rust-lang.org/)-like syntax.
