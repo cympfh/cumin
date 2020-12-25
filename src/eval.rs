@@ -633,4 +633,17 @@ mod test_eval_from_parse {
             JSON::Array(vec![JSON::Int(1), JSON::Str("hoge".to_string())])
         );
     }
+
+    macro_rules! assert_cannot_eval {
+        ($code:expr) => {
+            assert!(eval(cumin($code).unwrap().1, None).is_err());
+        };
+    }
+
+    #[test]
+    fn test_type_error() {
+        assert_cannot_eval!("let n: Nat = -1; n");
+        assert_cannot_eval!("let xs: Array<Nat> = [-1]; xs");
+        assert_cannot_eval!("let xs: Option<Nat> = Some(-1); xs");
+    }
 }
