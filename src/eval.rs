@@ -642,7 +642,7 @@ mod test_eval_from_parse {
 
     #[test]
     fn test_type_error() {
-        // assert_cannot_eval!("let n: Nat = -1; n");
+        assert_cannot_eval!("let n: Nat = -1; n");
         assert_cannot_eval!("let xs: Array<Nat> = [-1]; xs");
         assert_cannot_eval!("let xs: Option<Nat> = Some(-1); xs");
     }
