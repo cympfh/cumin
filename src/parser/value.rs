@@ -48,6 +48,7 @@ impl Value {
 
     pub fn cast(&self, typ: &Typing) -> Result<Value> {
         use Value::*;
+        eprintln!("CAST {:?} => {:?}", &self, &typ);
         let ret = match (self, typ) {
             (_, Typing::Any) => self.clone(),
             (val, typ) if &val.type_of() == typ => self.clone(),
@@ -56,9 +57,13 @@ impl Value {
             (Int(x), Typing::Float) => Float((*x) as f64),
             (Array(s, elems), Typing::Array(t)) => {
                 if let Some(typ) = Typing::unify(s, t) {
-                    let elems = elems
+                    let elems: Vec<Value> = elems
                         .iter()
                         .map(|val| val.cast(&typ))
+                        .collect::<Result<_>>()?;
+                    let elems = elems
+                        .iter()
+                        .map(|val| val.cast(&t))
                         .collect::<Result<_>>()?;
                     Array(typ, elems)
                 } else {
@@ -70,6 +75,7 @@ impl Value {
                     match &**val {
                         Some(x) => {
                             let val = x.cast(&typ)?;
+                            let val = val.cast(&t)?;
                             Optional(typ, Box::new(Some(val)))
                         }
                         None => Optional(typ, Box::new(None)),
