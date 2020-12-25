@@ -1,0 +1,10 @@
+let x: Nat = 0;  // INFER: Nat
+let x: Int = x;  // Nat -> Int
+let x: Float = x;  // Int -> Float
+
+let xs: Array<_> = [0];  // INFER: Array<Nat>
+let xs: Array<Nat> = xs;  // Array<Any> -> Array<Nat>
+let xs: Array<Int> = xs;  // Array<Nat> -> Array<Int>
+let xs: Array<Float> = xs;  // Array<Nat> -> Array<Float>
+
+0
