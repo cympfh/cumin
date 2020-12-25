@@ -48,7 +48,6 @@ impl Value {
 
     pub fn cast(&self, typ: &Typing) -> Result<Value> {
         use Value::*;
-        eprintln!("CAST {:?} => {:?}", &self, &typ);
         let ret = match (self, typ) {
             (_, Typing::Any) => self.clone(),
             (val, typ) if &val.type_of() == typ => self.clone(),
