@@ -1,11 +1,17 @@
+use std::path::Path;
+
 #[macro_use]
 extern crate anyhow;
-extern crate structopt;
 use anyhow::Result;
+
+extern crate structopt;
+use structopt::StructOpt;
+
+extern crate serde_json;
+extern crate serde_yaml;
+
 use cumin::eval::eval;
 use cumin::parser::cumin::cumin;
-use std::path::Path;
-use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -47,7 +53,19 @@ fn main() -> Result<()> {
             .parent()
             .map(|path| String::from(path.to_str().unwrap()));
         let json = eval(cumin, cd)?;
-        println!("{}", json.stringify());
+        match opt.output_type.as_str() {
+            "json" | "JSON" | "Json" => {
+                println!("{}", json.stringify());
+            }
+            "yaml" | "YAML" | "Yaml" => {
+                let value: serde_json::Value = serde_json::from_str(&json.stringify())?;
+                let yaml_str = serde_yaml::to_string(&value)?;
+                println!("{}", yaml_str);
+            }
+            _ => {
+                bail!("Unknown format `{}`", opt.output_type);
+            }
+        }
     } else {
         bail!("Parse Error");
     }
