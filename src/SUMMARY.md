@@ -8,6 +8,7 @@
     - [Struct](spec/struct.md)
     - [Enum](spec/enum.md)
     - [let](spec/let.md)
+    - [Function](spec/fn.md)
     - [Dictionary](spec/dict.md)
     - [Array](spec/array.md)
     - [Option](spec/option.md)

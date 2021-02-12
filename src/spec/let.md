@@ -23,8 +23,10 @@ The last `;` is required.
 This Statement can be denoted by following BNF;
 
 ```
-<let> ::= `let` <id> `=` <expression> `;`
-        | `let` <id> `:` <type> `=` <expression> `;`
+<let> ::= `let` <name> `=` <expression> `;`
+        | `let` <name> `:` <type> `=` <expression> `;`
+
+<name> ::= <identifier>
 ```
 
 ## shadowing
