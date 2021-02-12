@@ -36,7 +36,7 @@ fn find(path: String, cd: &Option<String>) -> Option<String> {
 }
 
 fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
-    // collect types
+    // Hoisting types
     for stmt in conf.0.iter() {
         match stmt {
             Type(name, types) => {
@@ -48,7 +48,7 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    // collect struct
+    // Hoisting struct
     for stmt in conf.0.iter() {
         match stmt {
             Struct(name, fields) => {
@@ -58,7 +58,7 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    // collect enums
+    // Hoisting enums
     for stmt in conf.0.iter() {
         match stmt {
             Enum(name, variants) => {
@@ -68,19 +68,13 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    // collect functions
+    // Evaluating let, functions, load-modules
     for stmt in conf.0.iter() {
         match stmt {
             Fun(name, args, body) => {
-                env.funs.insert(name.clone(), (args.to_vec(), body.clone()));
+                env.funs
+                    .insert(name.clone(), (env.clone(), args.to_vec(), body.clone()));
             }
-            _ => (),
-        }
-    }
-
-    // load modules
-    for stmt in conf.0.iter() {
-        match stmt {
             Import(path) => match find(path.to_string(), &env.cd) {
                 Some(path) => {
                     if env.loaded_modules.contains(&path) {
@@ -109,13 +103,6 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
                     eprintln!("Cannot find File {:?}", path);
                 }
             },
-            _ => (),
-        }
-    }
-
-    // collect let
-    for stmt in conf.0.iter() {
-        match stmt {
             Let(id, typ, expr) => {
                 let val = eval_expr(&env, expr)?.cast(typ)?;
                 env.vars.insert(id.clone(), (typ.clone(), val));
@@ -195,8 +182,8 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 }
                 // Function Apply
                 _ if env.funs.contains_key(name) => {
-                    let (args, body) = env.funs.get(name).unwrap();
-                    let mut env_inner = (*env).clone();
+                    let (env_inner, args, body) = env.funs.get(name).unwrap();
+                    let mut env_inner = env_inner.clone();
                     let n = values.len();
                     assert!(args.len() >= n);
                     for ((name, typ, _default), value) in args[..n].iter().zip(values.iter()) {
@@ -235,9 +222,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     }
                 }
                 Ok(Dict(Some(fname.to_string()), values))
-            } else if let Some((fields, body)) = env.funs.get(fname) {
+            } else if let Some((env_inner, fields, body)) = env.funs.get(fname) {
                 let args: HashMap<String, Expr> = items.iter().cloned().collect();
-                let mut env_inner = (*env).clone();
+                let mut env_inner = env_inner.clone();
                 for (name, typ, default) in fields.iter() {
                     if let Some(arg) = args.get(&name.to_string()) {
                         let val = eval_expr(&env, &arg)?.cast(&typ)?;
@@ -515,7 +502,7 @@ struct Environ {
     vars: HashMap<String, (Typing, Value)>,
     env_vars: HashMap<String, String>,
     loaded_modules: HashSet<String>,
-    funs: HashMap<String, (Vec<(String, Typing, Option<Expr>)>, Expr)>,
+    funs: HashMap<String, (Environ, Vec<(String, Typing, Option<Expr>)>, Expr)>,
 }
 
 impl Environ {
