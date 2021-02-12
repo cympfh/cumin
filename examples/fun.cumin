@@ -1,0 +1,9 @@
+fn f(x: Int) = x + 1;
+fn g(x: Int, y: Int = 1) = x + y;
+
+{{
+    two = f(1),
+    three = g(2),
+    four = g(2, 2),
+    unordered_args = g { y = 3, x = 2 },
+}}
