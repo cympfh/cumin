@@ -119,12 +119,12 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
-        Apply(name, args) => {
+        Apply(fname, args) => {
             let values: Vec<Value> = args
                 .iter()
                 .map(|x| eval_expr(&env, &x))
                 .collect::<Result<_>>()?;
-            match name.as_str() {
+            match fname.as_str() {
                 "Some" => {
                     assert!(values.len() == 1);
                     let val = values[0].clone();
@@ -142,8 +142,8 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     builtins::reverse(&values[0])
                 }
                 // Struct Apply
-                _ if env.structs.contains_key(name) => {
-                    let fields = env.structs.get(name).unwrap();
+                _ if env.structs.contains_key(fname) => {
+                    let fields = env.structs.get(fname).unwrap();
                     let n = values.len();
                     assert!(fields.len() >= n);
                     let mut items = vec![];
@@ -157,32 +157,32 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = value.cast(typ)?;
                             items.push((name.to_string(), val.clone()));
                         } else {
-                            bail!("No arg supplied for {}", name);
+                            bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
                         }
                     }
-                    Ok(Dict(Some(name.to_string()), items))
+                    Ok(Dict(Some(fname.to_string()), items))
                 }
                 // Type Apply
-                _ if env.types.contains_key(name) => {
+                _ if env.types.contains_key(fname) => {
                     assert!(values.len() == 1);
                     let value = values[0].clone();
                     let typ = values[0].type_of();
                     // up-cast
-                    for variant_typ in env.types.get(name).unwrap().iter() {
+                    for variant_typ in env.types.get(fname).unwrap().iter() {
                         if let Ok(val) = value.cast(variant_typ) {
                             return Ok(Wrapped(
-                                Typing::UserTyping(name.to_string()),
+                                Typing::UserTyping(fname.to_string()),
                                 Box::new(val),
                             ));
                         } else {
                             continue;
                         }
                     }
-                    bail!("Cannot up-cast {:?} <: {}.", typ, name.to_string());
+                    bail!("Cannot up-cast `{:?}` <: `{}`.", typ, fname.to_string());
                 }
                 // Function Apply
-                _ if env.funs.contains_key(name) => {
-                    let (env_inner, args, body) = env.funs.get(name).unwrap();
+                _ if env.funs.contains_key(fname) => {
+                    let (env_inner, args, body) = env.funs.get(fname).unwrap();
                     let mut env_inner = env_inner.clone();
                     let n = values.len();
                     assert!(args.len() >= n);
@@ -196,12 +196,12 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = val.cast(typ)?;
                             env_inner.vars.insert(name.to_string(), (typ.clone(), val));
                         } else {
-                            bail!("No value supplied for arg {}.", name);
+                            bail!("Not supplied Arg `{}` for Function `{}`.", name, fname);
                         }
                     }
                     eval_expr(&mut env_inner, body)
                 }
-                _ => bail!("Cannot resolve name {}.", name),
+                _ => bail!("Cannot resolve name `{}`.", fname),
             }
         }
         FieledApply(fname, items) => {
@@ -217,7 +217,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = eval_expr(&env, &e)?.cast(&typ)?;
                             values.push((name.to_string(), val));
                         } else {
-                            bail!("Not supplied field {} for {}", name, fname)
+                            bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
                         }
                     }
                 }
@@ -236,13 +236,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = eval_expr(&env, &e)?.cast(&typ)?;
                             env_inner.vars.insert(name.to_string(), (typ.clone(), val));
                         } else {
-                            bail!("Not supplied arg {} for {}", name, fname)
+                            bail!("Not supplied Arg `{}` for Function `{}`.", name, fname);
                         }
                     }
                 }
                 eval_expr(&mut env_inner, body)
             } else {
-                bail!("Cannot resolve name {}", fname)
+                bail!("Cannot resolve name `{}`", fname)
             }
         }
         AnonymousStruct(items) => {
