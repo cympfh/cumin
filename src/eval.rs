@@ -724,6 +724,7 @@ mod test_eval_from_parse {
     #[test]
     fn test_fn() {
         assert_eval!("fn f() = 1; f()", JSON::Nat(1));
+        assert_eval!("let f() = 1; f()", JSON::Nat(1));
         assert_eval!("fn f(x: Int) = x - 1; f(3)", JSON::Int(2));
         assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f(3)", JSON::Int(3));
         assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f{x=3}", JSON::Int(3));
@@ -734,6 +735,10 @@ mod test_eval_from_parse {
         assert_eval!(
             "fn f(x: Int) = {{ x = x - 1 }}; f(3)",
             JSON::Dict(vec![("x".to_string(), JSON::Int(2))])
+        );
+        assert_eval!(
+            "let f(x: Int) = x; fn g (x: Int) = f(x); g(2)",
+            JSON::Int(2)
         );
     }
 }

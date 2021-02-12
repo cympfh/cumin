@@ -138,6 +138,42 @@ pub fn stmt(input: &str) -> IResult<&str, Statement> {
         |(_, _, path, _, _)| Statement::Import(path.to_string()),
     );
 
+    // let fname(args) = code;
+    let let_fn_stmt = {
+        let args = separated_list0(
+            tuple((tag(","), commentable_spaces)),
+            map(
+                tuple((
+                    identifier,
+                    commentable_spaces,
+                    tag(":"),
+                    commentable_spaces,
+                    typing,
+                    commentable_spaces,
+                    opt(map(
+                        tuple((tag("="), commentable_spaces, expr, commentable_spaces)),
+                        |(_, _, e, _)| e,
+                    )),
+                )),
+                |(name, _, _, _, typ, _, default_value)| (name, typ, default_value),
+            ),
+        );
+        map(
+            tuple((
+                tag("let"),
+                commentable_spaces,
+                identifier,
+                commentable_spaces,
+                delimited(tag("("), args, tag(")")),
+                commentable_spaces,
+                tag("="),
+                commentable_spaces,
+                expr,
+                tag(";"),
+            )),
+            |(_, _, fname, _, args, _, _, _, body, _)| Statement::Fun(fname, args, body),
+        )
+    };
     // fn fname(args) = code;
     let fn_stmt = {
         let args = separated_list0(
@@ -178,6 +214,7 @@ pub fn stmt(input: &str) -> IResult<&str, Statement> {
     terminated(
         alt((
             fn_stmt,
+            let_fn_stmt,
             let_stmt,
             struct_stmt,
             enum_stmst,
@@ -337,6 +374,10 @@ mod test_statement {
     fn test_fn() {
         assert_stmt!(
             "fn zero() = 0;",
+            Fun("zero".to_string(), vec![], Val(Nat(0)))
+        );
+        assert_stmt!(
+            "let zero() = 0;",
             Fun("zero".to_string(), vec![], Val(Nat(0)))
         );
         assert_stmt!(

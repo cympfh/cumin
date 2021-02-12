@@ -1,0 +1,15 @@
+type List = Node | Nil;
+
+struct Node {
+    data: Any,
+    next: List,
+}
+struct Nil {}
+
+let nil = List.Nil();
+let cons(car: Any, cdr: List) = List.Node {
+    data = car,
+    next = cdr,
+};
+
+cons(1, cons(2, cons(3, nil)))
