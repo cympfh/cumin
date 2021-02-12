@@ -47,6 +47,7 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
             _ => (),
         }
     }
+
     // collect struct
     for stmt in conf.0.iter() {
         match stmt {
@@ -62,6 +63,16 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         match stmt {
             Enum(name, variants) => {
                 env.enums.insert(name.clone(), variants.clone());
+            }
+            _ => (),
+        }
+    }
+
+    // collect functions
+    for stmt in conf.0.iter() {
+        match stmt {
+            Fun(name, args, body) => {
+                env.funs.insert(name.clone(), (args.to_vec(), body.clone()));
             }
             _ => (),
         }
@@ -143,16 +154,28 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     assert!(values.len() == 1);
                     builtins::reverse(&values[0])
                 }
+                // Struct Apply
                 _ if env.structs.contains_key(name) => {
                     let fields = env.structs.get(name).unwrap();
-                    assert!(fields.len() == values.len());
+                    let n = values.len();
+                    assert!(fields.len() >= n);
                     let mut items = vec![];
-                    for ((name, typ, _default), value) in fields.iter().zip(values.iter()) {
+                    for ((name, typ, _default), value) in fields[..n].iter().zip(values.iter()) {
                         let val = value.cast(typ)?;
                         items.push((name.to_string(), val.clone()));
                     }
+                    for (name, typ, default) in fields[n..].iter() {
+                        if let Some(e) = default {
+                            let value = eval_expr(&env, e)?;
+                            let val = value.cast(typ)?;
+                            items.push((name.to_string(), val.clone()));
+                        } else {
+                            bail!("No arg supplied for {}", name);
+                        }
+                    }
                     Ok(Dict(Some(name.to_string()), items))
                 }
+                // Type Apply
                 _ if env.types.contains_key(name) => {
                     assert!(values.len() == 1);
                     let value = values[0].clone();
@@ -170,12 +193,33 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     }
                     bail!("Cannot up-cast {:?} <: {}.", typ, name.to_string());
                 }
+                // Function Apply
+                _ if env.funs.contains_key(name) => {
+                    let (args, body) = env.funs.get(name).unwrap();
+                    let mut env_inner = (*env).clone();
+                    let n = values.len();
+                    assert!(args.len() >= n);
+                    for ((name, typ, _default), value) in args[..n].iter().zip(values.iter()) {
+                        let val = value.cast(typ)?;
+                        env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                    }
+                    for (name, typ, default) in args[n..].iter() {
+                        if let Some(e) = default {
+                            let val = eval_expr(&env, &e)?;
+                            let val = val.cast(typ)?;
+                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                        } else {
+                            bail!("No value supplied for arg {}.", name);
+                        }
+                    }
+                    eval_expr(&mut env_inner, body)
+                }
                 _ => bail!("Cannot resolve name {}.", name),
             }
         }
-        FieledApply(name, items) => {
-            if let Some(fields) = env.structs.get(name) {
-                let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
+        FieledApply(fname, items) => {
+            if let Some(fields) = env.structs.get(fname) {
+                let args: HashMap<String, Expr> = items.iter().cloned().collect();
                 let mut values: Vec<(String, Value)> = vec![];
                 for (name, typ, default) in fields {
                     if let Some(arg) = args.get(&name.to_string()) {
@@ -186,13 +230,32 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = eval_expr(&env, &e)?.cast(&typ)?;
                             values.push((name.to_string(), val));
                         } else {
-                            bail!("Cannot find field {}", name)
+                            bail!("Not supplied field {} for {}", name, fname)
                         }
                     }
                 }
-                Ok(Dict(Some(name.to_string()), values))
+                Ok(Dict(Some(fname.to_string()), values))
+            } else if let Some((fields, body)) = env.funs.get(fname) {
+                let args: HashMap<String, Expr> = items.iter().cloned().collect();
+                let mut env_inner = (*env).clone();
+                for (name, typ, default) in fields.iter() {
+                    if let Some(arg) = args.get(&name.to_string()) {
+                        let val = eval_expr(&env, &arg)?.cast(&typ)?;
+                        env_inner
+                            .vars
+                            .insert(name.to_string(), (typ.clone(), val.clone()));
+                    } else {
+                        if let Some(e) = default {
+                            let val = eval_expr(&env, &e)?.cast(&typ)?;
+                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                        } else {
+                            bail!("Not supplied arg {} for {}", name, fname)
+                        }
+                    }
+                }
+                eval_expr(&mut env_inner, body)
             } else {
-                bail!("Cannot resolve name {}", name)
+                bail!("Cannot resolve name {}", fname)
             }
         }
         AnonymousStruct(items) => {
@@ -452,24 +515,20 @@ struct Environ {
     vars: HashMap<String, (Typing, Value)>,
     env_vars: HashMap<String, String>,
     loaded_modules: HashSet<String>,
+    funs: HashMap<String, (Vec<(String, Typing, Option<Expr>)>, Expr)>,
 }
 
 impl Environ {
     pub fn new(cd: Option<String>) -> Self {
-        let types = HashMap::new();
-        let structs = HashMap::new();
-        let enums = HashMap::new();
-        let env_vars = env::vars().collect();
-        let vars = HashMap::new();
-        let loaded_modules = HashSet::new();
         Self {
             cd,
-            types,
-            structs,
-            enums,
-            env_vars,
-            vars,
-            loaded_modules,
+            types: HashMap::new(),
+            structs: HashMap::new(),
+            enums: HashMap::new(),
+            env_vars: env::vars().collect(),
+            vars: HashMap::new(),
+            loaded_modules: HashSet::new(),
+            funs: HashMap::new(),
         }
     }
 }
@@ -593,7 +652,28 @@ mod test_eval_from_parse {
     }
 
     #[test]
-    fn test_fielded_apply() {
+    fn test_struct() {
+        assert_eval!(
+            "struct P { x: Nat, y: Nat } P(1, 2)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat, y: Nat = 100 } P(1, 2)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat, y: Nat = 100 } P(1)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(100)),
+            ])
+        );
         assert_eval!(
             "struct P { x: Nat, y: Nat } P{ x = 1, y = 2 }",
             JSON::Dict(vec![
@@ -612,6 +692,13 @@ mod test_eval_from_parse {
             "struct P { x: Nat = 42, y: Nat } P{ x = 1, y = 2 }",
             JSON::Dict(vec![
                 ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat = 42, y: Nat } P{ y = 2 }",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(42)),
                 ("y".to_string(), JSON::Nat(2)),
             ])
         );
@@ -645,5 +732,21 @@ mod test_eval_from_parse {
         assert_cannot_eval!("let n: Nat = -1; n");
         assert_cannot_eval!("let xs: Array<Nat> = [-1]; xs");
         assert_cannot_eval!("let xs: Option<Nat> = Some(-1); xs");
+    }
+
+    #[test]
+    fn test_fn() {
+        assert_eval!("fn f() = 1; f()", JSON::Nat(1));
+        assert_eval!("fn f(x: Int) = x - 1; f(3)", JSON::Int(2));
+        assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f(3)", JSON::Int(3));
+        assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f{x=3}", JSON::Int(3));
+        assert_eval!(
+            "fn f(x: Int, y: Int = 0) = x - y; f{y=2, x=3}",
+            JSON::Int(1)
+        );
+        assert_eval!(
+            "fn f(x: Int) = {{ x = x - 1 }}; f(3)",
+            JSON::Dict(vec![("x".to_string(), JSON::Int(2))])
+        );
     }
 }

@@ -18,6 +18,7 @@ pub enum Statement {
     Enum(String, Vec<String>),
     Type(String, Vec<Typing>),
     Import(String),
+    Fun(String, Vec<(String, Typing, Option<Expr>)>, Expr),
 }
 
 pub fn stmt(input: &str) -> IResult<&str, Statement> {
@@ -137,8 +138,52 @@ pub fn stmt(input: &str) -> IResult<&str, Statement> {
         |(_, _, path, _, _)| Statement::Import(path.to_string()),
     );
 
+    // fn fname(args) = code;
+    let fn_stmt = {
+        let args = separated_list0(
+            tuple((tag(","), commentable_spaces)),
+            map(
+                tuple((
+                    identifier,
+                    commentable_spaces,
+                    tag(":"),
+                    commentable_spaces,
+                    typing,
+                    commentable_spaces,
+                    opt(map(
+                        tuple((tag("="), commentable_spaces, expr, commentable_spaces)),
+                        |(_, _, e, _)| e,
+                    )),
+                )),
+                |(name, _, _, _, typ, _, default_value)| (name, typ, default_value),
+            ),
+        );
+        map(
+            tuple((
+                tag("fn"),
+                commentable_spaces,
+                identifier,
+                commentable_spaces,
+                delimited(tag("("), args, tag(")")),
+                commentable_spaces,
+                tag("="),
+                commentable_spaces,
+                expr,
+                tag(";"),
+            )),
+            |(_, _, fname, _, args, _, _, _, body, _)| Statement::Fun(fname, args, body),
+        )
+    };
+
     terminated(
-        alt((let_stmt, struct_stmt, enum_stmst, type_stmt, use_stmt)),
+        alt((
+            fn_stmt,
+            let_stmt,
+            struct_stmt,
+            enum_stmst,
+            type_stmt,
+            use_stmt,
+        )),
         commentable_spaces,
     )(input)
 }
@@ -285,6 +330,36 @@ mod test_statement {
         assert_stmt!(
             "use \"hoge/fuga/piyo\" ; // import",
             Import("hoge/fuga/piyo".to_string())
+        );
+    }
+
+    #[test]
+    fn test_fn() {
+        assert_stmt!(
+            "fn zero() = 0;",
+            Fun("zero".to_string(), vec![], Val(Nat(0)))
+        );
+        assert_stmt!(
+            "fn zero(x: Int) = x; // identity",
+            Fun(
+                "zero".to_string(),
+                vec![("x".to_string(), Typing::Int, None)],
+                Val(Var("x".to_string()))
+            )
+        );
+        assert_stmt!(
+            "fn zero(x: Int, y: Int = 2) = x + y; // identity",
+            Fun(
+                "zero".to_string(),
+                vec![
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, Some(Val(Nat(2)))),
+                ],
+                Add(
+                    Box::new(Val(Var("x".to_string()))),
+                    Box::new(Val(Var("y".to_string())))
+                )
+            )
         );
     }
 }

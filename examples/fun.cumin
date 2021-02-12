@@ -1,0 +1,4 @@
+fn f(x: Int) = x + 1;
+fn g(x: Int, y: Int = 1) = x + y;
+
+g(2, 10)
