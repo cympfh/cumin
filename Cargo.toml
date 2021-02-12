@@ -3,6 +3,9 @@ name = "cumin"
 version = "0.9.9"
 authors = ["cympfh <cympfh@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Cumin, Configuration Language"
+homepage = "https://github.com/cympfh/cumin"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
