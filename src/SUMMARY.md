@@ -23,4 +23,5 @@
     - [operators](spec/ops.md)
     - [Modules](spec/modules.md)
 - [Tools](tools.md)
-    - [cuminc](cuminc.md)
+    - [cuminc](tools/cuminc.md)
+    - [cumin-py](tools/cumin_py.md)
