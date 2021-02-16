@@ -6,7 +6,7 @@ use crate::parser::statement::*;
 use crate::parser::typing::*;
 use crate::parser::value::*;
 use anyhow::Result;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use Statement::*;
 
 pub fn eval_wasm(cumin: Cumin) -> Result<JSON> {
@@ -16,7 +16,7 @@ pub fn eval_wasm(cumin: Cumin) -> Result<JSON> {
 }
 
 fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
-    // collect types
+    // Hoisting types
     for stmt in conf.0.iter() {
         match stmt {
             Type(name, types) => {
@@ -27,7 +27,8 @@ fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
             _ => (),
         }
     }
-    // collect struct
+
+    // Hoisting struct
     for stmt in conf.0.iter() {
         match stmt {
             Struct(name, fields) => {
@@ -37,7 +38,7 @@ fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    // collect enums
+    // Hoisting enums
     for stmt in conf.0.iter() {
         match stmt {
             Enum(name, variants) => {
@@ -47,9 +48,14 @@ fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    // collect let
+    // Evaluating let, functions, load-modules
     for stmt in conf.0.iter() {
         match stmt {
+            Fun(name, args, body) => {
+                env.funs
+                    .insert(name.clone(), (env.clone(), args.to_vec(), body.clone()));
+            }
+            Import(_) => panic!("Cannot use import in WASM ;_;"),
             Let(id, typ, expr) => {
                 let val = eval_expr(&env, expr)?.cast(typ)?;
                 env.vars.insert(id.clone(), (typ.clone(), val));
@@ -66,12 +72,12 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
-        Apply(name, args) => {
+        Apply(fname, args) => {
             let values: Vec<Value> = args
                 .iter()
                 .map(|x| eval_expr(&env, &x))
                 .collect::<Result<_>>()?;
-            match name.as_str() {
+            match fname.as_str() {
                 "Some" => {
                     assert!(values.len() == 1);
                     let val = values[0].clone();
@@ -88,39 +94,72 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     assert!(values.len() == 1);
                     builtins::reverse(&values[0])
                 }
-                _ if env.structs.contains_key(name) => {
-                    let fields = env.structs.get(name).unwrap();
-                    assert!(fields.len() == values.len());
+                // Struct Apply
+                _ if env.structs.contains_key(fname) => {
+                    let fields = env.structs.get(fname).unwrap();
+                    let n = values.len();
+                    assert!(fields.len() >= n);
                     let mut items = vec![];
-                    for ((name, typ, _default), value) in fields.iter().zip(values.iter()) {
+                    for ((name, typ, _default), value) in fields[..n].iter().zip(values.iter()) {
                         let val = value.cast(typ)?;
                         items.push((name.to_string(), val.clone()));
                     }
-                    Ok(Dict(Some(name.to_string()), items))
+                    for (name, typ, default) in fields[n..].iter() {
+                        if let Some(e) = default {
+                            let value = eval_expr(&env, e)?;
+                            let val = value.cast(typ)?;
+                            items.push((name.to_string(), val.clone()));
+                        } else {
+                            bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
+                        }
+                    }
+                    Ok(Dict(Some(fname.to_string()), items))
                 }
-                _ if env.types.contains_key(name) => {
+                // Type Apply
+                _ if env.types.contains_key(fname) => {
                     assert!(values.len() == 1);
                     let value = values[0].clone();
                     let typ = values[0].type_of();
                     // up-cast
-                    for variant_typ in env.types.get(name).unwrap().iter() {
+                    for variant_typ in env.types.get(fname).unwrap().iter() {
                         if let Ok(val) = value.cast(variant_typ) {
                             return Ok(Wrapped(
-                                Typing::UserTyping(name.to_string()),
+                                Typing::UserTyping(fname.to_string()),
                                 Box::new(val),
                             ));
                         } else {
                             continue;
                         }
                     }
-                    bail!("Cannot up-cast {:?} <: {}.", typ, name.to_string());
+                    bail!("Cannot up-cast `{:?}` <: `{}`.", typ, fname.to_string());
                 }
-                _ => bail!("Cannot resolve name {}.", name),
+                // Function Apply
+                _ if env.funs.contains_key(fname) => {
+                    let (env_inner, args, body) = env.funs.get(fname).unwrap();
+                    let mut env_inner = env_inner.clone();
+                    let n = values.len();
+                    assert!(args.len() >= n);
+                    for ((name, typ, _default), value) in args[..n].iter().zip(values.iter()) {
+                        let val = value.cast(typ)?;
+                        env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                    }
+                    for (name, typ, default) in args[n..].iter() {
+                        if let Some(e) = default {
+                            let val = eval_expr(&env, &e)?;
+                            let val = val.cast(typ)?;
+                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                        } else {
+                            bail!("Not supplied Arg `{}` for Function `{}`.", name, fname);
+                        }
+                    }
+                    eval_expr(&mut env_inner, body)
+                }
+                _ => bail!("Cannot resolve name `{}`.", fname),
             }
         }
-        FieledApply(name, items) => {
-            if let Some(fields) = env.structs.get(name) {
-                let args: std::collections::HashMap<String, Expr> = items.iter().cloned().collect();
+        FieledApply(fname, items) => {
+            if let Some(fields) = env.structs.get(fname) {
+                let args: HashMap<String, Expr> = items.iter().cloned().collect();
                 let mut values: Vec<(String, Value)> = vec![];
                 for (name, typ, default) in fields {
                     if let Some(arg) = args.get(&name.to_string()) {
@@ -131,13 +170,32 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             let val = eval_expr(&env, &e)?.cast(&typ)?;
                             values.push((name.to_string(), val));
                         } else {
-                            bail!("Cannot find field {}", name)
+                            bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
                         }
                     }
                 }
-                Ok(Dict(Some(name.to_string()), values))
+                Ok(Dict(Some(fname.to_string()), values))
+            } else if let Some((env_inner, fields, body)) = env.funs.get(fname) {
+                let args: HashMap<String, Expr> = items.iter().cloned().collect();
+                let mut env_inner = env_inner.clone();
+                for (name, typ, default) in fields.iter() {
+                    if let Some(arg) = args.get(&name.to_string()) {
+                        let val = eval_expr(&env, &arg)?.cast(&typ)?;
+                        env_inner
+                            .vars
+                            .insert(name.to_string(), (typ.clone(), val.clone()));
+                    } else {
+                        if let Some(e) = default {
+                            let val = eval_expr(&env, &e)?.cast(&typ)?;
+                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                        } else {
+                            bail!("Not supplied Arg `{}` for Function `{}`.", name, fname);
+                        }
+                    }
+                }
+                eval_expr(&mut env_inner, body)
             } else {
-                bail!("Cannot resolve name {}", name)
+                bail!("Cannot resolve name `{}`", fname)
             }
         }
         AnonymousStruct(items) => {
@@ -367,7 +425,7 @@ fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
             Some((_, val)) => Ok((*val).clone()),
             None => bail!("Undefined variable {}", v),
         },
-        Env(_, _) => bail!("Cannot use $VAR in wasm mode"),
+        Env(_, _) => bail!("Cannot use $VAR in WASM ;_;"),
         EnumVariant(s, t) => {
             // check existence
             if let Some(variants) = env.enums.get(s) {
@@ -390,22 +448,17 @@ struct Environ {
     structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
     vars: HashMap<String, (Typing, Value)>,
-    loaded_modules: HashSet<String>,
+    funs: HashMap<String, (Environ, Vec<(String, Typing, Option<Expr>)>, Expr)>,
 }
 
 impl Environ {
     pub fn new() -> Self {
-        let types = HashMap::new();
-        let structs = HashMap::new();
-        let enums = HashMap::new();
-        let vars = HashMap::new();
-        let loaded_modules = HashSet::new();
         Self {
-            types,
-            structs,
-            enums,
-            vars,
-            loaded_modules,
+            types: HashMap::new(),
+            structs: HashMap::new(),
+            enums: HashMap::new(),
+            vars: HashMap::new(),
+            funs: HashMap::new(),
         }
     }
 }
