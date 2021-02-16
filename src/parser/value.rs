@@ -134,7 +134,8 @@ pub fn value(input: &str) -> IResult<&str, Value> {
             recognize(tuple((opt(char('-')), decimal, char('.'), decimal))),
         )),
         |num_str: &str| {
-            let x: f64 = num_str.parse().unwrap();
+            let num: String = num_str.chars().filter(|&c| c != '_').collect();
+            let x: f64 = num.parse().unwrap();
             Value::Float(x)
         },
     );
@@ -222,6 +223,9 @@ mod test_value {
         assert_value!("0.0", Value::Float(0.0));
         assert_value!("0.5", Value::Float(0.5));
         assert_value!("-0.5", Value::Float(-0.5));
+        assert_value!("100_000.0", Value::Float(100000.0));
+        assert_value!("0.000_000_001", Value::Float(0.000000001));
+        assert_value!("123_456.000_000_001", Value::Float(123456.000000001));
     }
     #[test]
     fn test_const() {
