@@ -72,6 +72,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
+        Var(v) => match env.vars.get(v) {
+            Some((_, val)) => Ok((*val).clone()),
+            None => bail!("Undefined variable `{}`.", v),
+        },
         Apply(fname, args) => {
             let values: Vec<Value> = args
                 .iter()
@@ -421,10 +425,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
 fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
     use Value::*;
     match value {
-        Var(v) => match env.vars.get(v) {
-            Some((_, val)) => Ok((*val).clone()),
-            None => bail!("Undefined variable {}", v),
-        },
         Env(_, _) => bail!("Cannot use $VAR in WASM ;_;"),
         EnumVariant(s, t) => {
             // check existence
