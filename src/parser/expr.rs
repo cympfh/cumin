@@ -52,21 +52,21 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
 pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
     let compare = map(
         tuple((
-            ab_expr,
-            commentable_spaces,
-            alt((
-                tag("=="),
-                tag("!="),
-                tag("<="),
-                tag(">="),
-                tag("<"),
-                tag(">"),
-            )),
-            commentable_spaces,
-            ab_expr,
-            commentable_spaces,
+            terminated(ab_expr, commentable_spaces),
+            terminated(
+                alt((
+                    tag("=="),
+                    tag("!="),
+                    tag("<="),
+                    tag(">="),
+                    tag("<"),
+                    tag(">"),
+                )),
+                commentable_spaces,
+            ),
+            terminated(ab_expr, commentable_spaces),
         )),
-        |(x, _, op, _, y, _)| match op {
+        |(x, op, y)| match op {
             "==" => Expr::Equal(Box::new(x), Box::new(y)),
             "!=" => Expr::Not(Box::new(Expr::Equal(Box::new(x), Box::new(y)))),
             "<=" => Expr::Not(Box::new(Expr::Less(Box::new(y), Box::new(x)))),
@@ -84,12 +84,14 @@ fn ab_expr(input: &str) -> IResult<&str, Expr> {
     let (input, _) = commentable_spaces(input)?;
     fold_many0(
         tuple((
-            alt((tag("and"), tag("or"), tag("xor"), tag("+"), tag("-"))),
-            commentable_spaces,
+            terminated(
+                alt((tag("and"), tag("or"), tag("xor"), tag("+"), tag("-"))),
+                commentable_spaces,
+            ),
             term,
         )),
         x,
-        |acc, (op, _, val)| match op {
+        |acc, (op, val)| match op {
             "and" => Expr::And(Box::new(acc), Box::new(val)),
             "or" => Expr::Or(Box::new(acc), Box::new(val)),
             "xor" => Expr::Xor(Box::new(acc), Box::new(val)),
@@ -105,12 +107,11 @@ fn term(input: &str) -> IResult<&str, Expr> {
     let (input, _) = commentable_spaces(input)?;
     fold_many0(
         tuple((
-            alt((tag("**"), tag("*"), tag("/"))),
-            commentable_spaces,
+            terminated(alt((tag("**"), tag("*"), tag("/"))), commentable_spaces),
             as_expr,
         )),
         x,
-        |acc, (op, _, val)| match op {
+        |acc, (op, val)| match op {
             "**" => Expr::Pow(Box::new(acc), Box::new(val)),
             "*" => Expr::Mul(Box::new(acc), Box::new(val)),
             "/" => Expr::Div(Box::new(acc), Box::new(val)),
@@ -123,13 +124,11 @@ fn as_expr(input: &str) -> IResult<&str, Expr> {
     // <expr> as <typing>
     let as_expr = map(
         tuple((
-            factor,
-            commentable_spaces,
-            tag("as"),
-            commentable_spaces,
+            terminated(factor, commentable_spaces),
+            terminated(tag("as"), commentable_spaces),
             typing,
         )),
-        |(e, _, _, _, typ)| Expr::AsCast(Box::new(e), typ),
+        |(e, _, typ)| Expr::AsCast(Box::new(e), typ),
     );
     alt((as_expr, factor))(input)
 }
@@ -137,13 +136,11 @@ fn as_expr(input: &str) -> IResult<&str, Expr> {
 fn factor(input: &str) -> IResult<&str, Expr> {
     let parened = map(
         tuple((
-            tag("("),
-            commentable_spaces,
-            expr,
-            commentable_spaces,
+            terminated(tag("("), commentable_spaces),
+            terminated(expr, commentable_spaces),
             tag(")"),
         )),
-        |(_, _, e, _, _)| e,
+        |(_, e, _)| e,
     );
     let minused = map(preceded(tag("-"), ab_expr), |e| Expr::Minus(Box::new(e)));
     let notted = map(preceded(tag("not"), preceded(spaces, term)), |e| {
@@ -183,14 +180,11 @@ fn factor(input: &str) -> IResult<&str, Expr> {
                 tuple((tag(","), commentable_spaces)),
                 map(
                     tuple((
-                        identifier,
-                        commentable_spaces,
-                        tag("="),
-                        commentable_spaces,
-                        expr,
-                        commentable_spaces,
+                        terminated(identifier, commentable_spaces),
+                        terminated(tag("="), commentable_spaces),
+                        terminated(expr, commentable_spaces),
                     )),
-                    |(name, _, _, _, e, _)| (name, e),
+                    |(name, _, e)| (name, e),
                 ),
             ),
             opt(tuple((tag(","), commentable_spaces))),
