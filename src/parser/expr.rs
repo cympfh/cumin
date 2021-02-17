@@ -37,10 +37,10 @@ pub enum Expr {
 }
 
 // <EXPR> ::= <AS>
-// <LOGIC> ::= <AS> {==, !=, <, >, <=, >=} <AS> | <AS>
-// <AS> ::= <AB> as <AB> | <AB>
+// <LOGIC> ::= <AB> {==, !=, <, >, <=, >=} <AB> | <AB>
 // <AB> ::= <TERM> {and,or,xor,+,-} <TERM> | <TERM>
-// <TERM> ::= <FACTOR> {*,/,**} <FACTOR> | <FACTOR>
+// <TERM> ::= <AS> {*,/,**} <AS> | <AS>
+// <AS> ::= <FACTOR> as <FACTOR> | <FACTOR>
 // <FACTOR> ::= ( <EXPR> ) | -<TERM> | not <TERM>
 //            | f(x) | S{x=x} | { ... } | Z::X | {{ ... }}
 //            | <EXPR> as <TYPE> | [ <EXPR> ,... ]
@@ -52,7 +52,7 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
 pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
     let compare = map(
         tuple((
-            as_expr,
+            ab_expr,
             commentable_spaces,
             alt((
                 tag("=="),
@@ -63,7 +63,7 @@ pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
                 tag(">"),
             )),
             commentable_spaces,
-            as_expr,
+            ab_expr,
             commentable_spaces,
         )),
         |(x, _, op, _, y, _)| match op {
@@ -76,22 +76,7 @@ pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
             _ => panic!(),
         },
     );
-    alt((compare, as_expr))(input)
-}
-
-fn as_expr(input: &str) -> IResult<&str, Expr> {
-    // <expr> as <typing>
-    let as_expr = map(
-        tuple((
-            ab_expr,
-            commentable_spaces,
-            tag("as"),
-            commentable_spaces,
-            typing,
-        )),
-        |(e, _, _, _, typ)| Expr::AsCast(Box::new(e), typ),
-    );
-    alt((as_expr, ab_expr))(input)
+    alt((compare, ab_expr))(input)
 }
 
 fn ab_expr(input: &str) -> IResult<&str, Expr> {
@@ -116,13 +101,13 @@ fn ab_expr(input: &str) -> IResult<&str, Expr> {
 }
 
 fn term(input: &str) -> IResult<&str, Expr> {
-    let (input, x) = factor(input)?;
+    let (input, x) = as_expr(input)?;
     let (input, _) = commentable_spaces(input)?;
     fold_many0(
         tuple((
             alt((tag("**"), tag("*"), tag("/"))),
             commentable_spaces,
-            factor,
+            as_expr,
         )),
         x,
         |acc, (op, _, val)| match op {
@@ -132,6 +117,21 @@ fn term(input: &str) -> IResult<&str, Expr> {
             _ => panic!(),
         },
     )(input)
+}
+
+fn as_expr(input: &str) -> IResult<&str, Expr> {
+    // <expr> as <typing>
+    let as_expr = map(
+        tuple((
+            factor,
+            commentable_spaces,
+            tag("as"),
+            commentable_spaces,
+            typing,
+        )),
+        |(e, _, _, _, typ)| Expr::AsCast(Box::new(e), typ),
+    );
+    alt((as_expr, factor))(input)
 }
 
 fn factor(input: &str) -> IResult<&str, Expr> {
@@ -616,6 +616,13 @@ mod test_expr {
                     vec![Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))]
                 )),
                 Typing::Int
+            )
+        );
+        assert_expr!(
+            "f(1) + 2 as Int",
+            Add(
+                Box::new(Apply("f".to_string(), vec![Val(Nat(1))])),
+                Box::new(AsCast(Box::new(Val(Nat(2))), Typing::Int))
             )
         );
     }
