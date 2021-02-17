@@ -19,7 +19,6 @@ pub enum Value {
     Float(f64),
     Bool(bool),
     Str(String),
-    Var(String),
     Env(String, Option<String>),
     Dict(Option<String>, Vec<(String, Value)>),
     EnumVariant(String, String),
@@ -190,8 +189,6 @@ pub fn value(input: &str) -> IResult<&str, Value> {
         ))
     };
 
-    let var_value = map(identifier, Value::Var);
-
     alt((
         const_values,
         float_value,
@@ -199,7 +196,6 @@ pub fn value(input: &str) -> IResult<&str, Value> {
         str_value,
         variant_value,
         env_value,
-        var_value,
     ))(input)
 }
 
@@ -261,11 +257,6 @@ mod test_value {
             "${USER:-hoge}",
             Value::Env("USER".to_string(), Some("hoge".to_string()))
         );
-    }
-    #[test]
-    fn test_var() {
-        assert_value!("hoge", Value::Var("hoge".to_string()));
-        assert_value!("_hoge0", Value::Var("_hoge0".to_string()));
     }
 
     macro_rules! assert_cast {

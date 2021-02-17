@@ -385,7 +385,7 @@ mod test_statement {
             Fun(
                 "zero".to_string(),
                 vec![("x".to_string(), Typing::Int, None)],
-                Val(Var("x".to_string()))
+                Expr::Var("x".to_string())
             )
         );
         assert_stmt!(
@@ -397,8 +397,8 @@ mod test_statement {
                     ("y".to_string(), Typing::Int, Some(Val(Nat(2)))),
                 ],
                 Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string())))
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string()))
                 )
             )
         );

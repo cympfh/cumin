@@ -119,6 +119,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
     use Value::*;
     match expr {
         Val(value) => eval_value(&env, value),
+        Var(v) => match env.vars.get(v) {
+            Some((_, val)) => Ok((*val).clone()),
+            None => bail!("Undefined variable `{}`.", v),
+        },
         Apply(fname, args) => {
             let values: Vec<Value> = args
                 .iter()
@@ -468,10 +472,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
 fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
     use Value::*;
     match value {
-        Var(v) => match env.vars.get(v) {
-            Some((_, val)) => Ok((*val).clone()),
-            None => bail!("Undefined variable {}", v),
-        },
         Env(v, default_value) => match (env.env_vars.get(v), default_value) {
             (Some(val), _) => Ok(Str(val.to_string())),
             (None, Some(def)) => Ok(Str(def.to_string())),

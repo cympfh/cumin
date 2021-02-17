@@ -46,7 +46,6 @@ impl JSON {
             Value::Float(x) => Float(x),
             Value::Bool(x) => Bool(x),
             Value::Str(x) => Str(x),
-            Value::Var(v) => panic!("Var {} is unresolved", v),
             Value::Env(v, _) => panic!("Env {} is unresolved", v),
             Value::Dict(_name, items) => {
                 let items: Vec<(String, JSON)> = items
