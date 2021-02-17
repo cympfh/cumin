@@ -1,5 +1,4 @@
 use crate::parser::cumin::*;
-use crate::parser::logic::logic_expr;
 use crate::parser::typing::*;
 use crate::parser::util::*;
 use crate::parser::value::*;
@@ -8,14 +7,15 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     combinator::{map, opt},
-    multi::{separated_list0, separated_list1},
-    sequence::{delimited, terminated, tuple},
+    multi::{fold_many0, separated_list0, separated_list1},
+    sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Val(Value),
+    Var(String),
     Apply(String, Vec<Expr>),
     FieledApply(String, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Typing, Expr)>),
@@ -36,7 +36,117 @@ pub enum Expr {
     AsCast(Box<Expr>, Typing),
 }
 
+// <EXPR> ::= <AS>
+// <LOGIC> ::= <AB> {==, !=, <, >, <=, >=} <AB> | <AB>
+// <AB> ::= <TERM> {and,or,xor,+,-} <TERM> | <TERM>
+// <TERM> ::= <AS> {*,/,**} <AS> | <AS>
+// <AS> ::= <FACTOR> as <FACTOR> | <FACTOR>
+// <FACTOR> ::= ( <EXPR> ) | -<TERM> | not <TERM>
+//            | f(x) | S{x=x} | { ... } | Z::X | {{ ... }}
+//            | <EXPR> as <TYPE> | [ <EXPR> ,... ]
+
 pub fn expr(input: &str) -> IResult<&str, Expr> {
+    terminated(logic_expr, commentable_spaces)(input)
+}
+
+pub fn logic_expr(input: &str) -> IResult<&str, Expr> {
+    let compare = map(
+        tuple((
+            terminated(ab_expr, commentable_spaces),
+            terminated(
+                alt((
+                    tag("=="),
+                    tag("!="),
+                    tag("<="),
+                    tag(">="),
+                    tag("<"),
+                    tag(">"),
+                )),
+                commentable_spaces,
+            ),
+            terminated(ab_expr, commentable_spaces),
+        )),
+        |(x, op, y)| match op {
+            "==" => Expr::Equal(Box::new(x), Box::new(y)),
+            "!=" => Expr::Not(Box::new(Expr::Equal(Box::new(x), Box::new(y)))),
+            "<=" => Expr::Not(Box::new(Expr::Less(Box::new(y), Box::new(x)))),
+            ">=" => Expr::Not(Box::new(Expr::Less(Box::new(x), Box::new(y)))),
+            "<" => Expr::Less(Box::new(x), Box::new(y)),
+            ">" => Expr::Less(Box::new(y), Box::new(x)),
+            _ => panic!(),
+        },
+    );
+    alt((compare, ab_expr))(input)
+}
+
+fn ab_expr(input: &str) -> IResult<&str, Expr> {
+    let (input, x) = term(input)?;
+    let (input, _) = commentable_spaces(input)?;
+    fold_many0(
+        tuple((
+            terminated(
+                alt((tag("and"), tag("or"), tag("xor"), tag("+"), tag("-"))),
+                commentable_spaces,
+            ),
+            term,
+        )),
+        x,
+        |acc, (op, val)| match op {
+            "and" => Expr::And(Box::new(acc), Box::new(val)),
+            "or" => Expr::Or(Box::new(acc), Box::new(val)),
+            "xor" => Expr::Xor(Box::new(acc), Box::new(val)),
+            "+" => Expr::Add(Box::new(acc), Box::new(val)),
+            "-" => Expr::Sub(Box::new(acc), Box::new(val)),
+            _ => panic!(),
+        },
+    )(input)
+}
+
+fn term(input: &str) -> IResult<&str, Expr> {
+    let (input, x) = as_expr(input)?;
+    let (input, _) = commentable_spaces(input)?;
+    fold_many0(
+        tuple((
+            terminated(alt((tag("**"), tag("*"), tag("/"))), commentable_spaces),
+            as_expr,
+        )),
+        x,
+        |acc, (op, val)| match op {
+            "**" => Expr::Pow(Box::new(acc), Box::new(val)),
+            "*" => Expr::Mul(Box::new(acc), Box::new(val)),
+            "/" => Expr::Div(Box::new(acc), Box::new(val)),
+            _ => panic!(),
+        },
+    )(input)
+}
+
+fn as_expr(input: &str) -> IResult<&str, Expr> {
+    // <expr> as <typing>
+    let as_expr = map(
+        tuple((
+            terminated(factor, commentable_spaces),
+            terminated(tag("as"), commentable_spaces),
+            typing,
+        )),
+        |(e, _, typ)| Expr::AsCast(Box::new(e), typ),
+    );
+    alt((as_expr, factor))(input)
+}
+
+fn factor(input: &str) -> IResult<&str, Expr> {
+    let parened = map(
+        tuple((
+            terminated(tag("("), commentable_spaces),
+            terminated(expr, commentable_spaces),
+            tag(")"),
+        )),
+        |(_, e, _)| e,
+    );
+    let minused = map(preceded(tag("-"), ab_expr), |e| Expr::Minus(Box::new(e)));
+    let notted = map(preceded(tag("not"), preceded(spaces, term)), |e| {
+        Expr::Not(Box::new(e))
+    });
+
     // <identifier>.<identifier> ( <expr>, )
     let apply_expr = map(
         tuple((
@@ -70,14 +180,11 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
                 tuple((tag(","), commentable_spaces)),
                 map(
                     tuple((
-                        identifier,
-                        commentable_spaces,
-                        tag("="),
-                        commentable_spaces,
-                        expr,
-                        commentable_spaces,
+                        terminated(identifier, commentable_spaces),
+                        terminated(tag("="), commentable_spaces),
+                        terminated(expr, commentable_spaces),
                     )),
-                    |(name, _, _, _, e, _)| (name, e),
+                    |(name, _, e)| (name, e),
                 ),
             ),
             opt(tuple((tag(","), commentable_spaces))),
@@ -128,30 +235,6 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
         Expr::Blocked(Box::new(cumin))
     });
 
-    // <expr> as <typing>
-    let as_expr = map(
-        tuple((
-            alt((
-                map(
-                    tuple((
-                        tag("("),
-                        commentable_spaces,
-                        expr,
-                        commentable_spaces,
-                        tag(")"),
-                    )),
-                    |(_, _, e, _, _)| e,
-                ),
-                map(value, Expr::Val),
-            )),
-            commentable_spaces,
-            tag("as"),
-            commentable_spaces,
-            typing,
-        )),
-        |(e, _, _, _, typ)| Expr::AsCast(Box::new(e), typ),
-    );
-
     // [ <expr> , ]
     let arrayed_expr = map(
         tuple((
@@ -168,18 +251,23 @@ pub fn expr(input: &str) -> IResult<&str, Expr> {
     );
 
     // <value>
-    let value_expr = map(value, |val| Expr::Val(val));
+    let avalue = map(value, Expr::Val);
+
+    // <variable>
+    let vvalue = map(identifier, Expr::Var);
 
     terminated(
         alt((
+            avalue,
+            notted,
+            minused,
+            parened,
             dict_expr,
             blocked_expr,
             arrayed_expr,
             apply_expr,
             field_apply_expr,
-            as_expr,
-            logic_expr,
-            value_expr,
+            vvalue,
         )),
         commentable_spaces,
     )(input)
@@ -207,35 +295,37 @@ mod test_expr {
             // one",
             Val(Bool(true))
         );
-        assert_expr!("x // var", Val(Var("x".to_string())));
+        assert_expr!("x // var", Expr::Var("x".to_string()));
     }
 
     #[test]
     fn test_arith() {
+        assert_expr!("1 // one", Val(Nat(1)));
+        assert_expr!("-1", Val(Int(-1)));
         assert_expr!("0 + 1", Add(Box::new(Val(Nat(0))), Box::new(Val(Nat(1)))));
         assert_expr!(
             "0 + x",
-            Add(Box::new(Val(Nat(0))), Box::new(Val(Var("x".to_string()))))
+            Add(Box::new(Val(Nat(0))), Box::new(Expr::Var("x".to_string())))
         );
         assert_expr!(
             "x + 2",
-            Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))))
+            Add(Box::new(Expr::Var("x".to_string())), Box::new(Val(Nat(2))))
         );
         assert_expr!(
             "x + y + z",
             Add(
                 Box::new(Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string()))),
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string())),
                 )),
-                Box::new(Val(Var("z".to_string()))),
+                Box::new(Expr::Var("z".to_string())),
             )
         );
         assert_expr!(
             "x - y",
             Sub(
-                Box::new(Val(Var("x".to_string()))),
-                Box::new(Val(Var("y".to_string()))),
+                Box::new(Expr::Var("x".to_string())),
+                Box::new(Expr::Var("y".to_string())),
             )
         );
         assert_expr!(
@@ -246,10 +336,62 @@ mod test_expr {
             "(x * y) / z",
             Div(
                 Box::new(Mul(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string()))),
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string())),
                 )),
-                Box::new(Val(Var("z".to_string())))
+                Box::new(Expr::Var("z".to_string()))
+            )
+        );
+        assert_expr!("1+-1", Add(Box::new(Val(Nat(1))), Box::new(Val(Int(-1)))));
+        assert_expr!("1  /2", Div(Box::new(Val(Nat(1))), Box::new(Val(Nat(2)))));
+        assert_expr!(
+            "1 + 2 - 3",
+            Sub(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+                Box::new(Val(Nat(3)))
+            )
+        );
+        assert_expr!(
+            "1 * 2 * 3 / 4",
+            Div(
+                Box::new(Mul(
+                    Box::new(Mul(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+                    Box::new(Val(Nat(3)))
+                )),
+                Box::new(Val(Nat(4)))
+            )
+        );
+        assert_expr!(
+            "1 + 2 * 3",
+            Add(
+                Box::new(Val(Nat(1))),
+                Box::new(Mul(Box::new(Val(Nat(2))), Box::new(Val(Nat(3))),))
+            )
+        );
+        assert_expr!(
+            "(1 + 2) * ((3) / 4 - 5)",
+            Mul(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))),)),
+                Box::new(Sub(
+                    Box::new(Div(Box::new(Val(Nat(3))), Box::new(Val(Nat(4))),)),
+                    Box::new(Val(Nat(5)))
+                ))
+            )
+        );
+        assert_expr!("-(-2)", Minus(Box::new(Val(Int(-2)))));
+        assert_expr!("-x", Minus(Box::new(Expr::Var("x".to_string()))));
+        assert_expr!(
+            "f(x) + 1",
+            Add(
+                Box::new(Apply("f".to_string(), vec![Expr::Var("x".to_string())])),
+                Box::new(Val(Nat(1)))
+            )
+        );
+        assert_expr!(
+            "f(x) + g(z)",
+            Add(
+                Box::new(Apply("f".to_string(), vec![Expr::Var("x".to_string())])),
+                Box::new(Apply("g".to_string(), vec![Expr::Var("z".to_string())])),
             )
         );
     }
@@ -264,15 +406,19 @@ mod test_expr {
             Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))
         );
         assert_expr!(
+            "true xor false",
+            Xor(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))
+        );
+        assert_expr!(
             "(a or not b) xor (not c and d)",
             Xor(
                 Box::new(Or(
-                    Box::new(Val(Var("a".to_string()))),
-                    Box::new(Not(Box::new(Val(Var("b".to_string())))))
+                    Box::new(Expr::Var("a".to_string())),
+                    Box::new(Not(Box::new(Expr::Var("b".to_string()))))
                 )),
                 Box::new(And(
-                    Box::new(Not(Box::new(Val(Var("c".to_string()))))),
-                    Box::new(Val(Var("d".to_string())))
+                    Box::new(Not(Box::new(Expr::Var("c".to_string())))),
+                    Box::new(Expr::Var("d".to_string()))
                 ))
             )
         );
@@ -427,8 +573,8 @@ mod test_expr {
                     Statement::Let("y".to_string(), Typing::Any, Val(Int(-2))),
                 ],
                 Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string())))
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string()))
                 )
             )))
         );
@@ -437,6 +583,13 @@ mod test_expr {
     #[test]
     fn test_as_cast() {
         assert_expr!("1 as Int", AsCast(Box::new(Val(Nat(1))), Typing::Int));
+        assert_expr!(
+            "{ 1 } as Int",
+            AsCast(
+                Box::new(Blocked(Box::new(Cumin(vec![], Val(Nat(1)))))),
+                Typing::Int
+            )
+        );
         assert_expr!(
             "1 as Int
                 // Nat -> Int",
@@ -449,5 +602,104 @@ mod test_expr {
                 Typing::Int
             )
         );
+        assert_expr!(
+            "f(1+1) as Int",
+            AsCast(
+                Box::new(Apply(
+                    "f".to_string(),
+                    vec![Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))]
+                )),
+                Typing::Int
+            )
+        );
+        assert_expr!(
+            "f(1) + 2 as Int",
+            Add(
+                Box::new(Apply("f".to_string(), vec![Val(Nat(1))])),
+                Box::new(AsCast(Box::new(Val(Nat(2))), Typing::Int))
+            )
+        );
+    }
+
+    #[test]
+    fn test_bool() {
+        assert_expr!("true", Val(Bool(true)));
+        assert_expr!("not x", Not(Box::new(Expr::Var("x".to_string()))));
+        assert_expr!(
+            "not true or true",
+            Or(
+                Box::new(Not(Box::new(Val(Bool(true))))),
+                Box::new(Val(Bool(true)))
+            )
+        );
+        assert_expr!(
+            "true or not true",
+            Or(
+                Box::new(Val(Bool(true))),
+                Box::new(Not(Box::new(Val(Bool(true)))))
+            )
+        );
+        assert_expr!(
+            "x and y",
+            And(
+                Box::new(Expr::Var("x".to_string())),
+                Box::new(Expr::Var("y".to_string()))
+            )
+        );
+        assert_expr!(
+            "true and false or true xor false",
+            Xor(
+                Box::new(Or(
+                    Box::new(And(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))),
+                    Box::new(Val(Bool(true)))
+                )),
+                Box::new(Val(Bool(false)))
+            )
+        );
+        assert_expr!(
+            "true and (false or not true)",
+            And(
+                Box::new(Val(Bool(true))),
+                Box::new(Or(
+                    Box::new(Val(Bool(false))),
+                    Box::new(Not(Box::new(Val(Bool(true)))))
+                ))
+            )
+        );
+    }
+
+    #[test]
+    fn test_compare() {
+        assert_expr!(
+            "1 == 2",
+            Equal(Box::new(Val(Nat(1))), Box::new(Val(Nat(2))))
+        );
+        assert_expr!(
+            "1 <= 2",
+            Not(Box::new(Less(Box::new(Val(Nat(2))), Box::new(Val(Nat(1))))))
+        );
+        assert_expr!(
+            "1 + 1 == 2 - 0",
+            Equal(
+                Box::new(Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))),
+                Box::new(Sub(Box::new(Val(Nat(2))), Box::new(Val(Nat(0)))))
+            )
+        );
+        assert_expr!(
+            "(1 <= 2) == false",
+            Equal(
+                Box::new(Not(Box::new(Less(
+                    Box::new(Val(Nat(2))),
+                    Box::new(Val(Nat(1)))
+                )))),
+                Box::new(Val(Bool(false)))
+            )
+        );
+    }
+
+    #[test]
+    fn test_var() {
+        assert_expr!("hoge", Expr::Var("hoge".to_string()));
+        assert_expr!("_hoge0", Expr::Var("_hoge0".to_string()));
     }
 }

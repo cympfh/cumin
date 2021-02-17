@@ -36,7 +36,7 @@ mod test_cumin {
             "let x=1; x",
             Cumin(
                 vec![Let("x".to_string(), Typing::Any, Val(Nat(1)))],
-                Val(Var("x".to_string()))
+                Expr::Var("x".to_string())
             )
         );
         assert_cumin!(
@@ -52,12 +52,12 @@ mod test_cumin {
                     Let(
                         "y".to_string(),
                         Typing::Any,
-                        Add(Box::new(Val(Var("x".to_string()))), Box::new(Val(Nat(2))))
+                        Add(Box::new(Expr::Var("x".to_string())), Box::new(Val(Nat(2))))
                     ),
                 ],
                 Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string())))
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string()))
                 )
             )
         );
@@ -69,8 +69,8 @@ mod test_cumin {
                     vec![("x".to_string(), Typing::Int, None)]
                 )],
                 Add(
-                    Box::new(Val(Var("x".to_string()))),
-                    Box::new(Val(Var("y".to_string())))
+                    Box::new(Expr::Var("x".to_string())),
+                    Box::new(Expr::Var("y".to_string()))
                 )
             )
         );
@@ -81,7 +81,7 @@ mod test_cumin {
                     Struct("X".to_string(), vec![("x".to_string(), Typing::Int, None)]),
                     Let("x".to_string(), Typing::Any, Val(Nat(1)))
                 ],
-                Apply("X".to_string(), vec![Val(Var("x".to_string()))])
+                Apply("X".to_string(), vec![Expr::Var("x".to_string())])
             )
         );
     }
