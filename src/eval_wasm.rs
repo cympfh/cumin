@@ -1,12 +1,9 @@
 use crate::builtins;
 use crate::json::*;
-use crate::parser::cumin::*;
-use crate::parser::expr::*;
-use crate::parser::statement::*;
-use crate::parser::typing::*;
-use crate::parser::value::*;
+use crate::parser::{cumin::*, expr::*, statement::*, typing::*, value::*};
+use crate::{assert_args_eq, assert_args_leq, bail_type_error};
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use Statement::*;
 
 pub fn eval_wasm(cumin: Cumin) -> Result<JSON> {
@@ -83,26 +80,26 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 .collect::<Result<_>>()?;
             match fname.as_str() {
                 "Some" => {
-                    assert!(values.len() == 1);
+                    assert_args_eq!("Some", values.len(), 1);
                     let val = values[0].clone();
                     let typ = val.type_of();
                     Ok(Optional(typ, Box::new(Some(val))))
                 }
                 "not" => {
-                    assert!(values.len() == 1);
+                    assert_args_eq!("not", values.len(), 1);
                     let e = Not(Box::new(Val(values[0].clone())));
                     eval_expr(&env, &e)
                 }
                 "concat" => builtins::concat(&values),
                 "reverse" => {
-                    assert!(values.len() == 1);
+                    assert_args_eq!("reverse", values.len(), 1);
                     builtins::reverse(&values[0])
                 }
                 // Struct Apply
                 _ if env.structs.contains_key(fname) => {
                     let fields = env.structs.get(fname).unwrap();
+                    assert_args_leq!(fname, values.len(), fields.len());
                     let n = values.len();
-                    assert!(fields.len() >= n);
                     let mut items = vec![];
                     for ((name, typ, _default), value) in fields[..n].iter().zip(values.iter()) {
                         let val = value.cast(typ)?;
@@ -121,7 +118,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 }
                 // Type Apply
                 _ if env.types.contains_key(fname) => {
-                    assert!(values.len() == 1);
+                    assert_args_eq!(fname, values.len(), 1);
                     let value = values[0].clone();
                     let typ = values[0].type_of();
                     // up-cast
@@ -140,9 +137,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 // Function Apply
                 _ if env.funs.contains_key(fname) => {
                     let (env_inner, args, body) = env.funs.get(fname).unwrap();
+                    assert_args_leq!(fname, values.len(), args.len());
                     let mut env_inner = env_inner.clone();
                     let n = values.len();
-                    assert!(args.len() >= n);
                     for ((name, typ, _default), value) in args[..n].iter().zip(values.iter()) {
                         let val = value.cast(typ)?;
                         env_inner.vars.insert(name.to_string(), (typ.clone(), val));
@@ -164,6 +161,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         FieledApply(fname, items) => {
             if let Some(fields) = env.structs.get(fname) {
                 let args: HashMap<String, Expr> = items.iter().cloned().collect();
+                assert_args_leq!(fname, args.len(), fields.len());
                 let mut values: Vec<(String, Value)> = vec![];
                 for (name, typ, default) in fields {
                     if let Some(arg) = args.get(&name.to_string()) {
@@ -178,9 +176,20 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                         }
                     }
                 }
+                {
+                    // check undefined fields given
+                    let defined_fields: HashSet<String> =
+                        fields.iter().map(|(name, _, _)| name).cloned().collect();
+                    for (name, _) in args.iter() {
+                        if !defined_fields.contains(name) {
+                            bail!("Undefined Field `{}` supplied for Struct `{}`", name, fname)
+                        }
+                    }
+                }
                 Ok(Dict(Some(fname.to_string()), values))
             } else if let Some((env_inner, fields, body)) = env.funs.get(fname) {
                 let args: HashMap<String, Expr> = items.iter().cloned().collect();
+                assert_args_leq!(fname, args.len(), fields.len());
                 let mut env_inner = env_inner.clone();
                 for (name, typ, default) in fields.iter() {
                     if let Some(arg) = args.get(&name.to_string()) {
@@ -197,6 +206,16 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                         }
                     }
                 }
+                {
+                    // check undefined args given
+                    let defined_fields: HashSet<String> =
+                        fields.iter().map(|(name, _, _)| name).cloned().collect();
+                    for (name, _) in args.iter() {
+                        if !defined_fields.contains(name) {
+                            bail!("Undefined Arg `{}` supplied for Function `{}`", name, fname)
+                        }
+                    }
+                }
                 eval_expr(&mut env_inner, body)
             } else {
                 bail!("Cannot resolve name `{}`", fname)
@@ -209,6 +228,11 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 values.push((name.to_string(), val.clone()));
             }
             Ok(Dict(None, values))
+        }
+        Concat(x, y) => {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            builtins::concat(&vec![a, b])
         }
         Add(x, y) => {
             let a = eval_expr(&env, &x)?;
@@ -228,7 +252,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     z.push_str(&y);
                     Str(z)
                 }
-                _ => bail!("Cant compute {:?} + {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "+" y),
             };
             Ok(ret)
         }
@@ -251,7 +275,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x - y as f64),
                 (Float(x), Int(y)) => Float(x - y as f64),
                 (Float(x), Float(y)) => Float(x - y),
-                _ => bail!("Cant compute {:?} - {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "-" y),
             };
             Ok(ret)
         }
@@ -268,7 +292,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x * y as f64),
                 (Float(x), Int(y)) => Float(x * y as f64),
                 (Float(x), Float(y)) => Float(x * y),
-                _ => bail!("Cant compute {:?} * {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "*" y),
             };
             Ok(ret)
         }
@@ -285,7 +309,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x / y as f64),
                 (Float(x), Int(y)) => Float(x / y as f64),
                 (Float(x), Float(y)) => Float(x / y),
-                _ => bail!("Cant compute {:?} / {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "/" y),
             };
             Ok(ret)
         }
@@ -314,7 +338,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x.powi(y as i32)),
                 (Float(x), Int(y)) => Float(x.powi(y as i32)),
                 (Float(x), Float(y)) => Float(x.powf(y)),
-                _ => bail!("Cant compute {:?} / {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "**" y),
             };
             Ok(ret)
         }
@@ -324,7 +348,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 Nat(x) => Int(-(x as i128)),
                 Int(x) => Int(-x),
                 Float(x) => Float(-x),
-                _ => bail!("Cant compute -({:?})", x),
+                x => bail_type_error!(compute "-" x),
             };
             Ok(ret)
         }
@@ -333,7 +357,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x && y),
-                _ => bail!("Cant compute {:?} and {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "and" y),
             };
             Ok(ret)
         }
@@ -342,7 +366,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x || y),
-                _ => bail!("Cant compute {:?} or {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "or" y),
             };
             Ok(ret)
         }
@@ -351,7 +375,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x ^ y),
-                _ => bail!("Cant compute {:?} xor {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "xor" y),
             };
             Ok(ret)
         }
@@ -359,7 +383,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let a = eval_expr(&env, &x)?;
             let ret = match a {
                 Bool(x) => Bool(!x),
-                _ => bail!("Cant compute not {:?}", x),
+                x => bail_type_error!(compute "not" x),
             };
             Ok(ret)
         }
@@ -373,7 +397,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Int(x), Int(y)) => Bool(x == y),
                 (Float(x), Float(y)) => Bool(x == y),
                 (Bool(x), Bool(y)) => Bool(x == y),
-                _ => bail!("Cant compare {:?} == {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "==" y),
             };
             Ok(ret)
         }
@@ -386,7 +410,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Int(x), Nat(y)) => Bool(x < y as i128),
                 (Int(x), Int(y)) => Bool(x < y),
                 (Float(x), Float(y)) => Bool(x < y),
-                _ => bail!("Cant compare {:?} < {:?}", x, y),
+                (x, y) => bail_type_error!(compute x "<" y),
             };
             Ok(ret)
         }
@@ -579,10 +603,36 @@ mod test_eval_from_parse {
         );
         assert_eval!("[None]", Array(vec![Null]));
         assert_eval!("[Some(1), Some(-1)]", Array(vec![Int(1), Int(-1)]));
+        assert_eval!("[1, 2] ++ [] ++ [3]", Array(vec![Nat(1), Nat(2), Nat(3)]));
+        assert_eval!(
+            "reverse([2, 1]) ++ [] ++ [3]",
+            Array(vec![Nat(1), Nat(2), Nat(3)])
+        );
     }
 
     #[test]
-    fn test_fielded_apply() {
+    fn test_struct() {
+        assert_eval!(
+            "struct P { x: Nat, y: Nat } P(1, 2)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat, y: Nat = 100 } P(1, 2)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
+        assert_eval!(
+            "struct P { x: Nat, y: Nat = 100 } P(1)",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(1)),
+                ("y".to_string(), JSON::Nat(100)),
+            ])
+        );
         assert_eval!(
             "struct P { x: Nat, y: Nat } P{ x = 1, y = 2 }",
             JSON::Dict(vec![
@@ -604,6 +654,13 @@ mod test_eval_from_parse {
                 ("y".to_string(), JSON::Nat(2)),
             ])
         );
+        assert_eval!(
+            "struct P { x: Nat = 42, y: Nat } P{ y = 2 }",
+            JSON::Dict(vec![
+                ("x".to_string(), JSON::Nat(42)),
+                ("y".to_string(), JSON::Nat(2)),
+            ])
+        );
     }
 
     #[test]
@@ -620,6 +677,40 @@ mod test_eval_from_parse {
         assert_eval!(
             "type T = Int | String; [T(1), T(\"hoge\")]",
             JSON::Array(vec![JSON::Int(1), JSON::Str("hoge".to_string())])
+        );
+    }
+
+    macro_rules! assert_cannot_eval {
+        ($code:expr) => {
+            assert!(eval(cumin($code).unwrap().1, None).is_err());
+        };
+    }
+
+    #[test]
+    fn test_type_error() {
+        assert_cannot_eval!("let n: Nat = -1; n");
+        assert_cannot_eval!("let xs: Array<Nat> = [-1]; xs");
+        assert_cannot_eval!("let xs: Option<Nat> = Some(-1); xs");
+    }
+
+    #[test]
+    fn test_fn() {
+        assert_eval!("fn f() = 1; f()", JSON::Nat(1));
+        assert_eval!("let f() = 1; f()", JSON::Nat(1));
+        assert_eval!("fn f(x: Int) = x - 1; f(3)", JSON::Int(2));
+        assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f(3)", JSON::Int(3));
+        assert_eval!("fn f(x: Int, y: Int = 0) = x - y; f{x=3}", JSON::Int(3));
+        assert_eval!(
+            "fn f(x: Int, y: Int = 0) = x - y; f{y=2, x=3}",
+            JSON::Int(1)
+        );
+        assert_eval!(
+            "fn f(x: Int) = {{ x = x - 1 }}; f(3)",
+            JSON::Dict(vec![("x".to_string(), JSON::Int(2))])
+        );
+        assert_eval!(
+            "let f(x: Int) = x; fn g (x: Int) = f(x); g(2)",
+            JSON::Int(2)
         );
     }
 }
