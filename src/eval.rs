@@ -298,7 +298,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     z.push_str(&y);
                     Str(z)
                 }
-                _ => bail_type_error!(compute x "+" y),
+                (x, y) => bail_type_error!(compute x "+" y),
             };
             Ok(ret)
         }
@@ -321,7 +321,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x - y as f64),
                 (Float(x), Int(y)) => Float(x - y as f64),
                 (Float(x), Float(y)) => Float(x - y),
-                _ => bail_type_error!(compute x "-" y),
+                (x, y) => bail_type_error!(compute x "-" y),
             };
             Ok(ret)
         }
@@ -338,7 +338,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x * y as f64),
                 (Float(x), Int(y)) => Float(x * y as f64),
                 (Float(x), Float(y)) => Float(x * y),
-                _ => bail_type_error!(compute x "*" y),
+                (x, y) => bail_type_error!(compute x "*" y),
             };
             Ok(ret)
         }
@@ -355,7 +355,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x / y as f64),
                 (Float(x), Int(y)) => Float(x / y as f64),
                 (Float(x), Float(y)) => Float(x / y),
-                _ => bail_type_error!(compute x "/" y),
+                (x, y) => bail_type_error!(compute x "/" y),
             };
             Ok(ret)
         }
@@ -384,7 +384,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Float(x), Nat(y)) => Float(x.powi(y as i32)),
                 (Float(x), Int(y)) => Float(x.powi(y as i32)),
                 (Float(x), Float(y)) => Float(x.powf(y)),
-                _ => bail_type_error!(compute x "**" y),
+                (x, y) => bail_type_error!(compute x "**" y),
             };
             Ok(ret)
         }
@@ -394,7 +394,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 Nat(x) => Int(-(x as i128)),
                 Int(x) => Int(-x),
                 Float(x) => Float(-x),
-                _ => bail_type_error!(compute "-" x),
+                x => bail_type_error!(compute "-" x),
             };
             Ok(ret)
         }
@@ -403,7 +403,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x && y),
-                _ => bail_type_error!(compute x "and" y),
+                (x, y) => bail_type_error!(compute x "and" y),
             };
             Ok(ret)
         }
@@ -412,7 +412,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x || y),
-                _ => bail_type_error!(compute x "or" y),
+                (x, y) => bail_type_error!(compute x "or" y),
             };
             Ok(ret)
         }
@@ -421,7 +421,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let b = eval_expr(&env, &y)?;
             let ret = match (a, b) {
                 (Bool(x), Bool(y)) => Bool(x ^ y),
-                _ => bail_type_error!(compute x "xor" y),
+                (x, y) => bail_type_error!(compute x "xor" y),
             };
             Ok(ret)
         }
@@ -429,7 +429,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let a = eval_expr(&env, &x)?;
             let ret = match a {
                 Bool(x) => Bool(!x),
-                _ => bail_type_error!(compute "not" x),
+                x => bail_type_error!(compute "not" x),
             };
             Ok(ret)
         }
@@ -443,7 +443,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Int(x), Int(y)) => Bool(x == y),
                 (Float(x), Float(y)) => Bool(x == y),
                 (Bool(x), Bool(y)) => Bool(x == y),
-                _ => bail_type_error!(compute x "==" y),
+                (x, y) => bail_type_error!(compute x "==" y),
             };
             Ok(ret)
         }
@@ -456,7 +456,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Int(x), Nat(y)) => Bool(x < y as i128),
                 (Int(x), Int(y)) => Bool(x < y),
                 (Float(x), Float(y)) => Bool(x < y),
-                _ => bail_type_error!(compute x "<" y),
+                (x, y) => bail_type_error!(compute x "<" y),
             };
             Ok(ret)
         }

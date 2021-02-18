@@ -29,9 +29,9 @@ macro_rules! assert_args_leq {
 #[macro_export]
 macro_rules! bail_type_error {
     (compute $x:tt $op:tt $y:tt) => {
-        bail!("TypeError: Cant compute `{:?}` {} `{:?}`.", $x, $op, $y);
+        bail!("TypeError: Cant compute {:?} `{}` {:?}.", $x, $op, $y);
     };
     (compute $op:tt $x:tt) => {
-        bail!("TypeError: Cant compute {} `{:?}`.", $op, $x);
+        bail!("TypeError: Cant compute `{}` {:?}.", $op, $x);
     };
 }
