@@ -19,6 +19,7 @@ pub enum Expr {
     Apply(String, Vec<Expr>),
     FieledApply(String, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Typing, Expr)>),
+    Concat(Box<Expr>, Box<Expr>),
     Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
     Mul(Box<Expr>, Box<Expr>),
@@ -85,7 +86,14 @@ fn ab_expr(input: &str) -> IResult<&str, Expr> {
     fold_many0(
         tuple((
             terminated(
-                alt((tag("and"), tag("or"), tag("xor"), tag("+"), tag("-"))),
+                alt((
+                    tag("and"),
+                    tag("or"),
+                    tag("xor"),
+                    tag("++"),
+                    tag("+"),
+                    tag("-"),
+                )),
                 commentable_spaces,
             ),
             term,
@@ -95,6 +103,7 @@ fn ab_expr(input: &str) -> IResult<&str, Expr> {
             "and" => Expr::And(Box::new(acc), Box::new(val)),
             "or" => Expr::Or(Box::new(acc), Box::new(val)),
             "xor" => Expr::Xor(Box::new(acc), Box::new(val)),
+            "++" => Expr::Concat(Box::new(acc), Box::new(val)),
             "+" => Expr::Add(Box::new(acc), Box::new(val)),
             "-" => Expr::Sub(Box::new(acc), Box::new(val)),
             _ => panic!(),
@@ -296,6 +305,27 @@ mod test_expr {
             Val(Bool(true))
         );
         assert_expr!("x // var", Expr::Var("x".to_string()));
+    }
+
+    #[test]
+    fn test_concat() {
+        assert_expr!(
+            "[] ++ []",
+            Expr::Concat(
+                Box::new(Expr::Arrayed(vec![])),
+                Box::new(Expr::Arrayed(vec![])),
+            )
+        );
+        assert_expr!(
+            "[] ++ [1] ++ [2]",
+            Expr::Concat(
+                Box::new(Expr::Concat(
+                    Box::new(Expr::Arrayed(vec![])),
+                    Box::new(Expr::Arrayed(vec![Expr::Val(Nat(1))])),
+                )),
+                Box::new(Expr::Arrayed(vec![Expr::Val(Nat(2))])),
+            )
+        );
     }
 
     #[test]

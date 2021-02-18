@@ -257,6 +257,11 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             }
             Ok(Dict(None, values))
         }
+        Concat(x, y) => {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            builtins::concat(&vec![a, b])
+        }
         Add(x, y) => {
             let a = eval_expr(&env, &x)?;
             let b = eval_expr(&env, &y)?;
@@ -636,6 +641,11 @@ mod test_eval_from_parse {
         );
         assert_eval!("[None]", Array(vec![Null]));
         assert_eval!("[Some(1), Some(-1)]", Array(vec![Int(1), Int(-1)]));
+        assert_eval!("[1, 2] ++ [] ++ [3]", Array(vec![Nat(1), Nat(2), Nat(3)]));
+        assert_eval!(
+            "reverse([2, 1]) ++ [] ++ [3]",
+            Array(vec![Nat(1), Nat(2), Nat(3)])
+        );
     }
 
     #[test]
