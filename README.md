@@ -1,8 +1,11 @@
 # cumin 🌿
 
-is a Structured Typed Configuration Language.
+is a Structured, Typed and Mini-Programmable Configuration Language.
 
-Document is [Here](https://cympfh.cc/cumin).
+## Documents
+
+- [cympfh.cc/cumin, English](https://cympfh.cc/cumin)
+- [v0.9.10 マニュアル, 日本語](https://zenn.dev/cympfh/books/cumin-book-v0910)
 
 ## Features
 
