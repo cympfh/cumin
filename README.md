@@ -1,9 +1,12 @@
-![](https://user-images.githubusercontent.com/2749629/108620455-ad24e400-746f-11eb-85b9-dfec1b8f8457.png)
+<p align="center">
+    <img src="https://user-images.githubusercontent.com/2749629/108620455-ad24e400-746f-11eb-85b9-dfec1b8f8457.png" alt="Cumin" />
+</p>
 
-
-[![Crates.io](https://img.shields.io/crates/v/cumin.svg)](https://crates.io/crates/cumin)
-![CI](https://github.com/cympfh/cumin/workflows/test/badge.svg)
-![License](https://img.shields.io/crates/l/cumin.svg)
+<p align="center">
+    <a href="https://crates.io/crates/cumin"><img src="https://img.shields.io/crates/v/cumin.svg" alt="crates.io" /></a>
+    <a href="https://github.com/cympfh/cumin/actions"><img src="https://github.com/cympfh/cumin/workflows/test/badge.svg" alt="test" /></a>
+    <img src="https://img.shields.io/crates/l/cumin.svg" alt="License:MIT" />
+</p>
 
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
 
