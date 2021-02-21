@@ -1,6 +1,11 @@
-# cumin 🌿
+![](https://user-images.githubusercontent.com/2749629/108620455-ad24e400-746f-11eb-85b9-dfec1b8f8457.png)
 
-is a Structured, Typed and Mini-Programmable Configuration Language.
+
+[![Crates.io](https://img.shields.io/crates/v/cumin.svg)](https://crates.io/crates/cumin)
+![CI](https://github.com/cympfh/cumin/workflows/test/badge.svg)
+![License](https://img.shields.io/crates/l/cumin.svg)
+
+Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
 
 ## Documents
 
