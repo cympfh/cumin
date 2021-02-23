@@ -306,6 +306,18 @@ mod test_statement {
                 ]
             )
         );
+        // without type-annotation & with default values
+        assert_stmt!(
+            "struct P { x: Int, y: Int = 2, z = 2 }",
+            Struct(
+                "P".to_string(),
+                vec![
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, Some(Val(Nat(2)))),
+                    ("z".to_string(), Typing::Any, Some(Val(Nat(2)))),
+                ]
+            )
+        );
     }
 
     #[test]

@@ -728,6 +728,10 @@ mod test_eval_from_parse {
                 ("y".to_string(), JSON::Nat(2)),
             ])
         );
+        assert_eval!(
+            "struct P { x = 42 } P(2)",
+            JSON::Dict(vec![("x".to_string(), JSON::Nat(2))])
+        );
     }
 
     #[test]
