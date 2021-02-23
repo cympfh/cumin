@@ -55,16 +55,16 @@ pub fn stmt(input: &str) -> IResult<&str, Statement> {
                 tuple((
                     identifier,
                     commentable_spaces,
-                    tag(":"),
-                    commentable_spaces,
-                    typing,
-                    commentable_spaces,
+                    opt(map(
+                        tuple((tag(":"), commentable_spaces, typing, commentable_spaces)),
+                        |(_, _, typ, _)| typ,
+                    )),
                     opt(map(
                         tuple((tag("="), commentable_spaces, expr, commentable_spaces)),
                         |(_, _, e, _)| e,
                     )),
                 )),
-                |(name, _, _, _, typ, _, default_value)| (name, typ, default_value),
+                |(name, _, typ, default_value)| (name, typ.unwrap_or(Typing::Any), default_value),
             ),
         );
         map(
@@ -303,6 +303,18 @@ mod test_statement {
                     ),
                     ("x".to_string(), Typing::Int, None),
                     ("y".to_string(), Typing::Int, Some(Val(Nat(0)))),
+                ]
+            )
+        );
+        // without type-annotation & with default values
+        assert_stmt!(
+            "struct P { x: Int, y: Int = 2, z = 2 }",
+            Struct(
+                "P".to_string(),
+                vec![
+                    ("x".to_string(), Typing::Int, None),
+                    ("y".to_string(), Typing::Int, Some(Val(Nat(2)))),
+                    ("z".to_string(), Typing::Any, Some(Val(Nat(2)))),
                 ]
             )
         );

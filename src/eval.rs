@@ -47,8 +47,19 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // Hoisting struct
     for stmt in conf.0.iter() {
         match stmt {
-            Struct(name, fields) => {
-                env.structs.insert(name.clone(), fields.clone());
+            Struct(sname, fields) => {
+                let mut simplified_fields = vec![];
+                for (name, typ, default) in fields.iter() {
+                    let simplified = match default {
+                        Some(e) => {
+                            let val = eval_expr(&mut env, &e)?.cast(&typ)?;
+                            (name.to_string(), val.type_of(), Some(Expr::Val(val)))
+                        }
+                        None => (name.to_string(), typ.clone(), None),
+                    };
+                    simplified_fields.push(simplified);
+                }
+                env.structs.insert(sname.clone(), simplified_fields);
             }
             _ => (),
         }
@@ -716,6 +727,10 @@ mod test_eval_from_parse {
                 ("x".to_string(), JSON::Nat(42)),
                 ("y".to_string(), JSON::Nat(2)),
             ])
+        );
+        assert_eval!(
+            "struct P { x = 42 } P(2)",
+            JSON::Dict(vec![("x".to_string(), JSON::Nat(2))])
         );
     }
 
