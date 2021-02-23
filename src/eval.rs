@@ -47,8 +47,19 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // Hoisting struct
     for stmt in conf.0.iter() {
         match stmt {
-            Struct(name, fields) => {
-                env.structs.insert(name.clone(), fields.clone());
+            Struct(sname, fields) => {
+                let mut simplified_fields = vec![];
+                for (name, typ, default) in fields.iter() {
+                    let simplified = match default {
+                        Some(e) => {
+                            let val = eval_expr(&mut env, &e)?.cast(&typ)?;
+                            (name.to_string(), val.type_of(), Some(Expr::Val(val)))
+                        }
+                        None => (name.to_string(), typ.clone(), None),
+                    };
+                    simplified_fields.push(simplified);
+                }
+                env.structs.insert(sname.clone(), simplified_fields);
             }
             _ => (),
         }
