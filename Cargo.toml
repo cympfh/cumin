@@ -1,6 +1,6 @@
 [package]
 name = "cumin"
-version = "0.9.10"
+version = "0.9.11"
 authors = ["cympfh <cympfh@gmail.com>"]
 edition = "2018"
 license = "MIT"

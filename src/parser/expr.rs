@@ -6,7 +6,8 @@ use crate::parser::value::*;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    combinator::{map, opt},
+    character::complete::space1,
+    combinator::{map, opt, peek},
     multi::{fold_many0, separated_list0, separated_list1},
     sequence::{delimited, preceded, terminated, tuple},
     IResult,
@@ -152,9 +153,13 @@ fn factor(input: &str) -> IResult<&str, Expr> {
         |(_, e, _)| e,
     );
     let minused = map(preceded(tag("-"), ab_expr), |e| Expr::Minus(Box::new(e)));
-    let notted = map(preceded(tag("not"), preceded(spaces, term)), |e| {
-        Expr::Not(Box::new(e))
-    });
+    let notted = map(
+        preceded(
+            preceded(tag("not"), peek(alt((space1, tag("("))))),
+            preceded(spaces, term),
+        ),
+        |e| Expr::Not(Box::new(e)),
+    );
 
     // <identifier>.<identifier> ( <expr>, )
     let apply_expr = map(
@@ -431,6 +436,8 @@ mod test_expr {
         assert_expr!("true", Val(Bool(true)));
         assert_expr!("false", Val(Bool(false)));
         assert_expr!("not false", Not(Box::new(Val(Bool(false)))));
+        assert_expr!("not(false)", Not(Box::new(Val(Bool(false)))));
+        assert_expr!("notfalse", Var("notfalse".to_string()));
         assert_expr!(
             "true or false",
             Or(Box::new(Val(Bool(true))), Box::new(Val(Bool(false))))
