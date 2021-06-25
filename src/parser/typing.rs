@@ -1,6 +1,9 @@
-use crate::parser::util::{identifier, spaces};
+use crate::parser::util::{commentable_spaces, identifier, spaces};
 use nom::combinator;
-use nom::{branch::alt, bytes::complete::tag, combinator::map, sequence::tuple, IResult};
+use nom::{
+    branch::alt, bytes::complete::tag, combinator::map, multi::separated_list1, sequence::tuple,
+    IResult,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Typing {
@@ -11,6 +14,7 @@ pub enum Typing {
     Bool,
     String,
     Array(Box<Typing>),
+    Tuple(Vec<Typing>),
     Option(Box<Typing>),
     UserTyping(String),
 }
@@ -36,6 +40,14 @@ pub fn typing(input: &str) -> IResult<&str, Typing> {
                 spaces,
             )),
             |item| Typing::Array(Box::new(item.4)),
+        ),
+        map(
+            tuple((
+                tag("("),
+                separated_list1(tuple((tag(","), commentable_spaces)), typing),
+                tag(")"),
+            )),
+            |item| Typing::Tuple(item.1),
         ),
         map(
             tuple((
@@ -73,6 +85,18 @@ impl Typing {
             (Typing::Array(s), Typing::Array(t)) => {
                 Typing::unify(s, t).map(|typ| Typing::Array(Box::new(typ)))
             }
+            (Typing::Tuple(xs), Typing::Tuple(ys)) => {
+                if xs.len() == ys.len() {
+                    let types = xs
+                        .iter()
+                        .zip(ys.iter())
+                        .map(|(x, y)| Typing::unify(x, y))
+                        .collect::<Option<Vec<Typing>>>()?;
+                    Some(Typing::Tuple(types))
+                } else {
+                    None
+                }
+            }
             (Typing::Option(s), Typing::Option(t)) => {
                 Typing::unify(s, t).map(|typ| Typing::Option(Box::new(typ)))
             }
@@ -105,6 +129,17 @@ mod test_typing {
             "Array<Array<String>>",
             Typing::Array(Box::new(Typing::Array(Box::new(Typing::String))))
         );
+        assert_typing!("(Int, Nat)", Typing::Tuple(vec![Typing::Int, Typing::Nat]));
+        assert_typing!(
+            "(Int, (Option<Nat>, S))",
+            Typing::Tuple(vec![
+                Typing::Int,
+                Typing::Tuple(vec![
+                    Typing::Option(Box::new(Typing::Nat)),
+                    Typing::UserTyping("S".to_string()),
+                ])
+            ])
+        );
         assert_typing!("Option<String>", Typing::Option(Box::new(Typing::String)));
         assert_typing!(
             "Option<Array<String>>",
@@ -131,6 +166,11 @@ mod test_typing {
         assert_unify!(Typing::Nat, Typing::Any, Some(Typing::Nat));
         assert_unify!(Typing::Nat, Typing::Int, Some(Typing::Int));
         assert_unify!(Typing::Float, Typing::Int, Some(Typing::Float));
+        assert_unify!(
+            Typing::Tuple(vec![Typing::Any, Typing::Nat]),
+            Typing::Tuple(vec![Typing::Nat, Typing::Int]),
+            Some(Typing::Tuple(vec![Typing::Nat, Typing::Int]))
+        );
         assert_unify!(Typing::Option(Box::new(Typing::Any)), Typing::Int, None);
         assert_unify!(
             Typing::Option(Box::new(Typing::Any)),

@@ -62,6 +62,13 @@ impl JSON {
                     .collect();
                 Array(elements)
             }
+            Value::Tuple(elements) => {
+                let elements = elements
+                    .iter()
+                    .map(|e| JSON::from_cumin((*e).clone()))
+                    .collect();
+                Array(elements)
+            }
             Value::Optional(_typ, val) => match *val {
                 Some(x) => JSON::from_cumin(x),
                 None => JSON::Null,

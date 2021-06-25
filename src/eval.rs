@@ -505,6 +505,13 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             }
             Ok(Array(element_type, values))
         }
+        Expr::Tuple(elements) => {
+            let elements: Vec<Value> = elements
+                .iter()
+                .map(|e| eval_expr(&env, &e))
+                .collect::<Result<_>>()?;
+            Ok(Value::Tuple(elements))
+        }
         Blocked(conf_inner) => {
             let mut env_inner: Environ = (*env).clone();
             eval_conf(&mut env_inner, &conf_inner)
@@ -802,6 +809,25 @@ mod test_eval_from_parse {
         assert_eval!(
             "let f(x: Int) = x; fn g (x: Int) = f(x); g(2)",
             JSON::Int(2)
+        );
+    }
+
+    #[test]
+    fn test_tuple() {
+        assert_eval!(
+            "(1, 2, 3)",
+            JSON::Array(vec![JSON::Nat(1), JSON::Nat(2), JSON::Nat(3)])
+        );
+        assert_eval!(
+            "struct S{x:Int}
+            (1, (S(2), \"3\"))",
+            JSON::Array(vec![
+                JSON::Nat(1),
+                JSON::Array(vec![
+                    JSON::Dict(vec![("x".to_string(), JSON::Int(2))]),
+                    JSON::Str("3".to_string())
+                ]),
+            ])
         );
     }
 }
