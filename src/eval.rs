@@ -454,6 +454,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 (Int(x), Int(y)) => Bool(x == y),
                 (Float(x), Float(y)) => Bool(x == y),
                 (Bool(x), Bool(y)) => Bool(x == y),
+                (Array(t, xs), Array(s, ys)) => Bool(t == s && xs == ys),
                 (x, y) => bail_type_error!(compute x "==" y),
             };
             Ok(ret)
@@ -631,6 +632,8 @@ mod test_eval_from_parse {
     fn test_compare() {
         assert_eval!("let x = 2; x == 2", JSON::Bool(true));
         assert_eval!("let x = 2; 2 < x + 1", JSON::Bool(true));
+        assert_eval!("[] == []", JSON::Bool(true));
+        assert_eval!("[1] == [1]", JSON::Bool(true));
     }
 
     #[test]
