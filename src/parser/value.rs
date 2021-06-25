@@ -1,3 +1,4 @@
+use crate::parser::entries::*;
 use crate::parser::typing::*;
 use crate::parser::util::*;
 use anyhow::Result;
@@ -20,7 +21,7 @@ pub enum Value {
     Bool(bool),
     Str(String),
     Env(String, Option<String>),
-    Dict(Option<String>, Vec<(String, Value)>),
+    Dict(Option<String>, Entries),
     EnumVariant(String, String),
     Array(Typing, Vec<Value>),
     Optional(Typing, Box<Option<Value>>),

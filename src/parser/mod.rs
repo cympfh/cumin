@@ -1,4 +1,5 @@
 pub mod cumin;
+pub mod entries;
 pub mod expr;
 pub mod module;
 pub mod statement;

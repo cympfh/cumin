@@ -1,6 +1,8 @@
 use crate::builtins;
 use crate::json::*;
-use crate::parser::{cumin::*, expr::*, module::load_module, statement::*, typing::*, value::*};
+use crate::parser::{
+    cumin::*, entries::*, expr::*, module::load_module, statement::*, typing::*, value::*,
+};
 use crate::{assert_args_eq, assert_args_leq, bail_type_error};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
@@ -181,7 +183,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                             bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
                         }
                     }
-                    Ok(Dict(Some(fname.to_string()), items))
+                    Ok(Dict(Some(fname.to_string()), Entries::new(items)))
                 }
                 // Type Apply
                 _ if env.types.contains_key(fname) => {
@@ -253,7 +255,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                         }
                     }
                 }
-                Ok(Dict(Some(fname.to_string()), values))
+                Ok(Dict(Some(fname.to_string()), Entries::new(values)))
             } else if let Some((env_inner, fields, body)) = env.funs.get(fname) {
                 let args: HashMap<String, Expr> = items.iter().cloned().collect();
                 assert_args_leq!(fname, args.len(), fields.len());
@@ -304,7 +306,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 let val = eval_expr(&env, &val)?.cast(typ)?;
                 values.push((name.to_string(), val.clone()));
             }
-            Ok(Dict(None, values))
+            Ok(Dict(None, Entries::new(values)))
         }
         Concat(x, y) => {
             let a = eval_expr(&env, &x)?;
@@ -646,6 +648,9 @@ mod test_eval_from_parse {
         assert_eval!("[1] == [1]", JSON::Bool(true));
         assert_eval!("[1, 2] == concat([1], [2])", JSON::Bool(true));
         assert_eval!("[1, 2] != [2, 1]", JSON::Bool(true));
+        assert_eval!("{{ x=1 }} == {{ x=1 }}", JSON::Bool(true));
+        assert_eval!("{{ x=1, y=1 }} == {{ y=1, x=1 }}", JSON::Bool(true));
+        assert_eval!("{{ x=1, y=2 }} != {{ y=1, x=2 }}", JSON::Bool(true));
     }
 
     #[test]
