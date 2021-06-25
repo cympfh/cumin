@@ -24,6 +24,7 @@ pub enum Value {
     Dict(Option<String>, Entries),
     EnumVariant(String, String),
     Array(Typing, Vec<Value>),
+    Tuple(Typing, Vec<Value>),
     Optional(Typing, Box<Option<Value>>),
     Wrapped(Typing, Box<Value>),
 }

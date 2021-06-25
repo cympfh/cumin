@@ -1,6 +1,9 @@
-use crate::parser::util::{identifier, spaces};
+use crate::parser::util::{commentable_spaces, identifier, spaces};
 use nom::combinator;
-use nom::{branch::alt, bytes::complete::tag, combinator::map, sequence::tuple, IResult};
+use nom::{
+    branch::alt, bytes::complete::tag, combinator::map, multi::separated_list1, sequence::tuple,
+    IResult,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Typing {
@@ -11,6 +14,7 @@ pub enum Typing {
     Bool,
     String,
     Array(Box<Typing>),
+    Tuple(Vec<Typing>),
     Option(Box<Typing>),
     UserTyping(String),
 }
@@ -36,6 +40,14 @@ pub fn typing(input: &str) -> IResult<&str, Typing> {
                 spaces,
             )),
             |item| Typing::Array(Box::new(item.4)),
+        ),
+        map(
+            tuple((
+                tag("("),
+                separated_list1(tuple((tag(","), commentable_spaces)), typing),
+                tag(")"),
+            )),
+            |item| Typing::Tuple(item.1),
         ),
         map(
             tuple((
@@ -104,6 +116,17 @@ mod test_typing {
         assert_typing!(
             "Array<Array<String>>",
             Typing::Array(Box::new(Typing::Array(Box::new(Typing::String))))
+        );
+        assert_typing!("(Int, Nat)", Typing::Tuple(vec![Typing::Int, Typing::Nat]));
+        assert_typing!(
+            "(Int, (Option<Nat>, S))",
+            Typing::Tuple(vec![
+                Typing::Int,
+                Typing::Tuple(vec![
+                    Typing::Option(Box::new(Typing::Nat)),
+                    Typing::UserTyping("S".to_string()),
+                ])
+            ])
         );
         assert_typing!("Option<String>", Typing::Option(Box::new(Typing::String)));
         assert_typing!(
