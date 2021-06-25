@@ -510,9 +510,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 .iter()
                 .map(|e| eval_expr(&env, &e))
                 .collect::<Result<_>>()?;
-            let inner_types = elements.iter().map(|val| val.type_of()).collect();
-            let ty = Typing::Tuple(inner_types);
-            Ok(Value::Tuple(ty, elements))
+            Ok(Value::Tuple(elements))
         }
         Blocked(conf_inner) => {
             let mut env_inner: Environ = (*env).clone();

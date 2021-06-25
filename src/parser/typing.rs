@@ -85,6 +85,18 @@ impl Typing {
             (Typing::Array(s), Typing::Array(t)) => {
                 Typing::unify(s, t).map(|typ| Typing::Array(Box::new(typ)))
             }
+            (Typing::Tuple(xs), Typing::Tuple(ys)) => {
+                if xs.len() == ys.len() {
+                    let types = xs
+                        .iter()
+                        .zip(ys.iter())
+                        .map(|(x, y)| Typing::unify(x, y))
+                        .collect::<Option<Vec<Typing>>>()?;
+                    Some(Typing::Tuple(types))
+                } else {
+                    None
+                }
+            }
             (Typing::Option(s), Typing::Option(t)) => {
                 Typing::unify(s, t).map(|typ| Typing::Option(Box::new(typ)))
             }
@@ -154,6 +166,11 @@ mod test_typing {
         assert_unify!(Typing::Nat, Typing::Any, Some(Typing::Nat));
         assert_unify!(Typing::Nat, Typing::Int, Some(Typing::Int));
         assert_unify!(Typing::Float, Typing::Int, Some(Typing::Float));
+        assert_unify!(
+            Typing::Tuple(vec![Typing::Any, Typing::Nat]),
+            Typing::Tuple(vec![Typing::Nat, Typing::Int]),
+            Some(Typing::Tuple(vec![Typing::Nat, Typing::Int]))
+        );
         assert_unify!(Typing::Option(Box::new(Typing::Any)), Typing::Int, None);
         assert_unify!(
             Typing::Option(Box::new(Typing::Any)),

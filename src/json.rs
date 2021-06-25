@@ -62,7 +62,7 @@ impl JSON {
                     .collect();
                 Array(elements)
             }
-            Value::Tuple(_typ, elements) => {
+            Value::Tuple(elements) => {
                 let elements = elements
                     .iter()
                     .map(|e| JSON::from_cumin((*e).clone()))
