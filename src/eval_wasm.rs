@@ -12,7 +12,7 @@ pub fn eval_wasm(cumin: Cumin) -> Result<JSON> {
     Ok(JSON::from_cumin(val))
 }
 
-fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
+fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // Hoisting types
     for stmt in conf.0.iter() {
         match stmt {
@@ -28,8 +28,19 @@ fn eval_conf(env: &mut Environ, conf: &Cumin) -> Result<Value> {
     // Hoisting struct
     for stmt in conf.0.iter() {
         match stmt {
-            Struct(name, fields) => {
-                env.structs.insert(name.clone(), fields.clone());
+            Struct(sname, fields) => {
+                let mut simplified_fields = vec![];
+                for (name, typ, default) in fields.iter() {
+                    let simplified = match default {
+                        Some(e) => {
+                            let val = eval_expr(&mut env, &e)?.cast(&typ)?;
+                            (name.to_string(), val.type_of(), Some(Expr::Val(val)))
+                        }
+                        None => (name.to_string(), typ.clone(), None),
+                    };
+                    simplified_fields.push(simplified);
+                }
+                env.structs.insert(sname.clone(), simplified_fields);
             }
             _ => (),
         }
@@ -390,16 +401,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         Equal(x, y) => {
             let a = eval_expr(&env, &x)?;
             let b = eval_expr(&env, &y)?;
-            let ret = match (a, b) {
-                (Nat(x), Nat(y)) => Bool(x == y),
-                (Nat(x), Int(y)) => Bool(x as i128 == y),
-                (Int(x), Nat(y)) => Bool(x == y as i128),
-                (Int(x), Int(y)) => Bool(x == y),
-                (Float(x), Float(y)) => Bool(x == y),
-                (Bool(x), Bool(y)) => Bool(x == y),
-                (x, y) => bail_type_error!(compute x "==" y),
-            };
-            Ok(ret)
+            Ok(Bool(a == b))
         }
         Less(x, y) => {
             let a = eval_expr(&env, &x)?;
@@ -564,6 +566,10 @@ mod test_eval_from_parse {
     fn test_compare() {
         assert_eval!("let x = 2; x == 2", JSON::Bool(true));
         assert_eval!("let x = 2; 2 < x + 1", JSON::Bool(true));
+        assert_eval!("[] == []", JSON::Bool(true));
+        assert_eval!("[1] == [1]", JSON::Bool(true));
+        assert_eval!("[1, 2] == concat([1], [2])", JSON::Bool(true));
+        assert_eval!("[1, 2] != [2, 1]", JSON::Bool(true));
     }
 
     #[test]
