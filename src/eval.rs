@@ -447,17 +447,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         Equal(x, y) => {
             let a = eval_expr(&env, &x)?;
             let b = eval_expr(&env, &y)?;
-            let ret = match (a, b) {
-                (Nat(x), Nat(y)) => Bool(x == y),
-                (Nat(x), Int(y)) => Bool(x as i128 == y),
-                (Int(x), Nat(y)) => Bool(x == y as i128),
-                (Int(x), Int(y)) => Bool(x == y),
-                (Float(x), Float(y)) => Bool(x == y),
-                (Bool(x), Bool(y)) => Bool(x == y),
-                (Array(t, xs), Array(s, ys)) => Bool(t == s && xs == ys),
-                (x, y) => bail_type_error!(compute x "==" y),
-            };
-            Ok(ret)
+            Ok(Bool(a == b))
         }
         Less(x, y) => {
             let a = eval_expr(&env, &x)?;
@@ -634,6 +624,8 @@ mod test_eval_from_parse {
         assert_eval!("let x = 2; 2 < x + 1", JSON::Bool(true));
         assert_eval!("[] == []", JSON::Bool(true));
         assert_eval!("[1] == [1]", JSON::Bool(true));
+        assert_eval!("[1, 2] == concat([1], [2])", JSON::Bool(true));
+        assert_eval!("[1, 2] != [2, 1]", JSON::Bool(true));
     }
 
     #[test]
