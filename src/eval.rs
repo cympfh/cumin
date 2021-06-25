@@ -48,6 +48,16 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     for stmt in conf.0.iter() {
         match stmt {
             Struct(sname, fields) => {
+                // key duplication check
+                {
+                    let mut used = HashSet::new();
+                    for (name, _, _) in fields.iter() {
+                        if used.contains(&name) {
+                            bail!("Duplicated Key `{}` in struct `{}`", name, sname);
+                        }
+                        used.insert(name);
+                    }
+                }
                 let mut simplified_fields = vec![];
                 for (name, typ, default) in fields.iter() {
                     let simplified = match default {
@@ -280,6 +290,16 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         }
         AnonymousStruct(items) => {
             let mut values = vec![];
+            // key duplication check
+            {
+                let mut used = HashSet::new();
+                for (name, _, _) in items.iter() {
+                    if used.contains(&name) {
+                        bail!("Duplicated Key `{}` in an AnonymousStruct", name);
+                    }
+                    used.insert(name);
+                }
+            }
             for (name, typ, val) in items.iter() {
                 let val = eval_expr(&env, &val)?.cast(typ)?;
                 values.push((name.to_string(), val.clone()));
