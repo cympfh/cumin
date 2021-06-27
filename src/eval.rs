@@ -469,7 +469,19 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
         Equal(x, y) => {
             let a = eval_expr(&env, &x)?;
             let b = eval_expr(&env, &y)?;
-            Ok(Bool(a == b))
+            let s = a.type_of();
+            let t = b.type_of();
+            if let Some(ty) = Typing::unify(&s, &t) {
+                let a = a.cast(&ty)?;
+                let b = b.cast(&ty)?;
+                Ok(Bool(a == b))
+            } else {
+                bail!(
+                    "Cannot compare different type values: {:?} and {:?}",
+                    &a,
+                    &b
+                );
+            }
         }
         Less(x, y) => {
             let a = eval_expr(&env, &x)?;
@@ -658,6 +670,11 @@ mod test_eval_from_parse {
         assert_eval!("{{ x=1 }} == {{ x=1 }}", JSON::Bool(true));
         assert_eval!("{{ x=1, y=1 }} == {{ y=1, x=1 }}", JSON::Bool(true));
         assert_eval!("{{ x=1, y=2 }} != {{ y=1, x=2 }}", JSON::Bool(true));
+        assert_eval!("let x: Int = 1; x == 1", JSON::Bool(true));
+        assert_eval!(
+            "let x: Int = 1; let y: Nat = 1; [x] == [y]",
+            JSON::Bool(true)
+        );
     }
 
     #[test]
