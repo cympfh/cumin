@@ -392,6 +392,23 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             };
             Ok(ret)
         }
+        Mod(x, y) => {
+            let a = eval_expr(&env, &x)?;
+            let b = eval_expr(&env, &y)?;
+            let ret = match (a, b) {
+                (Nat(x), Nat(y)) => Nat(x % y),
+                (Nat(x), Int(y)) => Int(x as i128 % y),
+                (Nat(x), Float(y)) => Float(x as f64 % y),
+                (Int(x), Nat(y)) => Int(x % y as i128),
+                (Int(x), Int(y)) => Int(x % y),
+                (Int(x), Float(y)) => Float(x as f64 % y),
+                (Float(x), Nat(y)) => Float(x % y as f64),
+                (Float(x), Int(y)) => Float(x % y as f64),
+                (Float(x), Float(y)) => Float(x % y),
+                (x, y) => bail_type_error!(compute x "%" y),
+            };
+            Ok(ret)
+        }
         Pow(x, y) => {
             let a = eval_expr(&env, &x)?;
             let b = eval_expr(&env, &y)?;
