@@ -532,6 +532,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let val = eval_expr(&env, &expr)?;
             val.coerce(typ)
         }
+        If(cond, body_then, body_else) => {
+            let cond = eval_expr(&env, &cond)?;
+            match cond {
+                Value::Bool(true) => eval_expr(&env, &body_then),
+                Value::Bool(false) => eval_expr(&env, &body_else),
+                _ => bail!("Condition must be bool"),
+            }
+        }
     }
 }
 
@@ -845,6 +853,15 @@ mod test_eval_from_parse {
                     JSON::Str("3".to_string())
                 ]),
             ])
+        );
+    }
+
+    #[test]
+    fn test_if() {
+        assert_eval!("if 1 == 1 { [] } else { [1] }", JSON::Array(vec![]));
+        assert_eval!(
+            "if 1 > 2 { [] } else { [1] }",
+            JSON::Array(vec![JSON::Nat(1)])
         );
     }
 }
