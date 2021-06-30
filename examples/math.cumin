@@ -1,0 +1,8 @@
+{{
+    add = 1 + 2 + 3,
+    prod = 1 * 2 * 3 * 4 * 5,
+    nat_div = 7 / 2,  // 3
+    nat_mod = 7 % 2,
+    float_div = 7.0 / 2,  // 3.5
+    float_mod = 7.5 % 2,
+}}
