@@ -20,14 +20,19 @@ Functions are declared with `fn` keyword or `let` keyword.
 ### Examples
 
 ```rust,no_run,noplayground
+fn doubled(x: Nat) = x * 2;
+doubled(10) // 20
+```
+
+```rust,no_run,noplayground
 struct S {
     x: Int,
 }
 
-fn f(x: Int) = S { x = x + 1 };
-let g(x: Int) = S(x-1);
+fn inc(x: Int) = S { x = x + 1 };
+let dec(x: Int) = S(x-1);
 
-[f(2), g(2)]  // S{x=3}, S{x=1}
+[inc(2), dec(2)]  // S{x=3}, S{x=1}
 ```
 
 ## Lexical Scopes

@@ -12,6 +12,7 @@
     - [Dictionary](spec/dict.md)
     - [Array](spec/array.md)
     - [Option](spec/option.md)
+    - [Tuple](spec/tuple.md)
     - [Typing](spec/typing.md)
         - [Types](spec/typing/types.md)
         - [Type Annotation](spec/typing/type-annotation.md)

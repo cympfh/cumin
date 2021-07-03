@@ -9,6 +9,7 @@
 | Minus     |  `-`  | `-x`          | \\( -x \\)  |
 | Multiply  |  `*`  | `x * y`       | \\( xy \\)  |
 | Division  |  `/`  | `x / y`       | \\( x/y \\) |
+| Modulo    |  `%`  | `x % y`       | \\( x \bmod y \\) |
 | Power     |  `**` | `x ** y`      | \\( x^y \\) |
 | Priority  | `()`  | `(x + y) * z` | \\( (x+y)\times z \\) |
 
@@ -26,4 +27,30 @@ It is one-way `Nat -> Int -> Float`.
 | Or        |  `or`   | `x or y`    | \\( a \lor b \\)   |
 | Xor       |  `xor`  | `x xor y`   | \\( a \oplus b \\) |
 | Not       |  `not`  | `not x`     | \\( \lnot a \\)    |
+
+## Equality
+
+| Name    | cumin | Example                   | Math            |
+|---------|-------|---------------------------|-----------------|
+| Equal   | `==`  | `1 == 2` `[1,2] == [1,2]` | \\( x = y \\)   |
+| Inequal | `!=`  | `1 != 2` `[1,2] != [1,2]` | \\( x \ne y \\) |
+
+All objects containing your custom struct values can be compared with `==` and `!=`.
+
+## Orderity of Numbers
+
+| Name         | cumin | Example  | Math             |
+|--------------|-------|----------|------------------|
+| LessThan     | `<`   | `x < y`  | \\( x < y \\)    |
+| LessEqual    | `<=`  | `x <= y` | \\( x \leq y \\) |
+| GreaterThan  | `>`   | `x > y`  | \\( x > y \\)    |
+| GreaterEqual | `>=`  | `x >= y` | \\( x \geq y \\) |
+
+Only numbers can be compared.
+
+## Array Operators
+
+| Name   | cumin | Example         | Math |
+|--------|-------|-----------------|------|
+| Concat | `++`  | `[1] ++ [2, 3]` |      |
 

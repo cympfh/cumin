@@ -31,8 +31,16 @@ Floating numbers are denoted with period (`.`), like
 ```
 
 _NOTE_:
-Following literals are invalid in v0.9.3: `.1`, `1.`.
-You should write `0.1` and `1.0`.
+You can omit leading zeros.
+For example, `.1` is `0.1`, `1.` is `1.0`.
+
+### Number Types
+
+There are 3 types for numbers: `Nat`, `Int` and `Float`.
+
+`Nat` is Natural Numbers. It is zero or positive integers.
+`Int` is Integer Numbers.
+`Float` is Floating Numbers (pseudo-Real Numbers).
 
 ## Strings
 
@@ -41,6 +49,10 @@ Strings are denoted by quoting double-quotation (`"`).
 ```rust,no_run,noplayground
 "Hello, World"
 ```
+
+### Type
+
+`String` is the type for Strings.
 
 ### Escape
 
@@ -52,4 +64,9 @@ Escape with `\`.
 
 ## Booleans
 
-There are `true` and `false` as Booleans.
+There are `true` and `false` as Boolean Values.
+No other values doesn't exist.
+
+### Type
+
+`Bool` is the type for Booleans.
