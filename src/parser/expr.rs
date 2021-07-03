@@ -38,6 +38,7 @@ pub enum Expr {
     Tuple(Vec<Expr>),
     Blocked(Box<Cumin>),
     AsCast(Box<Expr>, Typing),
+    If(Box<Expr>, Box<Expr>, Box<Expr>),
 }
 
 // <EXPR> ::= <AS>
@@ -48,6 +49,7 @@ pub enum Expr {
 // <FACTOR> ::= ( <EXPR> ) | -<TERM> | not <TERM>
 //            | f(x) | S{x=x} | { ... } | Z::X | {{ ... }}
 //            | <EXPR> as <TYPE> | [ <EXPR> ,... ]
+//            | if <EXPR> { <EXPR> } else { EXPR }
 
 pub fn expr(input: &str) -> IResult<&str, Expr> {
     terminated(logic_expr, commentable_spaces)(input)
@@ -280,6 +282,29 @@ fn factor(input: &str) -> IResult<&str, Expr> {
         |item| Expr::Tuple(item.1),
     );
 
+    // if <expr> { <expr> } else { <expr> }
+    let if_expr = map(
+        tuple((
+            tuple((tag("if"), space1, commentable_spaces)),
+            expr,
+            tuple((tag("{"), commentable_spaces)),
+            expr,
+            tuple((
+                tag("}"),
+                commentable_spaces,
+                tag("else"),
+                commentable_spaces,
+                tag("{"),
+                commentable_spaces,
+            )),
+            expr,
+            tuple((tag("}"), commentable_spaces)),
+        )),
+        |(_, cond, _, body_then, _, body_else, _)| {
+            Expr::If(Box::new(cond), Box::new(body_then), Box::new(body_else))
+        },
+    );
+
     // <value>
     let avalue = map(value, Expr::Val);
 
@@ -298,6 +323,7 @@ fn factor(input: &str) -> IResult<&str, Expr> {
             apply_expr,
             tuple_expr,
             field_apply_expr,
+            if_expr,
             vvalue,
         )),
         commentable_spaces,
@@ -768,5 +794,17 @@ mod test_expr {
     #[test]
     fn test_tuple() {
         assert_expr!("(1, 2)", Expr::Tuple(vec![Val(Nat(1)), Val(Nat(2)),]));
+    }
+
+    #[test]
+    fn test_if() {
+        assert_expr!(
+            "if a { b } else { c }",
+            Expr::If(
+                Box::new(Expr::Var("a".to_string())),
+                Box::new(Expr::Var("b".to_string())),
+                Box::new(Expr::Var("c".to_string())),
+            )
+        );
     }
 }
