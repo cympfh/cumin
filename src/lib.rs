@@ -13,7 +13,7 @@ use crate::{eval_wasm::eval_wasm, parser::cumin::cumin};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn load(input: &str) -> String {
+pub fn compile(input: &str) -> String {
     match cumin(input) {
         Ok((rest, data)) => {
             if rest == "" {
