@@ -7,6 +7,7 @@ use nom::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Typing {
+    Null,
     Any,
     Nat,
     Int,
@@ -21,6 +22,7 @@ pub enum Typing {
 
 pub fn typing(input: &str) -> IResult<&str, Typing> {
     alt((
+        combinator::value(Typing::Null, tag("Null")),
         combinator::value(Typing::Any, tag("Any")),
         combinator::value(Typing::Any, tag("_")),
         combinator::value(Typing::Nat, tag("Nat")),

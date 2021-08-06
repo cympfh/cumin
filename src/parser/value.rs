@@ -15,6 +15,7 @@ use nom::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
+    Null,
     Nat(u128),
     Int(i128),
     Float(f64),
@@ -32,6 +33,7 @@ pub enum Value {
 impl Value {
     pub fn type_of(&self) -> Typing {
         match self {
+            Value::Null => Typing::Null,
             Value::Nat(_) => Typing::Nat,
             Value::Int(_) => Typing::Int,
             Value::Float(_) => Typing::Float,
@@ -200,6 +202,8 @@ pub fn value(input: &str) -> IResult<&str, Value> {
         ))
     };
 
+    let null_value = map(tag("Null"), |_| Value::Null);
+
     alt((
         const_values,
         float_value,
@@ -207,6 +211,7 @@ pub fn value(input: &str) -> IResult<&str, Value> {
         str_value,
         variant_value,
         env_value,
+        null_value,
     ))(input)
 }
 
@@ -268,6 +273,10 @@ mod test_value {
             "${USER:-hoge}",
             Value::Env("USER".to_string(), Some("hoge".to_string()))
         );
+    }
+    #[test]
+    fn test_null() {
+        assert_value!("Null", Value::Null);
     }
 
     macro_rules! assert_cast {

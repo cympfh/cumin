@@ -41,6 +41,7 @@ impl JSON {
     pub fn from_cumin(val: Value) -> Self {
         use JSON::*;
         match val {
+            Value::Null => Null,
             Value::Nat(x) => Nat(x),
             Value::Int(x) => Int(x),
             Value::Float(x) => Float(x),
