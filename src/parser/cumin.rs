@@ -1,15 +1,21 @@
 use crate::parser::expr::*;
 use crate::parser::statement::*;
 use crate::parser::util::*;
+use crate::parser::value::*;
 
-use nom::{combinator::map, multi::many0, sequence::tuple, IResult};
+use nom::{branch::alt, combinator::map, multi::many0, sequence::tuple, IResult};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cumin(pub Vec<Statement>, pub Expr);
 
 pub fn cumin(input: &str) -> IResult<&str, Cumin> {
     map(
-        tuple((commentable_spaces, many0(stmt), expr, commentable_spaces)),
+        tuple((
+            commentable_spaces,
+            many0(stmt),
+            alt((expr, map(commentable_spaces, |_| Expr::Val(Value::Null)))),
+            commentable_spaces,
+        )),
         |(_, ss, e, _)| Cumin(ss, e),
     )(input)
 }
@@ -18,7 +24,6 @@ pub fn cumin(input: &str) -> IResult<&str, Cumin> {
 mod test_cumin {
     use crate::parser::cumin::*;
     use crate::parser::typing::*;
-    use crate::parser::value::*;
     use Expr::*;
     use Statement::*;
     use Value::*;
@@ -82,6 +87,16 @@ mod test_cumin {
                     Let("x".to_string(), Typing::Any, Val(Nat(1)))
                 ],
                 Apply("X".to_string(), vec![Expr::Var("x".to_string())])
+            )
+        );
+        assert_cumin!(
+            "let x = 1; let y = 2;",
+            Cumin(
+                vec![
+                    Let("x".to_string(), Typing::Any, Val(Nat(1))),
+                    Let("y".to_string(), Typing::Any, Val(Nat(2))),
+                ],
+                Expr::Val(Value::Null)
             )
         );
     }

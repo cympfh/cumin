@@ -1,8 +1,6 @@
 use crate::builtins;
 use crate::json::*;
-use crate::parser::{
-    cumin::*, entries::*, expr::*, module::load_module, statement::*, typing::*, value::*,
-};
+use crate::parser::{cumin::*, entries::*, expr::*, statement::*, typing::*, value::*};
 use crate::{assert_args_eq, assert_args_leq, bail_type_error};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
@@ -103,9 +101,8 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
 
                     let path = Path::new(&path);
                     match read_to_string(&path) {
-                        Ok(content) => match load_module(&content) {
-                            Ok((_, data)) => {
-                                let cumin = Cumin(data, Expr::Val(Value::Nat(0)));
+                        Ok(content) => match cumin(&content) {
+                            Ok((_, cumin)) => {
                                 let _ = eval_conf(&mut env, &cumin)?;
                             }
                             err => {
