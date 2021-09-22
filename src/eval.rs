@@ -546,6 +546,20 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             let val = eval_expr(&env, &expr)?;
             val.coerce(typ)
         }
+        Prop(expr, prop) => {
+            let val = eval_expr(&env, &expr)?;
+            match &val {
+                Dict(_, entries) => {
+                    for (field, inval) in entries.iter() {
+                        if field == prop {
+                            return Ok(inval.clone());
+                        }
+                    }
+                    bail!("Cannot find property {} in {:?}", prop, &val);
+                }
+                _ => bail!("Cannot access properties in {:?}", &val),
+            }
+        }
     }
 }
 
@@ -859,6 +873,27 @@ mod test_eval_from_parse {
                     JSON::Str("3".to_string())
                 ]),
             ])
+        );
+    }
+
+    #[test]
+    fn test_prop() {
+        assert_eval!(
+            "
+            struct X { value: Nat }
+            let x = X(42);
+            x.value
+            ",
+            JSON::Nat(42)
+        );
+        assert_eval!(
+            "
+            struct X { value: Nat }
+            struct Y { x: X }
+            let y = Y(X(42));
+            y.x.value
+            ",
+            JSON::Nat(42)
         );
     }
 }
