@@ -8,7 +8,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::space1,
     combinator::{map, opt, peek},
-    multi::{fold_many0, separated_list0, separated_list1},
+    multi::{fold_many0, many1, separated_list0, separated_list1},
     sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
@@ -38,16 +38,18 @@ pub enum Expr {
     Tuple(Vec<Expr>),
     Blocked(Box<Cumin>),
     AsCast(Box<Expr>, Typing),
+    Prop(Box<Expr>, String),
 }
 
 // <EXPR> ::= <AS>
 // <LOGIC> ::= <AB> {==, !=, <, >, <=, >=} <AB> | <AB>
 // <AB> ::= <TERM> {and,or,xor,+,-} <TERM> | <TERM>
 // <TERM> ::= <AS> {*,/,**} <AS> | <AS>
-// <AS> ::= <FACTOR> as <FACTOR> | <FACTOR>
+// <AS> ::= <FACTOR> as <TYPE> | <FACTOR>
 // <FACTOR> ::= ( <EXPR> ) | -<TERM> | not <TERM>
 //            | f(x) | S{x=x} | { ... } | Z::X | {{ ... }}
-//            | <EXPR> as <TYPE> | [ <EXPR> ,... ]
+//            | [ <EXPR> ,... ]
+//            | <IDENTIFIER>.x
 
 pub fn expr(input: &str) -> IResult<&str, Expr> {
     terminated(logic_expr, commentable_spaces)(input)
@@ -221,6 +223,24 @@ fn factor(input: &str) -> IResult<&str, Expr> {
         },
     );
 
+    // <identifier>.<identifier>
+    let property_expr = map(
+        tuple((
+            identifier,
+            many1(map(
+                tuple((tag("."), commentable_spaces, identifier)),
+                |(_, _, prop)| prop,
+            )),
+        )),
+        |(parent, children)| {
+            let mut e = Expr::Prop(Box::new(Expr::Var(parent)), children[0].to_string());
+            for i in 1..children.len() {
+                e = Expr::Prop(Box::new(e), children[i].to_string());
+            }
+            e
+        },
+    );
+
     // {{ <identifier> = <exp> , }}
     let dict_expr = map(
         tuple((
@@ -298,6 +318,7 @@ fn factor(input: &str) -> IResult<&str, Expr> {
             apply_expr,
             tuple_expr,
             field_apply_expr,
+            property_expr,
             vvalue,
         )),
         commentable_spaces,
@@ -616,6 +637,18 @@ mod test_expr {
                     "Y".to_string(),
                     vec![FieledApply("Z".to_string(), vec![])]
                 )]
+            )
+        );
+    }
+
+    #[test]
+    fn test_prop() {
+        assert_expr!("A.x", Prop(Box::new(Var("A".to_string())), "x".to_string()));
+        assert_expr!(
+            "A.x.y",
+            Prop(
+                Box::new(Prop(Box::new(Var("A".to_string())), "x".to_string())),
+                "y".to_string()
             )
         );
     }
