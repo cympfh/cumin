@@ -32,13 +32,17 @@ fn find(path: String, cd: &Option<String>) -> Option<String> {
 }
 
 fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
-    // Hoisting types
     for stmt in conf.0.iter() {
         match stmt {
+            // Hoisting types
             Type(name, types) => {
                 let _ = env
                     .types
                     .insert(name.to_string(), types.iter().cloned().collect());
+            }
+            // Hoisting enums
+            Enum(name, variants) => {
+                env.enums.insert(name.clone(), variants.clone());
             }
             _ => (),
         }
@@ -70,16 +74,6 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
                     simplified_fields.push(simplified);
                 }
                 env.structs.insert(sname.clone(), simplified_fields);
-            }
-            _ => (),
-        }
-    }
-
-    // Hoisting enums
-    for stmt in conf.0.iter() {
-        match stmt {
-            Enum(name, variants) => {
-                env.enums.insert(name.clone(), variants.clone());
             }
             _ => (),
         }
