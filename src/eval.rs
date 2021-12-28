@@ -911,5 +911,24 @@ mod test_eval_from_parse {
                 ("dir".to_string(), JSON::Str("East".to_string()))
             ])])
         );
+        assert_eval!(
+            "
+            struct Item {
+                id: Int,
+                name: Name,
+            }
+            struct Name {
+                value: String,
+            }
+            [Item(0, Name(\"cympfh\"))]
+            ",
+            JSON::Array(vec![JSON::Dict(vec![
+                ("id".to_string(), JSON::Int(0)),
+                (
+                    "name".to_string(),
+                    JSON::Dict(vec![("value".to_string(), JSON::Str("cympfh".to_string()))])
+                )
+            ])])
+        );
     }
 }
