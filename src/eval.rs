@@ -890,4 +890,45 @@ mod test_eval_from_parse {
             JSON::Nat(42)
         );
     }
+
+    #[test]
+    fn test_hoist() {
+        assert_eval!(
+            "
+            struct Item {
+                id: Int,
+                dir: Direction = Direction::Unknown,
+            }
+            enum Direction {
+                Unknown,
+                East,
+                West,
+            }
+            [Item(0, Direction::East)]
+            ",
+            JSON::Array(vec![JSON::Dict(vec![
+                ("id".to_string(), JSON::Int(0)),
+                ("dir".to_string(), JSON::Str("East".to_string()))
+            ])])
+        );
+        assert_eval!(
+            "
+            struct Item {
+                id: Int,
+                name: Name,
+            }
+            struct Name {
+                value: String,
+            }
+            [Item(0, Name(\"cympfh\"))]
+            ",
+            JSON::Array(vec![JSON::Dict(vec![
+                ("id".to_string(), JSON::Int(0)),
+                (
+                    "name".to_string(),
+                    JSON::Dict(vec![("value".to_string(), JSON::Str("cympfh".to_string()))])
+                )
+            ])])
+        );
+    }
 }
