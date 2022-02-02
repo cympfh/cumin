@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Hello cumin.wasm!</title>
+    <script src='./pkg/cumin.js'></script>
+    <script>
+      var cumin = function(input) {
+        console.error("wasm not loaded!?");
+        return null;
+      }
+      const { load } = wasm_bindgen;
+      async function run() {
+        await wasm_bindgen('./pkg/cumin_bg.wasm');
+        cumin = function(input) {
+          return JSON.parse(load(input));
+        };
+        console.log("wasm loaded");
+      }
+      run();
+    </script>
+  </head>
+  <body>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <!-- <script src="./bootstrap.js"></script> -->
+  </body>
+</html>
+
