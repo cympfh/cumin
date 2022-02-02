@@ -12,6 +12,13 @@
 
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
 
+## wasm compile
+
+- Install `wasm-pack`,
+  - https://rustwasm.github.io/wasm-pack/installer/
+- Run `make wasm`,
+- Package `pkg/` produced.
+
 ## Documents
 
 - [cympfh.cc/cumin, English](https://cympfh.cc/cumin)
