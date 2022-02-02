@@ -18,7 +18,7 @@ pub enum Expr {
     Val(Value),
     Var(String),
     Apply(String, Vec<Expr>),
-    FieledApply(String, Vec<(String, Expr)>),
+    FieldApply(String, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Typing, Expr)>),
     Concat(Box<Expr>, Box<Expr>),
     Add(Box<Expr>, Box<Expr>),
@@ -215,7 +215,7 @@ fn factor(input: &str) -> IResult<&str, Expr> {
         |(fs, _, _, _, args, _, _)| {
             let n = fs.len();
             assert!(n > 0);
-            let mut e = Expr::FieledApply(fs[n - 1].to_string(), args);
+            let mut e = Expr::FieldApply(fs[n - 1].to_string(), args);
             for i in (0..n - 1).rev() {
                 e = Expr::Apply(fs[i].to_string(), vec![e]);
             }
@@ -597,14 +597,14 @@ mod test_expr {
 
     #[test]
     fn test_field_apply() {
-        assert_expr!("X{}", FieledApply("X".to_string(), vec![]));
+        assert_expr!("X{}", FieldApply("X".to_string(), vec![]));
         assert_expr!(
             "X{x=1}",
-            FieledApply("X".to_string(), vec![("x".to_string(), Val(Nat(1)))])
+            FieldApply("X".to_string(), vec![("x".to_string(), Val(Nat(1)))])
         );
         assert_expr!(
             "X { x=1, y=-2, z=\"x\"}",
-            FieledApply(
+            FieldApply(
                 "X".to_string(),
                 vec![
                     ("x".to_string(), Val(Nat(1))),
@@ -620,7 +620,7 @@ mod test_expr {
                 y=-2,//comment
                 z=\"x\"
                 } // comment",
-            FieledApply(
+            FieldApply(
                 "X".to_string(),
                 vec![
                     ("x".to_string(), Val(Nat(1))),
@@ -635,7 +635,7 @@ mod test_expr {
                 "X".to_string(),
                 vec![Apply(
                     "Y".to_string(),
-                    vec![FieledApply("Z".to_string(), vec![])]
+                    vec![FieldApply("Z".to_string(), vec![])]
                 )]
             )
         );
