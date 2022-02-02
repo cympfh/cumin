@@ -1,6 +1,7 @@
 use crate::builtins;
 use crate::json::*;
-use crate::parser::{cumin::*, entries::*, expr::*, statement::*, typing::*, value::*};
+use crate::parser;
+use crate::parser::{cumin::Cumin, entries::*, expr::*, statement::*, typing::*, value::*};
 use crate::{assert_args_eq, assert_args_leq, bail_type_error};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
@@ -11,17 +12,20 @@ use Statement::*;
 
 pub fn eval(cumin: Cumin, cd: Option<String>) -> Result<JSON> {
     let mut env = Environ::new(cd);
-    let val = eval_conf(&mut env, &cumin)?;
+    let val = eval_cumin(&mut env, &cumin)?;
     Ok(JSON::from_cumin(val))
 }
 
-fn find(path: String, cd: &Option<String>) -> Option<String> {
+fn find(path: String, env: &Environ) -> Option<String> {
+    if env.wasm {
+        return None;
+    }
     let f = Path::new(&path);
     if f.is_file() {
         return Some(path);
     }
     if f.is_relative() {
-        if let Some(dir) = cd {
+        if let Some(dir) = &env.cd {
             let f = Path::new(&dir).join(f);
             if f.is_file() {
                 return Some(String::from(f.to_str().unwrap()));
@@ -31,8 +35,9 @@ fn find(path: String, cd: &Option<String>) -> Option<String> {
     None
 }
 
-fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
-    for stmt in conf.0.iter() {
+pub fn eval_cumin(mut env: &mut Environ, cumin: &Cumin) -> Result<Value> {
+    // Hoisting types
+    for stmt in cumin.0.iter() {
         match stmt {
             // Hoisting types
             Type(name, types) => {
@@ -49,7 +54,7 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
     }
 
     // Hoisting struct
-    for stmt in conf.0.iter() {
+    for stmt in cumin.0.iter() {
         match stmt {
             Struct(sname, fields) => {
                 // key duplication check
@@ -79,14 +84,24 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
+    // Hoisting enums
+    for stmt in cumin.0.iter() {
+        match stmt {
+            Enum(name, variants) => {
+                env.enums.insert(name.clone(), variants.clone());
+            }
+            _ => (),
+        }
+    }
+
     // Evaluating let, functions, load-modules
-    for stmt in conf.0.iter() {
+    for stmt in cumin.0.iter() {
         match stmt {
             Fun(name, args, body) => {
                 env.funs
                     .insert(name.clone(), (env.clone(), args.to_vec(), body.clone()));
             }
-            Import(path) => match find(path.to_string(), &env.cd) {
+            Import(path) => match find(path.to_string(), &env) {
                 Some(path) => {
                     if env.loaded_modules.contains(&path) {
                         continue;
@@ -95,9 +110,9 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
 
                     let path = Path::new(&path);
                     match read_to_string(&path) {
-                        Ok(content) => match cumin(&content) {
+                        Ok(content) => match parser::cumin::cumin(&content) {
                             Ok((_, cumin)) => {
-                                let _ = eval_conf(&mut env, &cumin)?;
+                                let _ = eval_cumin(&mut env, &cumin)?;
                             }
                             err => {
                                 eprintln!("Error in loading {:?}", path);
@@ -121,7 +136,7 @@ fn eval_conf(mut env: &mut Environ, conf: &Cumin) -> Result<Value> {
         }
     }
 
-    eval_expr(&env, &conf.1)
+    eval_expr(&env, &cumin.1)
 }
 
 fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
@@ -532,9 +547,9 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 .collect::<Result<_>>()?;
             Ok(Value::Tuple(elements))
         }
-        Blocked(conf_inner) => {
+        Blocked(inner) => {
             let mut env_inner: Environ = (*env).clone();
-            eval_conf(&mut env_inner, &conf_inner)
+            eval_cumin(&mut env_inner, &inner)
         }
         AsCast(expr, typ) => {
             let val = eval_expr(&env, &expr)?;
@@ -582,8 +597,9 @@ fn eval_value(env: &Environ, value: &Value) -> Result<Value> {
 }
 
 #[derive(Clone)]
-struct Environ {
+pub struct Environ {
     cd: Option<String>,
+    wasm: bool,
     types: HashMap<String, Vec<Typing>>,
     structs: HashMap<String, Vec<(String, Typing, Option<Expr>)>>,
     enums: HashMap<String, Vec<String>>,
@@ -597,10 +613,24 @@ impl Environ {
     pub fn new(cd: Option<String>) -> Self {
         Self {
             cd,
+            wasm: false,
             types: HashMap::new(),
             structs: HashMap::new(),
             enums: HashMap::new(),
             env_vars: env::vars().collect(),
+            vars: HashMap::new(),
+            loaded_modules: HashSet::new(),
+            funs: HashMap::new(),
+        }
+    }
+    pub fn wasm() -> Self {
+        Self {
+            cd: None,
+            wasm: true,
+            types: HashMap::new(),
+            structs: HashMap::new(),
+            enums: HashMap::new(),
+            env_vars: HashMap::new(),
             vars: HashMap::new(),
             loaded_modules: HashSet::new(),
             funs: HashMap::new(),
