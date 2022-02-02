@@ -233,7 +233,7 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                 _ => bail!("Cannot resolve name `{}`.", fname),
             }
         }
-        FieledApply(fname, items) => {
+        FieldApply(fname, items) => {
             if let Some(fields) = env.structs.get(fname) {
                 let args: HashMap<String, Expr> = items.iter().cloned().collect();
                 assert_args_leq!(fname, args.len(), fields.len());
