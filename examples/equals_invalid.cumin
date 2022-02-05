@@ -1,0 +1,5 @@
+struct F { x: Int }
+struct G { x: Nat }
+
+// We cannot compare different types!
+F(1) != G(2)

@@ -1,27 +1,15 @@
-struct X {
-    id: Nat,
-    x: Int,
-    name: Option<String> = None,
+enum Sex {
+    Male, Female
+}
+struct Person {
+    name: String,
+    sex: Sex,
 }
 
-// applying full-orderd-args
-let x1 = X(0, 31, None);
-
-// applying any-order
-let x2 = X {
-    name = Some("sample"),
-    id = 1,
-    x = -31,
-};
-
-// You can omit `name`, because it has default value.
-let x3 = X {
-    id = 2,
-    x = 12345,
-};
-
-[
-    x1,
-    x2,
-    x3,
-]
+{{
+    data = [
+        Person("A", Sex::Male),
+        Person("B", Sex::Female),
+    ],
+    size = 2,
+}}

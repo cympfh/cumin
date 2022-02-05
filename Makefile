@@ -1,5 +1,6 @@
 test:
 	cargo test
+	bash ./examples/test.sh
 
 install:
 	cargo install --path . --force
