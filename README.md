@@ -6,18 +6,9 @@
     <a href="https://crates.io/crates/cumin"><img src="https://img.shields.io/crates/v/cumin.svg" alt="crates.io" /></a>
     <a href="https://github.com/cympfh/cumin/actions"><img src="https://github.com/cympfh/cumin/workflows/test/badge.svg" /></a>
     <a href="https://github.com/cympfh/cumin/blob/main/LICENSE"><img src="https://img.shields.io/crates/l/cumin.svg" /></a>
-    <a href="https://github.com/cympfh/cumin/actions"><img src="https://github.com/cympfh/cumin/workflows/test/badge.svg" alt="test" /></a>
-    <img src="https://img.shields.io/crates/l/cumin.svg" alt="License:MIT" />
 </p>
 
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
-
-## wasm compile
-
-- Install `wasm-pack`,
-  - https://rustwasm.github.io/wasm-pack/installer/
-- Run `make wasm`,
-- Package `pkg/` produced.
 
 ## Documents
 

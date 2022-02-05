@@ -8,8 +8,6 @@ description = "Cumin, Configuration Language"
 homepage = "https://github.com/cympfh/cumin"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0"
@@ -18,7 +16,6 @@ structopt = { version = "0.3", default-features = false }
 serde = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.8"
-wasm-bindgen = "0.2.63"
 
 [[bin]]
 name = "cuminc"
