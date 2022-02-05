@@ -6,6 +6,8 @@
     <a href="https://crates.io/crates/cumin"><img src="https://img.shields.io/crates/v/cumin.svg" alt="crates.io" /></a>
     <a href="https://github.com/cympfh/cumin/actions"><img src="https://github.com/cympfh/cumin/workflows/test/badge.svg" /></a>
     <a href="https://github.com/cympfh/cumin/blob/main/LICENSE"><img src="https://img.shields.io/crates/l/cumin.svg" /></a>
+    <a href="https://github.com/cympfh/cumin/actions"><img src="https://github.com/cympfh/cumin/workflows/test/badge.svg" alt="test" /></a>
+    <img src="https://img.shields.io/crates/l/cumin.svg" alt="License:MIT" />
 </p>
 
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
@@ -24,7 +26,7 @@ Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
     - Validated Data
 - Mini-Programmable
 
-## Example
+## Language Example
 
 ```rust
 struct UserRecord {
@@ -47,7 +49,34 @@ enum Region {
 ]
 ```
 
-## Compiler
+## Installation
+
+### cuminc command as a compiler
+
+```bash
+# Install from crates.io
+$ cargo install cumin
+
+# from this Repository HEAD
+$ git clone https://github.com/cympfh/cumin
+$ cd cumin
+$ make install
+```
+
+### wasm
+
+This code contains wasm bind.
+
+- Install `wasm-pack`,
+  - https://rustwasm.github.io/wasm-pack/installer/
+- Run `make wasm`,
+- Package `pkg/` produced.
+
+### Python bind
+
+See [cympfh/cumin-py](https://github.com/cympfh/cumin-py).
+
+## cuminc Compiler
 
 Cumin Compiler `cuminc` converts to JSON from Cumin.
 
