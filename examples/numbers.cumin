@@ -7,4 +7,4 @@ let xs: Array<Nat> = xs;  // Array<Any> -> Array<Nat>
 let xs: Array<Int> = xs;  // Array<Nat> -> Array<Int>
 let xs: Array<Float> = xs;  // Array<Nat> -> Array<Float>
 
-0
+xs

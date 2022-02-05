@@ -1,0 +1,5 @@
+// type-mixed array is not allowed
+[
+    1,
+    "1",
+]
