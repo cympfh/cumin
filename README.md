@@ -12,13 +12,6 @@
 
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
 
-## wasm compile
-
-- Install `wasm-pack`,
-  - https://rustwasm.github.io/wasm-pack/installer/
-- Run `make wasm`,
-- Package `pkg/` produced.
-
 ## Documents
 
 - [cympfh.cc/cumin, English](https://cympfh.cc/cumin)
@@ -33,7 +26,7 @@ Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
     - Validated Data
 - Mini-Programmable
 
-## Example
+## Language Example
 
 ```rust
 struct UserRecord {
@@ -56,7 +49,34 @@ enum Region {
 ]
 ```
 
-## Compiler
+## Installation
+
+### cuminc command as a compiler
+
+```bash
+# Install from crates.io
+$ cargo install cumin
+
+# from this Repository HEAD
+$ git clone https://github.com/cympfh/cumin
+$ cd cumin
+$ make install
+```
+
+### wasm
+
+This code contains wasm bind.
+
+- Install `wasm-pack`,
+  - https://rustwasm.github.io/wasm-pack/installer/
+- Run `make wasm`,
+- Package `pkg/` produced.
+
+### Python bind
+
+See [cympfh/cumin-py](https://github.com/cympfh/cumin-py).
+
+## cuminc Compiler
 
 Cumin Compiler `cuminc` converts to JSON from Cumin.
 
