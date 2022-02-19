@@ -10,6 +10,12 @@
     <img src="https://img.shields.io/crates/l/cumin.svg" alt="License:MIT" />
 </p>
 
+<p align="center">
+    <a href="https://cympfh.cc/try-cumin-online/">
+      <img src="https://img.shields.io/static/v1?label=+&message=Try%20Cumin%20Online&color=green" />
+    </a>
+</p>
+
 Cumin is a Structured, Typed and Mini-Programmable Configuration Language.
 
 ## Documents
