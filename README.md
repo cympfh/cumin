@@ -53,6 +53,13 @@ enum Region {
 ]
 ```
 
+### Where is `if` statement? `for` loop?
+
+No.
+
+Cumin is **not** Turing-Complete Programming Language.
+Just (mini-Programmable) Configuration Language.
+
 ## Installation
 
 ### cuminc command as a compiler
