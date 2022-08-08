@@ -1,0 +1,14 @@
+// requires x and y
+fn f(x: Int, y: Int) = x * 10 + y;
+
+// requires x, and y is optional
+fn g(x: Int, y: Int = 0) = x * 100 + y;
+
+[
+  f(1, 2),
+  f(x=1, y=3),
+  f(y=4, x=1),
+  g(1, 1),
+  g(x=1),
+  g(y=3, x=1),
+]

@@ -3,13 +3,13 @@ enum Sex {
 }
 struct Person {
     name: String,
-    sex: Sex,
+    sex: Option<Sex> = None,
 }
 
-{{
-    data = [
-        Person("A", Sex::Male),
-        Person("B", Sex::Female),
-    ],
-    size = 2,
-}}
+[
+    Person("A", Some(Sex::Male)),
+    Person("B", Some(Sex::Female)),
+    Person("C"),
+    Person { name = "John", },
+    Person { sex = None, name = "Peach", },
+]
