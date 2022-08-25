@@ -17,8 +17,7 @@ use nom::{
 pub enum Expr {
     Val(Value),
     Var(String),
-    Apply(String, Vec<Expr>),
-    FieldApply(String, Vec<(String, Expr)>),
+    Apply(String, Vec<Expr>, Vec<(String, Expr)>),
     AnonymousStruct(Vec<(String, Typing, Expr)>),
     Concat(Box<Expr>, Box<Expr>),
     Add(Box<Expr>, Box<Expr>),
@@ -169,59 +168,62 @@ fn factor(input: &str) -> IResult<&str, Expr> {
         |e| Expr::Not(Box::new(e)),
     );
 
-    // <identifier>.<identifier> ( <expr>, )
-    let apply_expr = map(
-        tuple((
-            separated_list1(tag("."), identifier),
-            spaces,
-            tag("("),
-            commentable_spaces,
-            separated_list0(tuple((tag(","), commentable_spaces)), expr),
-            opt(tuple((tag(","), commentable_spaces))),
-            tag(")"),
-        )),
-        |(fs, _, _, _, args, _, _)| {
-            let n = fs.len();
-            assert!(n > 0);
-            let mut e = Expr::Apply(fs[n - 1].to_string(), args);
-            for i in (0..n - 1).rev() {
-                e = Expr::Apply(fs[i].to_string(), vec![e]);
-            }
-            e
-        },
-    );
-
-    // <identifier>.<identifier> { <identifier> = <expr> }
-    let field_apply_expr = map(
-        tuple((
-            separated_list1(tag("."), identifier),
-            commentable_spaces,
-            tag("{"),
-            commentable_spaces,
-            separated_list0(
-                tuple((tag(","), commentable_spaces)),
+    // <identifier>.<identifier> ( <expr>, ..., <identifier> = <expr>, ... )
+    let apply_expr = {
+        let an_arg = || {
+            alt((
                 map(
                     tuple((
                         terminated(identifier, commentable_spaces),
                         terminated(tag("="), commentable_spaces),
-                        terminated(expr, commentable_spaces),
+                        expr,
                     )),
-                    |(name, _, e)| (name, e),
+                    |(name, _, e)| (Some(name), e),
                 ),
-            ),
-            opt(tuple((tag(","), commentable_spaces))),
-            tag("}"),
-        )),
-        |(fs, _, _, _, args, _, _)| {
-            let n = fs.len();
-            assert!(n > 0);
-            let mut e = Expr::FieldApply(fs[n - 1].to_string(), args);
-            for i in (0..n - 1).rev() {
-                e = Expr::Apply(fs[i].to_string(), vec![e]);
-            }
-            e
-        },
-    );
+                map(expr, |e| (None, e)),
+            ))
+        };
+        let comma = || tuple((tag(","), commentable_spaces));
+        let args = || {
+            terminated(
+                terminated(separated_list0(comma(), an_arg()), opt(comma())),
+                commentable_spaces,
+            )
+        };
+
+        map(
+            tuple((
+                separated_list1(tag("."), identifier),
+                commentable_spaces,
+                alt((
+                    delimited(terminated(tag("("), commentable_spaces), args(), tag(")")),
+                    delimited(terminated(tag("{"), commentable_spaces), args(), tag("}")),
+                )),
+                commentable_spaces,
+            )),
+            |(fs, _, mixed_args, _)| {
+                let n = fs.len();
+                assert!(n > 0);
+                let mut args: Vec<Expr> = vec![];
+                let mut kwargs: Vec<(String, Expr)> = vec![];
+                for (name, val) in mixed_args {
+                    match name {
+                        None => {
+                            args.push(val);
+                        }
+                        Some(name) => {
+                            kwargs.push((name, val));
+                        }
+                    }
+                }
+                let mut e = Expr::Apply(fs[n - 1].to_string(), args, kwargs);
+                for i in (0..n - 1).rev() {
+                    e = Expr::Apply(fs[i].to_string(), vec![e], vec![]);
+                }
+                e
+            },
+        )
+    };
 
     // <identifier>.<identifier>
     let property_expr = map(
@@ -317,7 +319,6 @@ fn factor(input: &str) -> IResult<&str, Expr> {
             arrayed_expr,
             apply_expr,
             tuple_expr,
-            field_apply_expr,
             property_expr,
             vvalue,
         )),
@@ -464,15 +465,27 @@ mod test_expr {
         assert_expr!(
             "f(x) + 1",
             Add(
-                Box::new(Apply("f".to_string(), vec![Expr::Var("x".to_string())])),
+                Box::new(Apply(
+                    "f".to_string(),
+                    vec![Expr::Var("x".to_string())],
+                    vec![]
+                )),
                 Box::new(Val(Nat(1)))
             )
         );
         assert_expr!(
             "f(x) + g(z)",
             Add(
-                Box::new(Apply("f".to_string(), vec![Expr::Var("x".to_string())])),
-                Box::new(Apply("g".to_string(), vec![Expr::Var("z".to_string())])),
+                Box::new(Apply(
+                    "f".to_string(),
+                    vec![Expr::Var("x".to_string())],
+                    vec![]
+                )),
+                Box::new(Apply(
+                    "g".to_string(),
+                    vec![Expr::Var("z".to_string())],
+                    vec![]
+                )),
             )
         );
     }
@@ -565,14 +578,37 @@ mod test_expr {
     }
 
     #[test]
-    fn test_apply() {
-        assert_expr!("f()", Apply("f".to_string(), vec![]));
-        assert_expr!("f(1)", Apply("f".to_string(), vec![Val(Nat(1))]));
+    fn test_apply_functions() {
+        assert_expr!("f()", Apply("f".to_string(), vec![], vec![]));
+        assert_expr!("f(1)", Apply("f".to_string(), vec![Val(Nat(1))], vec![]));
+        assert_expr!(
+            "f(z=1)",
+            Apply(
+                "f".to_string(),
+                vec![],
+                vec![("z".to_string(), Val(Nat(1)))]
+            )
+        );
+        assert_expr!(
+            "f(1, z=2)",
+            Apply(
+                "f".to_string(),
+                vec![Val(Nat(1)),],
+                vec![("z".to_string(), Val(Nat(2)))]
+            )
+        );
+    }
+
+    #[test]
+    fn test_apply_struct() {
+        assert_expr!("X{}", Apply("X".to_string(), vec![], vec![]));
+        assert_expr!("X()", Apply("X".to_string(), vec![], vec![]));
         assert_expr!(
             "X(1, -2, \"x\")",
             Apply(
                 "X".to_string(),
-                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))],
+                vec![],
             )
         );
         assert_expr!(
@@ -580,7 +616,8 @@ mod test_expr {
                 -2, \"x\")//comment",
             Apply(
                 "X".to_string(),
-                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
+                vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))],
+                vec![],
             )
         );
         assert_expr!(
@@ -589,23 +626,33 @@ mod test_expr {
                 "X".to_string(),
                 vec![Apply(
                     "Y".to_string(),
-                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))]
-                )]
+                    vec![Val(Nat(1)), Val(Int(-2)), Val(Str("x".to_string()))],
+                    vec![],
+                )],
+                vec![],
             )
         );
-    }
-
-    #[test]
-    fn test_field_apply() {
-        assert_expr!("X{}", FieldApply("X".to_string(), vec![]));
         assert_expr!(
             "X{x=1}",
-            FieldApply("X".to_string(), vec![("x".to_string(), Val(Nat(1)))])
+            Apply(
+                "X".to_string(),
+                vec![],
+                vec![("x".to_string(), Val(Nat(1)))]
+            )
+        );
+        assert_expr!(
+            "X { x = 1, }",
+            Apply(
+                "X".to_string(),
+                vec![],
+                vec![("x".to_string(), Val(Nat(1)))]
+            )
         );
         assert_expr!(
             "X { x=1, y=-2, z=\"x\"}",
-            FieldApply(
+            Apply(
                 "X".to_string(),
+                vec![],
                 vec![
                     ("x".to_string(), Val(Nat(1))),
                     ("y".to_string(), Val(Int(-2))),
@@ -620,8 +667,9 @@ mod test_expr {
                 y=-2,//comment
                 z=\"x\"
                 } // comment",
-            FieldApply(
+            Apply(
                 "X".to_string(),
+                vec![],
                 vec![
                     ("x".to_string(), Val(Nat(1))),
                     ("y".to_string(), Val(Int(-2))),
@@ -635,8 +683,10 @@ mod test_expr {
                 "X".to_string(),
                 vec![Apply(
                     "Y".to_string(),
-                    vec![FieldApply("Z".to_string(), vec![])]
-                )]
+                    vec![Apply("Z".to_string(), vec![], vec![])],
+                    vec![],
+                )],
+                vec![],
             )
         );
     }
@@ -702,7 +752,8 @@ mod test_expr {
             AsCast(
                 Box::new(Apply(
                     "f".to_string(),
-                    vec![Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))]
+                    vec![Add(Box::new(Val(Nat(1))), Box::new(Val(Nat(1))))],
+                    vec![],
                 )),
                 Typing::Int
             )
@@ -710,7 +761,7 @@ mod test_expr {
         assert_expr!(
             "f(1) + 2 as Int",
             Add(
-                Box::new(Apply("f".to_string(), vec![Val(Nat(1))])),
+                Box::new(Apply("f".to_string(), vec![Val(Nat(1))], vec![])),
                 Box::new(AsCast(Box::new(Val(Nat(2))), Typing::Int))
             )
         );

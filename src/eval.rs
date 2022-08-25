@@ -148,10 +148,14 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
             Some((_, val)) => Ok((*val).clone()),
             None => bail!("Undefined variable `{}`.", v),
         },
-        Apply(fname, args) => {
+        Apply(fname, args, kwargs) => {
             let values: Vec<Value> = args
                 .iter()
                 .map(|x| eval_expr(&env, &x))
+                .collect::<Result<_>>()?;
+            let kwvalues: HashMap<String, Value> = kwargs
+                .iter()
+                .map(|(name, x)| eval_expr(&env, &x).map(|val| (name.to_string(), val)))
                 .collect::<Result<_>>()?;
             match fname.as_str() {
                 "Some" => {
@@ -181,7 +185,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                         items.push((name.to_string(), val.clone()));
                     }
                     for (name, typ, default) in fields[n..].iter() {
-                        if let Some(e) = default {
+                        if let Some(value) = kwvalues.get(name) {
+                            let val = value.cast(typ)?;
+                            items.push((name.to_string(), val.clone()));
+                        } else if let Some(e) = default {
                             let value = eval_expr(&env, e)?;
                             let val = value.cast(typ)?;
                             items.push((name.to_string(), val.clone()));
@@ -220,7 +227,10 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                         env_inner.vars.insert(name.to_string(), (typ.clone(), val));
                     }
                     for (name, typ, default) in args[n..].iter() {
-                        if let Some(e) = default {
+                        if let Some(val) = kwvalues.get(name) {
+                            let val = val.cast(typ)?;
+                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
+                        } else if let Some(e) = default {
                             let val = eval_expr(&env, &e)?;
                             let val = val.cast(typ)?;
                             env_inner.vars.insert(name.to_string(), (typ.clone(), val));
@@ -231,69 +241,6 @@ fn eval_expr(env: &Environ, expr: &Expr) -> Result<Value> {
                     eval_expr(&mut env_inner, body)
                 }
                 _ => bail!("Cannot resolve name `{}`.", fname),
-            }
-        }
-        FieldApply(fname, items) => {
-            if let Some(fields) = env.structs.get(fname) {
-                let args: HashMap<String, Expr> = items.iter().cloned().collect();
-                assert_args_leq!(fname, args.len(), fields.len());
-                let mut values: Vec<(String, Value)> = vec![];
-                for (name, typ, default) in fields {
-                    if let Some(arg) = args.get(&name.to_string()) {
-                        let val = eval_expr(&env, &arg)?.cast(&typ)?;
-                        values.push((name.to_string(), val));
-                    } else {
-                        if let Some(e) = default {
-                            let val = eval_expr(&env, &e)?.cast(&typ)?;
-                            values.push((name.to_string(), val));
-                        } else {
-                            bail!("Not supplied Field `{}` for Struct `{}`", name, fname);
-                        }
-                    }
-                }
-                {
-                    // check undefined fields given
-                    let defined_fields: HashSet<String> =
-                        fields.iter().map(|(name, _, _)| name).cloned().collect();
-                    for (name, _) in args.iter() {
-                        if !defined_fields.contains(name) {
-                            bail!("Undefined Field `{}` supplied for Struct `{}`", name, fname)
-                        }
-                    }
-                }
-                Ok(Dict(Some(fname.to_string()), Entries::new(values)))
-            } else if let Some((env_inner, fields, body)) = env.funs.get(fname) {
-                let args: HashMap<String, Expr> = items.iter().cloned().collect();
-                assert_args_leq!(fname, args.len(), fields.len());
-                let mut env_inner = env_inner.clone();
-                for (name, typ, default) in fields.iter() {
-                    if let Some(arg) = args.get(&name.to_string()) {
-                        let val = eval_expr(&env, &arg)?.cast(&typ)?;
-                        env_inner
-                            .vars
-                            .insert(name.to_string(), (typ.clone(), val.clone()));
-                    } else {
-                        if let Some(e) = default {
-                            let val = eval_expr(&env, &e)?.cast(&typ)?;
-                            env_inner.vars.insert(name.to_string(), (typ.clone(), val));
-                        } else {
-                            bail!("Not supplied Arg `{}` for Function `{}`.", name, fname);
-                        }
-                    }
-                }
-                {
-                    // check undefined args given
-                    let defined_fields: HashSet<String> =
-                        fields.iter().map(|(name, _, _)| name).cloned().collect();
-                    for (name, _) in args.iter() {
-                        if !defined_fields.contains(name) {
-                            bail!("Undefined Arg `{}` supplied for Function `{}`", name, fname)
-                        }
-                    }
-                }
-                eval_expr(&mut env_inner, body)
-            } else {
-                bail!("Cannot resolve name `{}`", fname)
             }
         }
         AnonymousStruct(items) => {

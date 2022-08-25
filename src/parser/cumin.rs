@@ -86,7 +86,47 @@ mod test_cumin {
                     Struct("X".to_string(), vec![("x".to_string(), Typing::Int, None)]),
                     Let("x".to_string(), Typing::Any, Val(Nat(1)))
                 ],
-                Apply("X".to_string(), vec![Expr::Var("x".to_string())])
+                Apply("X".to_string(), vec![Expr::Var("x".to_string())], vec![])
+            )
+        );
+        assert_cumin!(
+            "struct X { x: Int } X(x=1)",
+            Cumin(
+                vec![Struct(
+                    "X".to_string(),
+                    vec![("x".to_string(), Typing::Int, None)]
+                ),],
+                Apply(
+                    "X".to_string(),
+                    vec![],
+                    vec![("x".to_string(), Val(Nat(1)))]
+                ),
+            )
+        );
+        assert_cumin!(
+            "struct X {
+                x: Int = 2,  // with default
+                y: Int,
+                z: Int = 42, // with default
+            }
+            X(1, z=3, y=2,)",
+            Cumin(
+                vec![Struct(
+                    "X".to_string(),
+                    vec![
+                        ("x".to_string(), Typing::Int, Some(Val(Nat(2)))),
+                        ("y".to_string(), Typing::Int, None),
+                        ("z".to_string(), Typing::Int, Some(Val(Nat(42)))),
+                    ]
+                ),],
+                Apply(
+                    "X".to_string(),
+                    vec![Val(Nat(1))],
+                    vec![
+                        ("z".to_string(), Val(Nat(3))),
+                        ("y".to_string(), Val(Nat(2))),
+                    ]
+                ),
             )
         );
         assert_cumin!(
