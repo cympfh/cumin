@@ -1,42 +1,28 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>cumin spec</title>
-        
-        <meta name="robots" content="noindex" />
-        
-        
+        <meta name="robots" content="noindex">
 
 
         <!-- Custom HTML head -->
         
-
-
-        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
-        
         <link rel="icon" href="favicon.svg">
-        
-        
         <link rel="shortcut icon" href="favicon.png">
-        
         <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
-        
         <link rel="stylesheet" href="css/print.css" media="print">
-        
 
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        
         <link rel="stylesheet" href="fonts/fonts.css">
-        
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
@@ -44,22 +30,20 @@
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        
 
-        
         <!-- MathJax -->
-        <script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     </head>
-    <body>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
         <!-- Provide site root to javascript -->
-        <script type="text/javascript">
+        <script>
             var path_to_root = "";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
-        <script type="text/javascript">
+        <script>
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
@@ -75,79 +59,104 @@
         </script>
 
         <!-- Set the theme before any content is loaded, prevents flash -->
-        <script type="text/javascript">
+        <script>
             var theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             var html = document.querySelector('html');
-            html.classList.remove('no-js')
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
         </script>
 
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
         <!-- Hide / unhide sidebar before it is displayed -->
-        <script type="text/javascript">
-            var html = document.querySelector('html');
-            var sidebar = 'hidden';
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="try-online.html"><strong aria-hidden="true">1.1.</strong> Try Online</a></li></ol></li><li class="chapter-item expanded "><a href="spec.html"><strong aria-hidden="true">2.</strong> Language Spec</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/overview.html"><strong aria-hidden="true">2.1.</strong> Overview</a></li><li class="chapter-item expanded "><a href="spec/values.html"><strong aria-hidden="true">2.2.</strong> Primitive Values</a></li><li class="chapter-item expanded "><a href="spec/struct.html"><strong aria-hidden="true">2.3.</strong> Struct</a></li><li class="chapter-item expanded "><a href="spec/enum.html"><strong aria-hidden="true">2.4.</strong> Enum</a></li><li class="chapter-item expanded "><a href="spec/let.html"><strong aria-hidden="true">2.5.</strong> let</a></li><li class="chapter-item expanded "><a href="spec/fn.html"><strong aria-hidden="true">2.6.</strong> Function</a></li><li class="chapter-item expanded "><a href="spec/dict.html"><strong aria-hidden="true">2.7.</strong> Dictionary</a></li><li class="chapter-item expanded "><a href="spec/array.html"><strong aria-hidden="true">2.8.</strong> Array</a></li><li class="chapter-item expanded "><a href="spec/option.html"><strong aria-hidden="true">2.9.</strong> Option</a></li><li class="chapter-item expanded "><a href="spec/tuple.html"><strong aria-hidden="true">2.10.</strong> Tuple</a></li><li class="chapter-item expanded "><a href="spec/typing.html"><strong aria-hidden="true">2.11.</strong> Typing</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="spec/typing/types.html"><strong aria-hidden="true">2.11.1.</strong> Types</a></li><li class="chapter-item expanded "><a href="spec/typing/type-annotation.html"><strong aria-hidden="true">2.11.2.</strong> Type Annotation</a></li><li class="chapter-item expanded "><a href="spec/typing/type-checking.html"><strong aria-hidden="true">2.11.3.</strong> Type Checking</a></li><li class="chapter-item expanded "><a href="spec/typing/natural-cast.html"><strong aria-hidden="true">2.11.4.</strong> Natural Cast</a></li><li class="chapter-item expanded "><a href="spec/typing/union-types.html"><strong aria-hidden="true">2.11.5.</strong> Union Types</a></li></ol></li><li class="chapter-item expanded "><a href="spec/as_cast.html"><strong aria-hidden="true">2.12.</strong> as-cast</a></li><li class="chapter-item expanded "><a href="spec/blocks.html"><strong aria-hidden="true">2.13.</strong> blocks</a></li><li class="chapter-item expanded "><a href="spec/ops.html"><strong aria-hidden="true">2.14.</strong> operators</a></li><li class="chapter-item expanded "><a href="spec/modules.html"><strong aria-hidden="true">2.15.</strong> Modules</a></li></ol></li><li class="chapter-item expanded "><a href="tools.html"><strong aria-hidden="true">3.</strong> Tools</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tools/cuminc.html"><strong aria-hidden="true">3.1.</strong> cuminc</a></li><li class="chapter-item expanded "><a href="tools/cumin_py.html"><strong aria-hidden="true">3.2.</strong> cumin-py</a></li></ol></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        
                         <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
-                        
                     </div>
 
                     <h1 class="menu-title">cumin spec</h1>
 
                     <div class="right-buttons">
-                        
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
-                        
-                        
+
                     </div>
                 </div>
 
-                
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -155,10 +164,9 @@
                         </ul>
                     </div>
                 </div>
-                
 
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
-                <script type="text/javascript">
+                <script>
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
                     document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
                     Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
@@ -168,7 +176,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#introduction" id="introduction">Introduction</a></h1>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
 <p><strong>Cumin</strong> is a Configuration Language like JSON, YAML or TOML,
 but this is Mini-Programmable, Structured and Typed.</p>
 <p>cumin has <a href="https://www.rust-lang.org/">Rust</a>-like syntax.</p>
@@ -180,21 +188,20 @@ struct User {
 }
 
 let names = [
-    User(1, &quot;cympfh&quot;),
-    User(2, &quot;Taro&quot;),
-    User(3, &quot;John&quot;),
+    User(1, "cympfh"),
+    User(2, "Taro"),
+    User(3, "John"),
 ];
 
-names
-</code></pre>
+names</code></pre>
 <p>The compiler <strong>cuminc</strong> generates JSON from cumin.</p>
 <pre><code class="language-bash">$ cuminc ./example.cumin
-[{&quot;id&quot;:1,&quot;name&quot;:&quot;cympfh&quot;},{&quot;id&quot;:2,&quot;name&quot;:&quot;Taro&quot;},{&quot;id&quot;:3,&quot;name&quot;:&quot;John&quot;}]
+[{"id":1,"name":"cympfh"},{"id":2,"name":"Taro"},{"id":3,"name":"John"}]
 </code></pre>
-<h1><a class="header" href="#try-online" id="try-online">Try Online</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="try-online"><a class="header" href="#try-online">Try Online</a></h1>
 <p>You can <a href="https://cympfh.cc/try-cumin-online/">Try Cumin Online</a> without any installation.</p>
-<h1><a class="header" href="#language-spec-v0913" id="language-spec-v0913">Language Spec v0.9.13</a></h1>
-<h1><a class="header" href="#overview" id="overview">Overview</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="language-spec-v0913"><a class="header" href="#language-spec-v0913">Language Spec v0.9.13</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="overview"><a class="header" href="#overview">Overview</a></h1>
 <p>Cumin data are composed of Statements and Expressions.
 A cumin data must start with zero or more Statements and end with exact one Expression data.</p>
 <p>Frankly, it is expressed like</p>
@@ -217,62 +224,54 @@ A cumin data must start with zero or more Statements and end with exact one Expr
 which can contain already defined types and variables.
 For examples, number literals are Values and Expressions.
 Arithmetic Expressions are Expressions (e.g. <code>(1 + x) / 2</code>).</p>
-<h1><a class="header" href="#primitive-values" id="primitive-values">Primitive Values</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="primitive-values"><a class="header" href="#primitive-values">Primitive Values</a></h1>
 <p><strong>Values</strong> are Expressions.
 In particular, primitive Values can be used in any context.</p>
-<h2><a class="header" href="#numbers" id="numbers">Numbers</a></h2>
+<h2 id="numbers"><a class="header" href="#numbers">Numbers</a></h2>
 <p>Natural numbers and integers are represented as decimal literal.</p>
 <p>For examples,</p>
-<pre><code class="language-rust no_run noplayground">123
-</code></pre>
-<pre><code class="language-rust no_run noplayground">-100000
-</code></pre>
+<pre><code class="language-rust no_run noplayground">123</code></pre>
+<pre><code class="language-rust no_run noplayground">-100000</code></pre>
 <p>Zero or positive numbers are Natural numbers by default,
 and negative ones are Integers.</p>
 <p>Floating numbers are denoted with period (<code>.</code>), like</p>
-<pre><code class="language-rust no_run noplayground">1.234
-</code></pre>
-<pre><code class="language-rust no_run noplayground">-0.1
-</code></pre>
+<pre><code class="language-rust no_run noplayground">1.234</code></pre>
+<pre><code class="language-rust no_run noplayground">-0.1</code></pre>
 <p><em>NOTE</em>:
 You can omit leading zeros.
 For example, <code>.1</code> is <code>0.1</code>, <code>1.</code> is <code>1.0</code>.</p>
-<h3><a class="header" href="#number-types" id="number-types">Number Types</a></h3>
+<h3 id="number-types"><a class="header" href="#number-types">Number Types</a></h3>
 <p>There are 3 types for numbers: <code>Nat</code>, <code>Int</code> and <code>Float</code>.</p>
 <p><code>Nat</code> is Natural Numbers. It is zero or positive integers.
 <code>Int</code> is Integer Numbers.
 <code>Float</code> is Floating Numbers (pseudo-Real Numbers).</p>
-<h2><a class="header" href="#strings" id="strings">Strings</a></h2>
-<p>Strings are denoted by quoting double-quotation (<code>&quot;</code>).</p>
-<pre><code class="language-rust no_run noplayground">&quot;Hello, World&quot;
-</code></pre>
-<h3><a class="header" href="#type" id="type">Type</a></h3>
+<h2 id="strings"><a class="header" href="#strings">Strings</a></h2>
+<p>Strings are denoted by quoting double-quotation (<code>"</code>).</p>
+<pre><code class="language-rust no_run noplayground">"Hello, World"</code></pre>
+<h3 id="type"><a class="header" href="#type">Type</a></h3>
 <p><code>String</code> is the type for Strings.</p>
-<h3><a class="header" href="#escape" id="escape">Escape</a></h3>
+<h3 id="escape"><a class="header" href="#escape">Escape</a></h3>
 <p>Escape with <code>\</code>.</p>
-<pre><code class="language-rust no_run noplayground">&quot;\n\r\t\&quot;&quot;
-</code></pre>
-<h2><a class="header" href="#booleans" id="booleans">Booleans</a></h2>
+<pre><code class="language-rust no_run noplayground">"\n\r\t\""</code></pre>
+<h2 id="booleans"><a class="header" href="#booleans">Booleans</a></h2>
 <p>There are <code>true</code> and <code>false</code> as Boolean Values.
 No other values doesn't exist.</p>
-<h3><a class="header" href="#type-1" id="type-1">Type</a></h3>
+<h3 id="type-1"><a class="header" href="#type-1">Type</a></h3>
 <p><code>Bool</code> is the type for Booleans.</p>
-<h1><a class="header" href="#struct" id="struct">Struct</a></h1>
-<h2><a class="header" href="#struct-declaration" id="struct-declaration">Struct Declaration</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="struct"><a class="header" href="#struct">Struct</a></h1>
+<h2 id="struct-declaration"><a class="header" href="#struct-declaration">Struct Declaration</a></h2>
 <p>You can introduce new types with <code>struct</code>.</p>
 <pre><code class="language-rust no_run noplayground">struct X {
     x: Int,
     n: Nat,
     s: String,
-}
-</code></pre>
+}</code></pre>
 <p>Each fields can have default Values.</p>
 <pre><code class="language-rust no_run noplayground">struct X {
     x: Int,
     n: Nat = 0,
     s: String,
-}
-</code></pre>
+}</code></pre>
 <p><em>NOTE</em>:
 Cumin always allows comma-trailing.
 The last <code>,</code> is optional completely, but I recommend putting ','.</p>
@@ -286,40 +285,33 @@ where
     &lt;type&gt; ::= (type name)
     &lt;expression&gt; ::= (Expression)
 </code></pre>
-<h2><a class="header" href="#struct-values" id="struct-values">Struct Values</a></h2>
+<h2 id="struct-values"><a class="header" href="#struct-values">Struct Values</a></h2>
 <p>After you declared structs, you can apply them.</p>
 <p>For example, the previous struct <code>X</code> has three fields <code>x</code>, <code>n</code> and <code>s</code>.
 You can create <code>X</code> Values by appling three Values.</p>
-<pre><code class="language-rust no_run noplayground">X(0, 123, &quot;yellow&quot;)
-</code></pre>
+<pre><code class="language-rust no_run noplayground">X(0, 123, "yellow")</code></pre>
 <p>Applied Values can be any Expression.</p>
 <pre><code class="language-rust no_run noplayground">let n = -3;
-X(12 * 3, n, &quot;yel&quot; + &quot;low&quot;)
-</code></pre>
+X(12 * 3, n, "yel" + "low")</code></pre>
 <p>This style is similar to the function apply in many Programming Languages.
 Cumin has another style.</p>
-<pre><code class="language-rust no_run noplayground">X { s = &quot;yellow&quot;, n = 123, x = 0 }
-</code></pre>
+<pre><code class="language-rust no_run noplayground">X { s = "yellow", n = 123, x = 0 }</code></pre>
 <p>Because any fields are named, the appling Values can be in any order.
 And you can omit the fields having default Values.</p>
-<pre><code class="language-rust no_run noplayground">X { s = &quot;yellow&quot;, x = 0 }  // n is omitted, and the default Value `0` be applied.
-</code></pre>
-<h1><a class="header" href="#enum" id="enum">Enum</a></h1>
+<pre><code class="language-rust no_run noplayground">X { s = "yellow", x = 0 }  // n is omitted, and the default Value `0` be applied.</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="enum"><a class="header" href="#enum">Enum</a></h1>
 <p>Cumin's Enum is very simple (likewise C-language).</p>
 <pre><code class="language-rust no_run noplayground">enum Z {
     A, B, C,
-}
-</code></pre>
+}</code></pre>
 <p>This declaration introduces new type <code>Z</code> and three Values
 <code>Z::A</code>, <code>Z::B</code> and <code>Z::C</code>.</p>
-<h1><a class="header" href="#let" id="let">let</a></h1>
-<h2><a class="header" href="#let-statement" id="let-statement">let Statement</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="let"><a class="header" href="#let">let</a></h1>
+<h2 id="let-statement"><a class="header" href="#let-statement">let Statement</a></h2>
 <p>The <code>let</code> Statement gives names to data.</p>
-<pre><code class="language-rust no_run noplayground">let x: Int = 1 + 2;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x: Int = 1 + 2;</code></pre>
 <p>Type annotation is freely optional.</p>
-<pre><code class="language-rust no_run noplayground">let x = 1 + 2;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x = 1 + 2;</code></pre>
 <p>This Statement computes the expression <code>1 + 2</code> (the result is <code>3</code> of course),
 and we call it <code>x</code>.
 Frankly, this is a variable,
@@ -331,19 +323,18 @@ This Statement can be denoted by following BNF;</p>
 
 &lt;name&gt; ::= &lt;identifier&gt;
 </code></pre>
-<h2><a class="header" href="#shadowing" id="shadowing">shadowing</a></h2>
+<h2 id="shadowing"><a class="header" href="#shadowing">shadowing</a></h2>
 <p>When some variables are defined already,
 you can declare the same names with <code>let</code>.
 New data shadows old data.</p>
 <pre><code class="language-rust no_run noplayground">let x = 1;
 // Here, x is Nat 1.
 
-let x = &quot;hoge&quot;;
-// Here, x is String &quot;hoge&quot;.
-</code></pre>
+let x = "hoge";
+// Here, x is String "hoge".</code></pre>
 <p>Once variables are shadowed, they cannot be used.</p>
-<h1><a class="header" href="#function" id="function">Function</a></h1>
-<h2><a class="header" href="#declaration" id="declaration">Declaration</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="function"><a class="header" href="#function">Function</a></h1>
+<h2 id="declaration"><a class="header" href="#declaration">Declaration</a></h2>
 <p>Functions are declared with <code>fn</code> keyword or <code>let</code> keyword.</p>
 <pre><code>&lt;function&gt; ::=
       `fn` &lt;name&gt; `(` &lt;args&gt; `)` `=` &lt;expr&gt; `;`
@@ -356,10 +347,9 @@ let x = &quot;hoge&quot;;
     | &lt;var&gt; `:` &lt;type&gt;
     | &lt;var&gt; `:` &lt;type&gt; `,` &lt;args&gt;
 </code></pre>
-<h3><a class="header" href="#examples" id="examples">Examples</a></h3>
+<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
 <pre><code class="language-rust no_run noplayground">fn doubled(x: Nat) = x * 2;
-doubled(10) // 20
-</code></pre>
+doubled(10) // 20</code></pre>
 <pre><code class="language-rust no_run noplayground">struct S {
     x: Int,
 }
@@ -367,48 +357,44 @@ doubled(10) // 20
 fn inc(x: Int) = S { x = x + 1 };
 let dec(x: Int) = S(x-1);
 
-[inc(2), dec(2)]  // S{x=3}, S{x=1}
-</code></pre>
-<h2><a class="header" href="#lexical-scopes" id="lexical-scopes">Lexical Scopes</a></h2>
+[inc(2), dec(2)]  // S{x=3}, S{x=1}</code></pre>
+<h2 id="lexical-scopes"><a class="header" href="#lexical-scopes">Lexical Scopes</a></h2>
 <pre><code class="language-rust no_run noplayground">let z = 1;
 
 fn one() = z;  // this `z` is 1.
 
 // `one` can be referred from here.
 
-let z: String = &quot;2&quot;;
+let z: String = "2";
 
 // `two` cannot be used yet.
 let x = two();
 // ↑ ERROR!
 
-fn two() = z;  // this `z` is &quot;2&quot; now.
+fn two() = z;  // this `z` is "2" now.
 
 {{
     a = one(),  // 1
-    b = two(),  // &quot;2&quot;
-}}
-</code></pre>
-<h1><a class="header" href="#dictionary" id="dictionary">Dictionary</a></h1>
+    b = two(),  // "2"
+}}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="dictionary"><a class="header" href="#dictionary">Dictionary</a></h1>
 <p>Dictionary is a Value data which can have any fields with any types.
 It is denoted by quoting with <code>{{</code> and <code>}}</code>.</p>
 <pre><code class="language-rust no_run noplayground">{{
     x = 1,
     y = -2.3,
-    s = &quot;yellow&quot;,
-}}
-</code></pre>
+    s = "yellow",
+}}</code></pre>
 <p>If you need, each fields can have type-annotation optionally.</p>
 <pre><code class="language-rust no_run noplayground">{{
     x: Int = 1,
     y = -2.3,
-    s: String = &quot;yellow&quot;,
-}}
-</code></pre>
+    s: String = "yellow",
+}}</code></pre>
 <p>This is sometimes convenience but not type-safe.
 If two or more dictionaries have same fields with same types,
 it is chance to define a struct.</p>
-<h1><a class="header" href="#array" id="array">Array</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="array"><a class="header" href="#array">Array</a></h1>
 <p>An Array is a Value data containing zero or more elements in order.
 It is required that all elements have same types,
 therefore any Array can be called an Array of type <code>T</code> where <code>T</code> is the type of elements.</p>
@@ -419,23 +405,19 @@ the following is an Array of <code>Int</code>.</p>
     2,
     -3,
     4 - 4,
-]
-</code></pre>
+]</code></pre>
 <p>The type of this data is <code>Array&lt;Int&gt;</code>.</p>
-<h1><a class="header" href="#option" id="option">Option</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="option"><a class="header" href="#option">Option</a></h1>
 <p>If you want <em>null</em>-able Values, <code>Option</code> is very suitable.
 For any type <code>T</code>, <code>Option&lt;T&gt;</code> is valid type and it is <em>null</em>-able.
 Null Value can be denoted as <code>None</code>.</p>
-<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = None;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = None;</code></pre>
 <p>In other hand, not <em>null</em> Values for <em>null</em>-able are denoted with <code>Some(_)</code>.</p>
-<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = Some(&quot;MGR&quot;);
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let name: Option&lt;String&gt; = Some("MGR");</code></pre>
 <p><code>Some</code> is considered as a natural transformation <code>T -&gt; Option&lt;T&gt;</code> representing <strong>not</strong> <em>null</em> Values.</p>
-<h1><a class="header" href="#tuple" id="tuple">Tuple</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="tuple"><a class="header" href="#tuple">Tuple</a></h1>
 <p>Tuples are structures which can have different type values.</p>
-<pre><code class="language-rust no_run noplayground">let x = (1, &quot;str&quot;);  // (Nat, String)
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x = (1, "str");  // (Nat, String)</code></pre>
 <p><code>x</code> is a pair of <code>Nat</code> and <code>String</code>.
 The <code>(Nat, String)</code> is the type of <code>x</code>.</p>
 <p>If you aren't familiar to tuples, this is considered as a kind of struct,
@@ -444,12 +426,11 @@ which has no field names.</p>
     __field_0: Int,
     __field_1: String,
 }
-let x = Anonymous(1, &quot;str&quot;);
-</code></pre>
-<h1><a class="header" href="#typing" id="typing">Typing</a></h1>
+let x = Anonymous(1, "str");</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="typing"><a class="header" href="#typing">Typing</a></h1>
 <p>In cumin, all data are typed gradually. Enjoy!</p>
-<h1><a class="header" href="#types" id="types">Types</a></h1>
-<h2><a class="header" href="#primitive-types" id="primitive-types">Primitive Types</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="types"><a class="header" href="#types">Types</a></h1>
+<h2 id="primitive-types"><a class="header" href="#primitive-types">Primitive Types</a></h2>
 <p>There are following types in prior.</p>
 <pre><code class="language-rust no_run noplayground">Any
 Nat
@@ -458,8 +439,7 @@ Float
 Bool
 String
 Array&lt;_&gt;
-Option&lt;_&gt;
-</code></pre>
+Option&lt;_&gt;</code></pre>
 <p><code>Any</code> is the top type for any values.
 This is convenient for gradual typing.
 <code>_</code> is alias for <code>Any</code>.</p>
@@ -471,20 +451,18 @@ For example, <code>Array&lt;Int&gt;</code> is an array of Int Values.
 Type parameters can be nested.
 <code>Array&lt;Array&lt;Option&lt;Int&gt;&gt;&gt;</code>
 is an array of an array of option of Int Values.</p>
-<h2><a class="header" href="#custom-types" id="custom-types">Custom Types</a></h2>
+<h2 id="custom-types"><a class="header" href="#custom-types">Custom Types</a></h2>
 <p>After you declared <code>struct</code>-s and <code>enum</code>-s, the names are new types.
 The names will be the names of types.</p>
 <pre><code class="language-rust no_run noplayground">struct X {}
 
 // `X` is a type now.
 
-let x: X = X();
-</code></pre>
-<h1><a class="header" href="#type-annotation" id="type-annotation">Type Annotation</a></h1>
-<h2><a class="header" href="#typed-let" id="typed-let">Typed Let</a></h2>
+let x: X = X();</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="type-annotation"><a class="header" href="#type-annotation">Type Annotation</a></h1>
+<h2 id="typed-let"><a class="header" href="#typed-let">Typed Let</a></h2>
 <p><code>let</code> statement may have type annotations.</p>
-<pre><code class="language-rust no_run noplayground">let x: Int = 100;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x: Int = 100;</code></pre>
 <p><code>cuminc</code> evaluates this in the following steps:</p>
 <ol>
 <li>eval <code>100</code>
@@ -506,50 +484,44 @@ For example, <code>String</code> to <code>Int</code>, <code>Int</code> to <code>
 <strong>NOTE</strong>: If you need, <code>as</code>-cast coerce to other types.</p>
 <p>The type annotation is optional.
 If it is omitted, the step 2 will be skipped.</p>
-<pre><code class="language-rust no_run noplayground">let x = 100;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x = 100;</code></pre>
 <p>In this example, <code>x</code> is <code>Nat</code>.</p>
-<h2><a class="header" href="#typed-struct" id="typed-struct">Typed Struct</a></h2>
+<h2 id="typed-struct"><a class="header" href="#typed-struct">Typed Struct</a></h2>
 <p>In structs, all fields should be type annotated.</p>
 <pre><code class="language-rust no_run noplayground">struct S {
     x: Nat,
     y: Int,
     z: Array&lt;String&gt;,
-}
-</code></pre>
+}</code></pre>
 <p>When constructing struct values (applying), <code>cuminc</code> checks the types of applied values.</p>
 <pre><code class="language-rust no_run noplayground">S {
     x = 1,
     y = -2,
-    z = [&quot;cumin&quot;],
-}
-</code></pre>
-<h1><a class="header" href="#type-checking" id="type-checking">Type Checking</a></h1>
-<h2><a class="header" href="#array-1" id="array-1">Array</a></h2>
+    z = ["cumin"],
+}</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="type-checking"><a class="header" href="#type-checking">Type Checking</a></h1>
+<h2 id="array-1"><a class="header" href="#array-1">Array</a></h2>
 <p>In general JSON, Arrays can contain various values.</p>
 <pre><code class="language-json">// In JSON, this is OK.
-[1, 3.14, [&quot;cumin&quot;]]
+[1, 3.14, ["cumin"]]
 </code></pre>
 <p>But this is very strange and buggy.
 In cumin, Arrays should contain values with same type.</p>
 <pre><code class="language-rust no_run noplayground">// In cumin, this is NG.
-[1, 3.14, [&quot;cumin&quot;]]
-</code></pre>
+[1, 3.14, ["cumin"]]</code></pre>
 <p>This occurs and error</p>
-<pre><code>Error: Cannot infer type of Array([Nat(1), Float(3.14), Array(String, [Str(&quot;cumin&quot;)])]); Hint: Array cannot contain values with different types.
+<pre><code>Error: Cannot infer type of Array([Nat(1), Float(3.14), Array(String, [Str("cumin")])]); Hint: Array cannot contain values with different types.
 </code></pre>
-<h2><a class="header" href="#any-type" id="any-type">Any Type</a></h2>
+<h2 id="any-type"><a class="header" href="#any-type">Any Type</a></h2>
 <p><code>Any</code> is the top type.</p>
-<pre><code class="language-rust no_run noplayground">let x: Any = 100;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let x: Any = 100;</code></pre>
 <p>This is ok. And don't worry. <code>cuminc</code> knows that <code>x</code> is <code>Nat</code> (because <code>100</code> is <code>Nat</code>).
 <code>Any</code> is convenient in some cases.
 This example is trivial, and it is equivalent to <code>let</code> statement without type annotation.</p>
 <p>For example, <code>Array&lt;Any&gt;</code> is a type for <strong>Something Arrays</strong>.</p>
 <pre><code class="language-rust no_run noplayground">let xs: Array&lt;Any&gt; = [
     1, 2, 3
-];
-</code></pre>
+];</code></pre>
 <p>In this example,</p>
 <ol>
 <li>The elements are all <code>Nat</code>.</li>
@@ -559,13 +531,11 @@ This example is trivial, and it is equivalent to <code>let</code> statement with
 <p>Because <code>_</code> is an alias for <code>Any</code>, you can write</p>
 <pre><code class="language-rust no_run noplayground">let xs: Array&lt;_&gt; = [
     1, 2, 3
-];
-</code></pre>
+];</code></pre>
 <p>It is <strong>unsafe</strong> that struct fields are declared as <code>Any</code>.</p>
 <pre><code class="language-rust no_run noplayground">struct Data {
     data: Any,
-}
-</code></pre>
+}</code></pre>
 <p>Since <code>data</code> can be any values, followings are all valid.</p>
 <pre><code class="language-rust no_run noplayground">let x = Data {
     data = 1,  // Nat
@@ -576,12 +546,11 @@ let y = Data {
 };
 
 let z = Data {
-    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
-};
-</code></pre>
+    data = ["cumin"]  // Array&lt;String&gt;
+};</code></pre>
 <p>And <code>cuminc</code> knows only that <code>x</code>, <code>y</code> and <code>z</code> are just <code>Data</code>, and ignores the type of <code>data</code>.
 So they have all same type!</p>
-<h3><a class="header" href="#hack-array-with-various-data" id="hack-array-with-various-data">Hack: Array with various data.</a></h3>
+<h3 id="hack-array-with-various-data"><a class="header" href="#hack-array-with-various-data">Hack: Array with various data.</a></h3>
 <p>In cumin v0.9.7, This is ok.</p>
 <pre><code class="language-rust no_run noplayground">struct Data {
     data: Any,
@@ -596,34 +565,30 @@ let y = Data {
 };
 
 let z = Data {
-    data = [&quot;cumin&quot;]  // Array&lt;String&gt;
+    data = ["cumin"]  // Array&lt;String&gt;
 };
 
-[x, y, z]
-</code></pre>
+[x, y, z]</code></pre>
 <p>Because the last data is just <code>Array&lt;Data&gt;</code>.
 <strong>NOTE</strong>: No warrantry to support this hack.</p>
-<h1><a class="header" href="#natural-cast" id="natural-cast">Natural Cast</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="natural-cast"><a class="header" href="#natural-cast">Natural Cast</a></h1>
 <p>For types <code>S</code> and <code>T</code>,
 we denote <code>S -&gt; T</code> describing that <code>S</code> can be casted to <code>T</code> naturally.</p>
 <p>And <code>S -&gt; T</code> if and only if the following code is valid when <code>x</code> has type <code>S</code>:</p>
-<pre><code class="language-rust no_run noplayground">let y: T = x;  // when x:S.
-</code></pre>
+<pre><code class="language-rust no_run noplayground">let y: T = x;  // when x:S.</code></pre>
 <p>There are two rules for natural cast.</p>
-<h2><a class="header" href="#numbers-downcast" id="numbers-downcast">Numbers downcast</a></h2>
-<pre><code class="language-rust no_run noplayground">Nat -&gt; Int -&gt; Float
-</code></pre>
+<h2 id="numbers-downcast"><a class="header" href="#numbers-downcast">Numbers downcast</a></h2>
+<pre><code class="language-rust no_run noplayground">Nat -&gt; Int -&gt; Float</code></pre>
 <p><strong>NOTE</strong>: <code>-&gt;</code> is transitive.
 The fact that <code>S -&gt; T</code>, <code>T -&gt; U</code> and <code>S -&gt; U</code> are denoted as <code>S -&gt; T -&gt; U</code>.</p>
 <p>Any natural numbers can be considered as integers or as floating numbers.
 But the inverse doesn't hold on.</p>
-<h2><a class="header" href="#all-values-are-any" id="all-values-are-any">All values are <code>Any</code></a></h2>
+<h2 id="all-values-are-any"><a class="header" href="#all-values-are-any">All values are <code>Any</code></a></h2>
 <p>For any type <code>S</code>, <code>S -&gt; Any</code>.</p>
-<h1><a class="header" href="#union-types" id="union-types">Union Types</a></h1>
-<h2><a class="header" href="#type-statement" id="type-statement"><code>type</code> statement</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="union-types"><a class="header" href="#union-types">Union Types</a></h1>
+<h2 id="type-statement"><a class="header" href="#type-statement"><code>type</code> statement</a></h2>
 <p>Union Types are declared with <code>type</code> keyword and variants are described one or more types separated by <code>|</code>.</p>
-<pre><code class="language-rust no_run noplayground">type T = Int | String;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">type T = Int | String;</code></pre>
 <p>Using this <code>T</code>,
 <code>Int</code> values and <code>String</code> values can be same type values.
 This is convenient to construct an array of <code>Int</code> or <code>String</code> (i.e. <code>Array&lt;T&gt;</code>).</p>
@@ -631,16 +596,14 @@ This is convenient to construct an array of <code>Int</code> or <code>String</co
 <pre><code class="language-rust no_run noplayground">struct A { a: Nat }
 struct B { b: String }
 struct C { c: Array&lt;String&gt; }
-type T = A | B | C;
-</code></pre>
-<h3><a class="header" href="#note" id="note">NOTE</a></h3>
+type T = A | B | C;</code></pre>
+<h3 id="note"><a class="header" href="#note">NOTE</a></h3>
 <p>Union Types is like union-sets, and <strong>not</strong> Sum Types (or disjoint union).
 For example,</p>
-<pre><code class="language-rust no_run noplayground">type T = Int | Int;
-</code></pre>
+<pre><code class="language-rust no_run noplayground">type T = Int | Int;</code></pre>
 <p>this equals to just <code>Int</code> exactly,
 because nobody distinguish left <code>Int</code> from right one.</p>
-<h3><a class="header" href="#note-1" id="note-1">NOTE</a></h3>
+<h3 id="note-1"><a class="header" href="#note-1">NOTE</a></h3>
 <p>Union Types define subtypes.
 In primitive, cumin defines the following subtype system:</p>
 <pre><code>Nat &lt;: Int &lt;: Float
@@ -655,25 +618,23 @@ B &lt;: T
 <p>holds on.
 So, you can cast <code>A -&gt; T</code> and <code>B -&gt; T</code>, but we don't cast them implicitly.
 In next section, we will show how to cast them.</p>
-<h2><a class="header" href="#casting-for-union-types" id="casting-for-union-types">Casting for Union Types</a></h2>
+<h2 id="casting-for-union-types"><a class="header" href="#casting-for-union-types">Casting for Union Types</a></h2>
 <p>The names of union types can be <strong>casting functions</strong> (or injection).</p>
 <pre><code class="language-rust no_run noplayground">type T = Int | String;
 
 let x: Int = 2;
 let t = T(x);  // Int -&gt; T
 
-let s = T(&quot;hello&quot;);  // String -&gt; T
-</code></pre>
+let s = T("hello");  // String -&gt; T</code></pre>
 <pre><code class="language-rust no_run noplayground">struct A { a: Nat }
 struct B { b: String }
 struct C { c: Array&lt;String&gt; }
 type T = A | B | C;
 
 let t = T(A(1));  // A -&gt; T
-let u = T(C { c = [] });  // C -&gt; T
-</code></pre>
+let u = T(C { c = [] });  // C -&gt; T</code></pre>
 <p>If you mind of the mount of parenthesis, we prepared a syntax-sugar.</p>
-<h2><a class="header" href="#composite-applying-syntax" id="composite-applying-syntax">Composite Applying Syntax</a></h2>
+<h2 id="composite-applying-syntax"><a class="header" href="#composite-applying-syntax">Composite Applying Syntax</a></h2>
 <p><code>A.B(x)</code> will be <code>A(B(x))</code>.
 <code>A.B{x = y}</code> will be <code>A(B{x=y})</code>.</p>
 <pre><code class="language-rust no_run noplayground">struct A { a: Nat }
@@ -682,27 +643,25 @@ struct C { c: Array&lt;String&gt; }
 type T = A | B | C;
 
 let t = T.A(1);  // T(A(1))
-let u = T.C{c=[]};  // T(C { c = [] })
-</code></pre>
+let u = T.C{c=[]};  // T(C { c = [] })</code></pre>
 <p>Yay!</p>
-<h1><a class="header" href="#as-cast" id="as-cast">as-cast</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="as-cast"><a class="header" href="#as-cast">as-cast</a></h1>
 <p>With <code>as</code> keyword, Values are casted to another types.</p>
 <pre><code class="language-rust no_run noplayground">// Inter Number Types
 let x = 1.0 as Int; // Float -&gt; Int
 let y = 2 as Float; // Nat -&gt; Float
 
 // Stringify
-let x = 1.0 as String; // &quot;1.0&quot;
-let y = -2 as String; // &quot;-2&quot;
+let x = 1.0 as String; // "1.0"
+let y = -2 as String; // "-2"
 
 // Parse String
-let x = &quot;1.0&quot; as Float; // 1.0
-let y = &quot;-2&quot; as Int; // -2
-</code></pre>
+let x = "1.0" as Float; // 1.0
+let y = "-2" as Int; // -2</code></pre>
 <p><strong>NOTE</strong>:
 Type casting is a coercion procedure.
 It sometimes occurs runtime errors.</p>
-<h1><a class="header" href="#blocks" id="blocks">blocks</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="blocks"><a class="header" href="#blocks">blocks</a></h1>
 <p><code>{}</code> makes a new scope block.
 In blocks, you can write whole cumin data.</p>
 <pre><code>&lt;block&gt; ::= `{` &lt;statements&gt; &lt;expression&gt; `}`
@@ -710,121 +669,122 @@ In blocks, you can write whole cumin data.</p>
 </code></pre>
 <p>For example, following code is a valid cumin data.</p>
 <pre><code class="language-rust no_run noplayground">let x = 1;
-x + 1
-</code></pre>
+x + 1</code></pre>
 <p>So, you can write</p>
 <pre><code class="language-rust no_run noplayground">let z = {
     let x = 1;
     x + 1
 };
-z
-</code></pre>
+z</code></pre>
 <p>Here, <code>z</code> has Value <code>2</code>, and the <code>x</code> is invisible from outer.
 This notation can make private variables.</p>
-<h1><a class="header" href="#operators" id="operators">operators</a></h1>
-<h2><a class="header" href="#number-operators" id="number-operators">Number Operators</a></h2>
-<table><thead><tr><th align="center">Name</th><th align="center">cumin</th><th align="center">Example</th><th align="center">Math</th></tr></thead><tbody>
-<tr><td align="center">Addition</td><td align="center"><code>+</code></td><td align="center"><code>x + y</code></td><td align="center">\( x+y \)</td></tr>
-<tr><td align="center">Subtract</td><td align="center"><code>-</code></td><td align="center"><code>x - y</code></td><td align="center">\( x-y \)</td></tr>
-<tr><td align="center">Minus</td><td align="center"><code>-</code></td><td align="center"><code>-x</code></td><td align="center">\( -x \)</td></tr>
-<tr><td align="center">Multiply</td><td align="center"><code>*</code></td><td align="center"><code>x * y</code></td><td align="center">\( xy \)</td></tr>
-<tr><td align="center">Division</td><td align="center"><code>/</code></td><td align="center"><code>x / y</code></td><td align="center">\( x/y \)</td></tr>
-<tr><td align="center">Modulo</td><td align="center"><code>%</code></td><td align="center"><code>x % y</code></td><td align="center">\( x \bmod y \)</td></tr>
-<tr><td align="center">Power</td><td align="center"><code>**</code></td><td align="center"><code>x ** y</code></td><td align="center">\( x^y \)</td></tr>
-<tr><td align="center">Priority</td><td align="center"><code>()</code></td><td align="center"><code>(x + y) * z</code></td><td align="center">\( (x+y)\times z \)</td></tr>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="operators"><a class="header" href="#operators">operators</a></h1>
+<h2 id="number-operators"><a class="header" href="#number-operators">Number Operators</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Name</th><th style="text-align: center">cumin</th><th style="text-align: center">Example</th><th style="text-align: center">Math</th></tr></thead><tbody>
+<tr><td style="text-align: center">Addition</td><td style="text-align: center"><code>+</code></td><td style="text-align: center"><code>x + y</code></td><td style="text-align: center">\( x+y \)</td></tr>
+<tr><td style="text-align: center">Subtract</td><td style="text-align: center"><code>-</code></td><td style="text-align: center"><code>x - y</code></td><td style="text-align: center">\( x-y \)</td></tr>
+<tr><td style="text-align: center">Minus</td><td style="text-align: center"><code>-</code></td><td style="text-align: center"><code>-x</code></td><td style="text-align: center">\( -x \)</td></tr>
+<tr><td style="text-align: center">Multiply</td><td style="text-align: center"><code>*</code></td><td style="text-align: center"><code>x * y</code></td><td style="text-align: center">\( xy \)</td></tr>
+<tr><td style="text-align: center">Division</td><td style="text-align: center"><code>/</code></td><td style="text-align: center"><code>x / y</code></td><td style="text-align: center">\( x/y \)</td></tr>
+<tr><td style="text-align: center">Modulo</td><td style="text-align: center"><code>%</code></td><td style="text-align: center"><code>x % y</code></td><td style="text-align: center">\( x \bmod y \)</td></tr>
+<tr><td style="text-align: center">Power</td><td style="text-align: center"><code>**</code></td><td style="text-align: center"><code>x ** y</code></td><td style="text-align: center">\( x^y \)</td></tr>
+<tr><td style="text-align: center">Priority</td><td style="text-align: center"><code>()</code></td><td style="text-align: center"><code>(x + y) * z</code></td><td style="text-align: center">\( (x+y)\times z \)</td></tr>
 </tbody></table>
+</div>
 <p>There are three types for Numbers:
 <code>Nat</code>, <code>Int</code> and <code>Float</code>.
 The operations do implicit type casting.
 For example, the result of <code>Nat + Float</code> has <code>Float</code>.
 It is one-way <code>Nat -&gt; Int -&gt; Float</code>.</p>
-<h2><a class="header" href="#bool-operators" id="bool-operators">Bool Operators</a></h2>
-<table><thead><tr><th align="center">Name</th><th align="center">cumin</th><th align="center">Example</th><th align="center">Math</th></tr></thead><tbody>
-<tr><td align="center">And</td><td align="center"><code>and</code></td><td align="center"><code>x and y</code></td><td align="center">\( a \land b \)</td></tr>
-<tr><td align="center">Or</td><td align="center"><code>or</code></td><td align="center"><code>x or y</code></td><td align="center">\( a \lor b \)</td></tr>
-<tr><td align="center">Xor</td><td align="center"><code>xor</code></td><td align="center"><code>x xor y</code></td><td align="center">\( a \oplus b \)</td></tr>
-<tr><td align="center">Not</td><td align="center"><code>not</code></td><td align="center"><code>not x</code></td><td align="center">\( \lnot a \)</td></tr>
+<h2 id="bool-operators"><a class="header" href="#bool-operators">Bool Operators</a></h2>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Name</th><th style="text-align: center">cumin</th><th style="text-align: center">Example</th><th style="text-align: center">Math</th></tr></thead><tbody>
+<tr><td style="text-align: center">And</td><td style="text-align: center"><code>and</code></td><td style="text-align: center"><code>x and y</code></td><td style="text-align: center">\( a \land b \)</td></tr>
+<tr><td style="text-align: center">Or</td><td style="text-align: center"><code>or</code></td><td style="text-align: center"><code>x or y</code></td><td style="text-align: center">\( a \lor b \)</td></tr>
+<tr><td style="text-align: center">Xor</td><td style="text-align: center"><code>xor</code></td><td style="text-align: center"><code>x xor y</code></td><td style="text-align: center">\( a \oplus b \)</td></tr>
+<tr><td style="text-align: center">Not</td><td style="text-align: center"><code>not</code></td><td style="text-align: center"><code>not x</code></td><td style="text-align: center">\( \lnot a \)</td></tr>
 </tbody></table>
-<h2><a class="header" href="#equality" id="equality">Equality</a></h2>
-<table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
+</div>
+<h2 id="equality"><a class="header" href="#equality">Equality</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
 <tr><td>Equal</td><td><code>==</code></td><td><code>1 == 2</code> <code>[1,2] == [1,2]</code></td><td>\( x = y \)</td></tr>
 <tr><td>Inequal</td><td><code>!=</code></td><td><code>1 != 2</code> <code>[1,2] != [1,2]</code></td><td>\( x \ne y \)</td></tr>
 </tbody></table>
+</div>
 <p>All objects containing your custom struct values can be compared with <code>==</code> and <code>!=</code>.</p>
-<h2><a class="header" href="#orderity-of-numbers" id="orderity-of-numbers">Orderity of Numbers</a></h2>
-<table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
+<h2 id="orderity-of-numbers"><a class="header" href="#orderity-of-numbers">Orderity of Numbers</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
 <tr><td>LessThan</td><td><code>&lt;</code></td><td><code>x &lt; y</code></td><td>\( x &lt; y \)</td></tr>
 <tr><td>LessEqual</td><td><code>&lt;=</code></td><td><code>x &lt;= y</code></td><td>\( x \leq y \)</td></tr>
 <tr><td>GreaterThan</td><td><code>&gt;</code></td><td><code>x &gt; y</code></td><td>\( x &gt; y \)</td></tr>
 <tr><td>GreaterEqual</td><td><code>&gt;=</code></td><td><code>x &gt;= y</code></td><td>\( x \geq y \)</td></tr>
 </tbody></table>
+</div>
 <p>Only numbers can be compared.</p>
-<h2><a class="header" href="#array-operators" id="array-operators">Array Operators</a></h2>
-<table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
+<h2 id="array-operators"><a class="header" href="#array-operators">Array Operators</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>cumin</th><th>Example</th><th>Math</th></tr></thead><tbody>
 <tr><td>Concat</td><td><code>++</code></td><td><code>[1] ++ [2, 3]</code></td><td></td></tr>
 </tbody></table>
-<h1><a class="header" href="#modules" id="modules">Modules</a></h1>
-<h2><a class="header" href="#module-file" id="module-file">Module file</a></h2>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="modules"><a class="header" href="#modules">Modules</a></h1>
+<h2 id="module-file"><a class="header" href="#module-file">Module file</a></h2>
 <p>Module files must contain only statements.</p>
 <pre><code>&lt;module&gt; ::= &lt;statements&gt;
 &lt;statements&gt; ::= &lt;statement&gt; | &lt;statement&gt; &lt;statements&gt;
 </code></pre>
-<h2><a class="header" href="#importing-modules" id="importing-modules">Importing modules</a></h2>
-<pre><code class="language-rust no_run noplayground">use &quot;./path/to/module.cumin&quot;;
-</code></pre>
+<h2 id="importing-modules"><a class="header" href="#importing-modules">Importing modules</a></h2>
+<pre><code class="language-rust no_run noplayground">use "./path/to/module.cumin";</code></pre>
 <p>The path will be read as</p>
 <ol>
 <li>Absolute path</li>
 <li>Relative path from the current directory</li>
 <li>Relative path from the file</li>
 </ol>
-<h1><a class="header" href="#tools" id="tools">Tools</a></h1>
-<h1><a class="header" href="#cuminc" id="cuminc">cuminc</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="tools"><a class="header" href="#tools">Tools</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="cuminc"><a class="header" href="#cuminc">cuminc</a></h1>
 <p><strong>cuminc</strong> is a compiler for cumin.</p>
-<h2><a class="header" href="#installation" id="installation">Installation</a></h2>
+<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <p>To build from source code, <strong>cargo</strong> is required.
 It is recommended to use <a href="https://www.rust-lang.org/tools/install">rustup</a> to install cargo.</p>
-<h3><a class="header" href="#from-cratesio" id="from-cratesio">From crates.io</a></h3>
+<h3 id="from-cratesio"><a class="header" href="#from-cratesio">From crates.io</a></h3>
 <pre><code class="language-bash">$ cargo install cumin
 </code></pre>
-<h3><a class="header" href="#from-github" id="from-github">From Github</a></h3>
+<h3 id="from-github"><a class="header" href="#from-github">From Github</a></h3>
 <pre><code class="language-bash">$ git clone git@github.com:cympfh/cumin.git
 $ make install
 $ export PATH=$PATH:$HOME/.cargo/bin/
 $ which cuminc
 </code></pre>
-<h2><a class="header" href="#usage" id="usage">Usage</a></h2>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p><strong>cuminc</strong> compiles cumin data into other data format, JSON by default.</p>
 <pre><code class="language-bash">$ cuminc &lt;file.cumin&gt;
 $ cat &lt;file.cumin&gt; | cuminc
 </code></pre>
-<h3><a class="header" href="#example" id="example">Example</a></h3>
+<h3 id="example"><a class="header" href="#example">Example</a></h3>
 <pre><code class="language-bash">$ echo '{{three = 1 + 2}}' | cuminc
-{&quot;three&quot;:3}
+{"three":3}
 </code></pre>
 <pre><code class="language-bash">$ echo '{{three = 1 + 2}}' | cuminc -T yaml
 ---
 three: 3
 </code></pre>
-<h1><a class="header" href="#cumin-py" id="cumin-py">cumin-py</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="cumin-py"><a class="header" href="#cumin-py">cumin-py</a></h1>
 <p><strong>cumin-py</strong> is a Python binding for cumin.</p>
-<h2><a class="header" href="#installation-1" id="installation-1">Installation</a></h2>
+<h2 id="installation-1"><a class="header" href="#installation-1">Installation</a></h2>
 <p>Firstly <strong>cargo</strong> is required.</p>
-<h3><a class="header" href="#from-pypi" id="from-pypi">From PyPI</a></h3>
+<h3 id="from-pypi"><a class="header" href="#from-pypi">From PyPI</a></h3>
 <pre><code class="language-bash">pip install cumin-py
 </code></pre>
-<h3><a class="header" href="#from-github-1" id="from-github-1">From Github</a></h3>
+<h3 id="from-github-1"><a class="header" href="#from-github-1">From Github</a></h3>
 <pre><code class="language-bash">$ git clone git@github.com:cympfh/cumin-py.git
 $ pip install .
 </code></pre>
-<h2><a class="header" href="#usage-1" id="usage-1">Usage</a></h2>
+<h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
 <p>From Python code,</p>
 <pre><code class="language-python">import cumin
 
-data = cumin.loads(&quot;{{three = 1 + 2}}&quot;)
+data = cumin.loads("{{three = 1 + 2}}")
 # {'three': 3}
 
-data = cumin.load(&quot;./data.cumin&quot;)
+data = cumin.load("./data.cumin")
 # import file `data.cumin`
 </code></pre>
 
@@ -832,9 +792,7 @@ data = cumin.load(&quot;./data.cumin&quot;)
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                        
 
-                        
 
                         <div style="clear: both"></div>
                     </nav>
@@ -842,51 +800,53 @@ data = cumin.load(&quot;./data.cumin&quot;)
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                
 
-                
             </nav>
 
         </div>
 
-        
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
 
-        
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
-        
 
-        
-        <script type="text/javascript">
+
+        <script>
             window.playground_copyable = true;
         </script>
-        
 
-        
 
-        
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
 
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        
 
-        
-        
-        <script type="text/javascript">
+        <script>
         window.addEventListener('load', function() {
             MathJax.Hub.Register.StartupHook('End', function() {
                 window.setTimeout(window.print, 100);
             });
         });
         </script>
-        
-        
 
+    </div>
     </body>
 </html>
