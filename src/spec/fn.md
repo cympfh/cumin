@@ -58,3 +58,12 @@ fn two() = z;  // this `z` is "2" now.
 }}
 ```
 
+## NOTE: Cannot be used recursively
+
+The internal definition of `f` cannot refer to `f`.
+
+```rust,no_run,noplayground
+fn f(x: Int) = f(x - 1);  // Error: Cannot resolve name `f`.
+```
+
+This is because of cumin's NO-LOOP policy.

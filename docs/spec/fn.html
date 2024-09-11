@@ -219,6 +219,10 @@ fn two() = z;  // this `z` is "2" now.
     a = one(),  // 1
     b = two(),  // "2"
 }}</code></pre>
+<h2 id="note-cannot-be-used-recursively"><a class="header" href="#note-cannot-be-used-recursively">NOTE: Cannot be used recursively</a></h2>
+<p>The internal definition of <code>f</code> cannot refer to <code>f</code>.</p>
+<pre><code class="language-rust no_run noplayground">fn f(x: Int) = f(x - 1);  // Error: Cannot resolve name `f`.</code></pre>
+<p>This is because of cumin's NO-LOOP policy.</p>
 
                     </main>
 
